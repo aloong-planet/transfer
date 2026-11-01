@@ -14,7 +14,7 @@ export const VERSION = '1.2.2'
 
 // 两个下载来源的 base
 const R2_BASE = 'https://dl.aloongplanet.com/releases' // Cloudflare R2 自定义域(主)
-const GITHUB_REPO = 'https://github.com/zhoulf1006/transfer' // GitHub Release(兜底)
+const GITHUB_REPO = 'https://github.com/aloong-planet/transfer' // GitHub Release(兜底)
 const DOWNLOAD_STATS_PUBLIC_URL = 'https://dl.aloongplanet.com/stats/downloads.json'
 const DOWNLOAD_STATS_DEV_PATH = '/__download-statistics'
 

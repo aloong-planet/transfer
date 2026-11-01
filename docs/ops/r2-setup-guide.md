@@ -68,7 +68,7 @@ R2 免费额度(个人项目基本 $0):**10 GB 存储 + egress(下载流量)免�
 
 ## 第 6 步:把 4 个密钥填进 GitHub Secrets
 
-1. 打开仓库:https://github.com/zhoulf1006/transfer/settings/secrets/actions
+1. 打开仓库:https://github.com/aloong-planet/transfer/settings/secrets/actions
 2. 点 **New repository secret**,逐个添加(名字**必须完全一致**):
 
    | Secret 名 | 值 |

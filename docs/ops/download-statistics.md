@@ -102,3 +102,9 @@ https://example.com                        (无该响应头)
 ## 本地预览
 
 Astro 开发服务器把同源路径 `/__download-statistics` 代理到 R2 的公开统计 JSON,因此 `pnpm --dir site dev` 下刷新页面也能看到真实数字。该代理只存在于开发服务器;生产构建仍直接读取 `https://dl.aloongplanet.com/stats/downloads.json`,不会扩大 R2 CORS 白名单。
+
+## Repository ownership and continuity
+
+The workflow runs in `aloong-planet/transfer`. The collector reads `GITHUB_REPOSITORY`, so repository ownership changes do not require a hard-coded API target update. Repository-level R2 and analytics secrets and `CF_ZONE_ID` must remain available to Actions.
+
+Preserve the original Release asset IDs and the existing `stats/downloads.json` state. Transfer the repository instead of recreating its Releases or re-uploading assets; the accumulator keys GitHub history by asset ID. The R2 bucket, object paths and public download hostname remain independent of the repository owner. After a transfer, manually run `download-statistics.yml` once and verify its successful publication, retained historical keys, advancing cursor and nondecreasing totals.

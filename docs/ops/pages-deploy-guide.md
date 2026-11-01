@@ -13,8 +13,8 @@
 ## 第 1 步:创建 Pages 项目并连 GitHub
 
 1. Cloudflare 面板 → 左侧 **Workers & Pages** → **Create application** → **Pages** 标签 → **Connect to Git**。
-2. 授权 Cloudflare 访问你的 GitHub(首次会跳 GitHub 授权页,选择只授权 `zhoulf1006/transfer` 仓库即可)。
-3. 选中仓库 **zhoulf1006/transfer** → **Begin setup**。
+2. 授权 Cloudflare 访问你的 GitHub(首次会跳 GitHub 授权页,选择只授权 `aloong-planet/transfer` 仓库即可)。
+3. 选中仓库 **aloong-planet/transfer** → **Begin setup**。
 
 ## 第 2 步:构建配置(关键,照填)
 
@@ -22,7 +22,7 @@
 
 | 字段 | 填什么 |
 |------|--------|
-| **Project name** | `transfer`(会成为 `transfer.pages.dev`,随意) |
+| **Project name** | `transfer-org` (`transfer-org.pages.dev`) |
 | **Production branch** | `master` |
 | **Framework preset** | `Astro`(选了会自动带出下面两项;没有就手填) |
 | **Build command** | `pnpm install && pnpm build` |
@@ -41,7 +41,7 @@
 ## 第 3 步:首次部署
 
 1. 点 **Save and Deploy**。
-2. Pages 会拉代码、`pnpm install`、`pnpm build`,几分钟后给你一个 `https://transfer.pages.dev`(或类似)。
+2. Pages 会拉代码、`pnpm install`、`pnpm build`,几分钟后给你一个 `https://transfer-org.pages.dev`。
 3. 打开这个临时地址,确认落地页正常、下载按钮能点(下载指向 `dl.aloongplanet.com`,R2 已验证可下)。
 
 ## 第 4 步:绑定自定义域 transfer.aloongplanet.com
@@ -69,3 +69,11 @@
 - **构建失败 pnpm 版本** → Pages 会读 `site/package.json` 的 `packageManager`?本项目 site 没写该字段,Pages 默认 pnpm 版本一般够用;若报错,加环境变量 `PNPM_VERSION=9`。
 - **页面 404 / 样式丢失** → Build output directory 应为 `dist`(相对 site/),别写成绝对或 `site/dist`。
 - **下载按钮 404** → 检查 R2 桶里确有 `releases/v0.9.0/` 对应文件(已验证有)。
+
+## Organization repository
+
+The source repository is `aloong-planet/transfer`. The active Git-integrated Pages project is `transfer-org` (`transfer-org.pages.dev`), with `transfer.aloongplanet.com` as its custom domain. It builds `master` using the settings above.
+
+The previous project, `transfer` (`transfer-aho.pages.dev`), retains its deployment history but no longer owns the custom domain. Its Git integration still refers to the former personal repository; do not use that project for future production deployments.
+
+When changing repository ownership again, first ensure the Cloudflare GitHub App can access the destination repository. Build and verify the replacement Pages project before moving the custom domain. Cloudflare does not allow the same custom domain on both projects: remove its old binding, add it to the replacement, and confirm the generated CNAME target. Then verify domain status, HTTPS, both language pages, installer links and the statistics request. Keep the previous deployment available until validation succeeds.
