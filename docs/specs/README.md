@@ -13,6 +13,7 @@
 | [landing-page-deploy.md](landing-page-deploy.md) | 落地页一份代码两处部署:备案号的注入与渲染边界、与下载/统计的回归点、部署约束 |
 | [receive-dir.md](receive-dir.md) | 接收文件夹可由用户选定:选择/恢复默认/失效退回/告知/路径展示七组边界,含沙盒容器路径展示与 App Store 2.4.5(i) 的由来 |
 | [mac-distribution.md](mac-distribution.md) | macOS Developer ID / DMG distribution: which builds are signed and notarized, the two entry commands and the in-build notarization hook, the CI tiers, the no-certificate failure and the release gate |
+| [electron-security.md](electron-security.md) | The Electron security baseline: only Transfer's own pages in every window, IPC answered only for them, minimal permissions, sandboxed renderers, quarantined received files on macOS, and the checklist's ledger |
 
 ## 不变量
 
@@ -20,3 +21,4 @@
 - **不写文件路径与代码片段**——那些腐烂得最快。写抽象层的决策。
 - 够 ADR 三门槛的决策落 ADR 后,spec 改为引用编号。
 - slug 尽量与 `docs/features/` 对应;**分发渠道是例外**(落地页、macOS 分发)——功能目录明确「分发渠道不入目录」(见 features/README.md),所以它们有 spec 而无 features 条目。
+- The security baseline (`electron-security`) is the other exception: it constrains the whole app rather than one feature, so it has a spec and no features entry; its one user-visible part, the quarantine of received files, is described in `docs/features/transfer-chat.md`.
