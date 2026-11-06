@@ -4,7 +4,7 @@
 
 ## Context
 
-Transfer shows what other devices on the LAN send it, and its pages are given an API that can send any local file to any device, read the chat history and accept transfers. electron-scaffold's security checklist (items 4, 5, 12, 13, 14, 17) asks that a window never hold a page that is not the app's own, that IPC answer only the app's own frames, that a page get no permission it does not need, and that renderers run sandboxed; Transfer had none of these. Received files were written without the quarantine attribute that browsers and AirDrop set, so opening a received app or script skipped macOS's first-launch check.
+Transfer shows what other devices on the LAN send it, and its pages are given Transfer's API. electron-scaffold's security checklist (items 4, 5, 12, 13, 14, 17) asks that a window never hold a page that is not the app's own, that IPC answer only the app's own frames, that a page get no permission it does not need, and that renderers run sandboxed. Browsers and AirDrop mark the files they bring in with a quarantine attribute, so that opening a downloaded app or script gets macOS's first-launch check; a file received through Transfer should be treated the same.
 
 ## Options
 
@@ -27,12 +27,12 @@ We choose **option 1**. The rule "is this URL one of Transfer's own pages" is on
 - Positive: a received app or script gets macOS's first-launch check, as a download does.
 - Negative: opening a received app or script shows the system's confirmation once, which it did not before.
 - Negative: a volume that keeps no extended attributes cannot carry the quarantine; such a file is received without it (logged).
-- Neutral: dropping files anywhere but the message list does nothing, as it was meant to; it used to navigate the window.
+- Neutral: dropping files anywhere but the message list does nothing.
 - Neutral: the drop-to-navigation step itself was not measured (it needs a real drag on screen); neither layer that stops it depends on it.
 
 ## Sources
 
 - Spec: [electron-security](../specs/electron-security.md).
 - electron-scaffold's `electron-security.md` (items 4, 5, 12, 13, 14, 17) and `electron-security-howto.md`.
-- Measurements on 2026-11-06 of the state before this change (kept with the working records).
+- Measurements on 2026-11-06 (kept with the working records).
 - Owner's decision on quarantining received files (2026-11-06).

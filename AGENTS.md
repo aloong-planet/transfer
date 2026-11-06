@@ -10,7 +10,7 @@ Each class of document has exactly one home, chosen by how fast it rots; see `do
 
 - A test seam the main process reads is an environment variable named `TRANSFER_*`; the main process reads no other launch argument or variable (ADR-0024).
 - The packaging check's plain launch is the only automated launch of Transfer that may announce on the LAN (ADR-0024).
-- Every IPC handler for the renderer is registered through the sender-checking `handle` wrapper, never with `ipcMain.handle` directly (ADR-0025).
+- Every IPC handler for the renderer is registered through the sender-checking `handle` wrapper, never directly through `ipcMain`, a web contents' `ipc` object or its IPC message events (ADR-0025).
 - No window is created with its sandbox off or with Node integration on (ADR-0025).
 - A change to windows, sessions, protocols, IPC handlers, launch inputs, the Electron major version or the packaging platforms updates `docs/ops/electron-security.md` in the same change.
 
