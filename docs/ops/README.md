@@ -17,3 +17,4 @@
 | [cn-mirror-deploy.md](cn-mirror-deploy.md) | 国内镜像 `transfer.aloongplanet.com.cn`:部署命令、服务器形态、备案号注入、CORS 验证与排查 |
 | [r2-setup-guide.md](r2-setup-guide.md) | R2 开通、Token 最小权限、四个 secret 的语义 |
 | [download-statistics.md](download-statistics.md) | 下载统计口径定义、状态文件 schema、Cloudflare Analytics Token 与 R2 CORS 配置 |
+| [electron-security.md](electron-security.md) | The Electron security checklist, item by item: Transfer's status, what holds it, and when to update it |
