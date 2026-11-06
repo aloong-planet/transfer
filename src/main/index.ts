@@ -7,7 +7,6 @@ import { randomUUID } from 'node:crypto'
 import {
   app,
   BrowserWindow,
-  ipcMain,
   dialog,
   shell,
   clipboard,
@@ -35,6 +34,7 @@ import {
   type SetShortcutResult
 } from '@shared/ipc'
 import { isValidAccelerator } from '@shared/accelerator'
+import { handle, installWebGuards } from './web-guards'
 import { loadOrCreateIdentity, saveAlias } from './device-identity'
 import { AppCore } from './app-core'
 import { MessageStore } from './db/messages'
@@ -309,7 +309,7 @@ function createWindow(): void {
       preload: PRELOAD,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true
     }
   })
   // QUIET 下不显示:测试实例一显示就抢前台(见 QUIET 定义处①)。渲染与布局照常进行。
@@ -340,20 +340,20 @@ function createWindow(): void {
 }
 
 function registerIpc(): void {
-  ipcMain.handle(CMD.getIdentity, async (): Promise<IdentityInfo> => {
+  handle(CMD.getIdentity, async (): Promise<IdentityInfo> => {
     const id = await loadOrCreateIdentity(app.getPath('userData'))
     return { alias: id.alias, fingerprint: id.fingerprint }
   })
-  ipcMain.handle(CMD.setAlias, async (_e, alias: string) => {
+  handle(CMD.setAlias, async (_e, alias: string) => {
     await saveAlias(app.getPath('userData'), alias)
   })
-  ipcMain.handle(
+  handle(
     CMD.setRemoteAlias,
     (_e, a: { fingerprint: string; alias: string }): { ok: boolean } =>
       core?.setRemoteAlias(a.fingerprint, a.alias) ?? { ok: false }
   )
-  ipcMain.handle(CMD.listDevices, () => core?.listDevices() ?? [])
-  ipcMain.handle(CMD.pickFiles, async () => {
+  handle(CMD.listDevices, () => core?.listDevices() ?? [])
+  handle(CMD.pickFiles, async () => {
     if (!mainWindow) return []
     const r = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile', 'multiSelections']
@@ -362,15 +362,15 @@ function registerIpc(): void {
   })
 
   // ── 聊天 ──
-  ipcMain.handle(CMD.sendText, async (_e, args: SendTextArgs) => {
+  handle(CMD.sendText, async (_e, args: SendTextArgs) => {
     await core?.chat.sendText(args.peerFp, args.text)
   })
-  ipcMain.handle(CMD.sendFiles, async (_e, args: SendFilesArgs) => {
+  handle(CMD.sendFiles, async (_e, args: SendFilesArgs) => {
     await core?.chat.sendFiles(args.peerFp, args.filePaths)
   })
   // 粘贴/内存图片发送:落盘为持久 png 副本(命名唯一,防撞名)后走 sendFiles 链路(入库/推 UI/串行化)。
   // 复用截图那套 persistAndSend:成功保留原图(缩略图/看大图靠 filePath 读盘)、失败删副本。
-  ipcMain.handle(CMD.sendImage, async (_e, args: SendImageArgs) => {
+  handle(CMD.sendImage, async (_e, args: SendImageArgs) => {
     if (!core) return
     const fileName = `${t('main.file.imagePrefix')}_${Date.now()}_${randomUUID().slice(0, 8)}.png`
     const dir = join(app.getPath('userData'), 'sent-images') // 与截图 sentImagesDir 同源(index.ts 处)
@@ -378,27 +378,27 @@ function registerIpc(): void {
       await core!.chat.sendFiles(args.peerFp, [p])
     })
   })
-  ipcMain.handle(CMD.respond, (_e, args: RespondArgs) => {
+  handle(CMD.respond, (_e, args: RespondArgs) => {
     core?.chat.respond(args.transferId, args.accept)
   })
-  ipcMain.handle(CMD.listMessages, (_e, args?: ListMessagesArgs) => {
+  handle(CMD.listMessages, (_e, args?: ListMessagesArgs) => {
     return core?.chat.list(args) ?? []
   })
-  ipcMain.handle(CMD.listReceivedFiles, (_e, args?: ListMessagesArgs) => {
+  handle(CMD.listReceivedFiles, (_e, args?: ListMessagesArgs) => {
     return store?.listReceivedFiles(args) ?? []
   })
-  ipcMain.handle(CMD.openFile, (_e, messageId: string) => {
+  handle(CMD.openFile, (_e, messageId: string) => {
     // ④-B:按 id 精确取(store.get),不受 list 分页上限限制
     const msg = store?.get(messageId)
     if (msg?.filePath) shell.openPath(msg.filePath)
   })
   // 在文件管理器中定位并高亮该文件(收到的文件"打开所在文件夹")。
-  ipcMain.handle(CMD.showInFolder, (_e, messageId: string) => {
+  handle(CMD.showInFolder, (_e, messageId: string) => {
     const msg = store?.get(messageId)
     if (msg?.filePath) shell.showItemInFolder(msg.filePath)
   })
   // 图片缩略图:nativeImage 生成小图 dataURL(仅 PNG/JPEG 可靠;GIF/WEBP/非图片返回 null → UI 回退图标)
-  ipcMain.handle(CMD.getThumbnail, async (_e, messageId: string): Promise<string | null> => {
+  handle(CMD.getThumbnail, async (_e, messageId: string): Promise<string | null> => {
     const msg = store?.get(messageId)
     if (!msg?.filePath) return null
     try {
@@ -410,7 +410,7 @@ function registerIpc(): void {
     }
   })
   // 图片另存为:弹系统对话框,把原图(filePath)复制到用户选定位置。
-  ipcMain.handle(CMD.saveImageAs, async (_e, messageId: string): Promise<string | null> => {
+  handle(CMD.saveImageAs, async (_e, messageId: string): Promise<string | null> => {
     const msg = store?.get(messageId)
     if (!msg?.filePath) return null
     const r = await dialog.showSaveDialog({ defaultPath: basename(msg.filePath) })
@@ -420,14 +420,14 @@ function registerIpc(): void {
   })
   // Copy an image to the clipboard as pixels only (no file reference), upright. A file that is gone or
   // no longer decodes leaves the clipboard as it was; there is no feedback either way (spec US-001).
-  ipcMain.handle(CMD.copyImage, async (_e, messageId: string): Promise<void> => {
+  handle(CMD.copyImage, async (_e, messageId: string): Promise<void> => {
     const msg = store?.get(messageId)
     if (!msg?.filePath) return
     const img = await decodeUpright(msg.filePath)
     if (img) clipboard.writeImage(img)
   })
   // 取原图 dataURL(app 内居中弹层看大图):fs 读原文件按扩展名拼 mime,支持所有图片格式。
-  ipcMain.handle(CMD.getImageDataUrl, async (_e, messageId: string): Promise<string | null> => {
+  handle(CMD.getImageDataUrl, async (_e, messageId: string): Promise<string | null> => {
     const msg = store?.get(messageId)
     if (!msg?.filePath) return null
     try {
@@ -437,22 +437,22 @@ function registerIpc(): void {
       return null
     }
   })
-  ipcMain.handle(CMD.getAutoAccept, (): AutoAcceptSettings => {
+  handle(CMD.getAutoAccept, (): AutoAcceptSettings => {
     return settings!.getAutoAccept()
   })
-  ipcMain.handle(CMD.setAutoAccept, (_e, s: Partial<AutoAcceptSettings>): AutoAcceptSettings => {
+  handle(CMD.setAutoAccept, (_e, s: Partial<AutoAcceptSettings>): AutoAcceptSettings => {
     return settings!.setAutoAccept(s).autoAccept
   })
   // ── 接收文件夹 ──
   // 三个写操作都**立即生效**,不跟随该页的「保存」——与同页的语言、离线设备保留一致
   // (那两个也是选完即生效;跟随保存的只有自动接收开关与大小上限)。
-  ipcMain.handle(CMD.getReceiveDir, (): ReceiveDirInfo => receiveDirInfo())
+  handle(CMD.getReceiveDir, (): ReceiveDirInfo => receiveDirInfo())
 
-  ipcMain.handle(CMD.openReceiveDir, async (): Promise<void> => {
+  handle(CMD.openReceiveDir, async (): Promise<void> => {
     await shell.openPath(currentReceiveDir())
   })
 
-  ipcMain.handle(CMD.pickReceiveDir, async (): Promise<PickReceiveDirResult> => {
+  handle(CMD.pickReceiveDir, async (): Promise<PickReceiveDirResult> => {
     const unchanged = (): PickReceiveDirResult => ({ info: receiveDirInfo(), changed: false })
     if (!mainWindow) return unchanged()
     const r = await dialog.showOpenDialog(mainWindow, {
@@ -492,14 +492,14 @@ function registerIpc(): void {
     return { info: receiveDirInfo(), changed }
   })
 
-  ipcMain.handle(CMD.resetReceiveDir, (): ReceiveDirInfo => {
+  handle(CMD.resetReceiveDir, (): ReceiveDirInfo => {
     settings!.setReceiveDir({ chosen: null, notice: false })
     acquireReceiveDirAccess(null)
     cancelReceiveDirRecheck()
     return receiveDirInfo()
   })
 
-  ipcMain.handle(CMD.dismissReceiveDirNotice, (): ReceiveDirInfo => {
+  handle(CMD.dismissReceiveDirNotice, (): ReceiveDirInfo => {
     // 只清告知,不动目录也不动授权 —— 故把当前书签原样传回去
     settings!.setReceiveDir(
       { ...settings!.getReceiveDir(), notice: false },
@@ -508,14 +508,14 @@ function registerIpc(): void {
     return receiveDirInfo()
   })
   // 主题偏好:存 main 侧(避开 file:// 下 localStorage 慢)
-  ipcMain.handle(CMD.getTheme, (): ThemePref => settings!.getTheme())
-  ipcMain.handle(CMD.setTheme, (_e, t: ThemePref): ThemePref => settings!.setTheme(t))
+  handle(CMD.getTheme, (): ThemePref => settings!.getTheme())
+  handle(CMD.setTheme, (_e, t: ThemePref): ThemePref => settings!.setTheme(t))
   // 界面语言:pref 存盘,effective 由 main 解析 system(getPreferredSystemLanguages)。
-  ipcMain.handle(CMD.getLanguage, (): LangResult => {
+  handle(CMD.getLanguage, (): LangResult => {
     const pref = settings!.getLanguage()
     return { pref, effective: resolveSystemEffective(pref) }
   })
-  ipcMain.handle(CMD.setLanguage, (_e, pref: LangPref): LangResult => {
+  handle(CMD.setLanguage, (_e, pref: LangPref): LangResult => {
     settings!.setLanguage(pref)
     const effective = resolveSystemEffective(pref)
     setMainLang(effective) // 更新主进程内存态,后续 dialog/文件名用新语言
@@ -525,27 +525,27 @@ function registerIpc(): void {
     return { pref, effective }
   })
   // 截图快捷键:取当前值。
-  ipcMain.handle(CMD.getShortcut, (): string => settings!.getShortcutCapture())
+  handle(CMD.getShortcut, (): string => settings!.getShortcutCapture())
   // 设新键:先粗校验格式 → 试注册(rebind,失败自动回滚旧键)→ 成功才持久化。
-  ipcMain.handle(CMD.setShortcut, (_e, accel: string): SetShortcutResult => {
+  handle(CMD.setShortcut, (_e, accel: string): SetShortcutResult => {
     if (!isValidAccelerator(accel)) return { ok: false, reason: 'invalid' }
     if (!screenshot!.rebindShortcut(accel)) return { ok: false, reason: 'conflict' }
     settings!.setShortcutCapture(accel)
     return { ok: true, accel }
   })
   // 离线保留时长:取当前分钟值 / 设新值。set 必须走 core(打通 registry + 立即 prune),不能只 settings.set。
-  ipcMain.handle(CMD.getOfflineKeep, (): number => settings!.getOfflineKeepMinutes())
-  ipcMain.handle(CMD.setOfflineKeep, (_e, minutes: number): number =>
+  handle(CMD.getOfflineKeep, (): number => settings!.getOfflineKeepMinutes())
+  handle(CMD.setOfflineKeep, (_e, minutes: number): number =>
     core?.setOfflineKeepMinutes(minutes) ?? settings!.getOfflineKeepMinutes()
   )
   // 同步总未读数(renderer 算好后传来)→ mac Dock 数字角标(0 隐藏)。
   // Windows setBadgeCount 无效(返 false),无害;Windows 提醒靠 flashFrame。
-  ipcMain.handle(CMD.setUnread, (_e, total: number) => {
+  handle(CMD.setUnread, (_e, total: number) => {
     app.setBadgeCount(Math.max(0, Math.floor(total)))
   })
 
   // 截图:主窗同步当前聊天对象(决定"发聊天"可用性,§4.3 blocker#1)
-  ipcMain.handle(SHOT_CMD.setActivePeer, (_e, peerFp: string | null) => {
+  handle(SHOT_CMD.setActivePeer, (_e, peerFp: string | null) => {
     screenshot?.setActivePeer(peerFp)
   })
 }
@@ -564,6 +564,9 @@ if (gotTheLock) {
 app.whenReady().then(async () => {
   // 非首个实例:已 app.quit(),不初始化(whenReady 仍可能触发,这里兜住)。
   if (!gotTheLock) return
+
+  // Before the first window: keep every web contents on Transfer's own pages and set the permission handlers (ADR-0025)
+  installWebGuards()
 
   // app:// handler 必须在建窗(loadURL app://…)之前注册。dev 不加载 app://,注册也无害。
   // rendererRoot = out/renderer(__dirname = out/main),与原 loadFile 路径一致。

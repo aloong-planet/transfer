@@ -25,11 +25,11 @@ Applies to: every file Transfer receives from another device, on macOS (the Deve
 
 ### electron-security::CON-001 Only Transfer's own pages, in every window (direct acceptance)
 
-Applies to: every web contents Transfer creates — the main window and the screenshot overlay, and any created later. A navigation of a main frame or of any frame to an origin other than Transfer's own (`app://bundle` in a packaged build; the development server's origin in a run from source), whoever starts it — a link, a script, a dropped file or link — is cancelled; a request for a new window is denied; a webview is never attached. Origins are compared after parsing, never by string prefix.
+Applies to: every web contents Transfer creates — the main window, the screenshot overlay, the windows that dim the other screens during a screenshot, and any created later. A navigation of a main frame or of any frame to an origin other than Transfer's own (`app://bundle` in a packaged build; the development server's origin in a run from source), whoever starts it — a link, a script, a dropped file or link — is cancelled; a request for a new window is denied; a webview is never attached. Origins are compared after parsing, never by string prefix.
 
 ### electron-security::CON-002 Dropping onto a window does nothing outside the drop target
 
-Applies to: both windows. A file or link dropped anywhere on a window other than the open chat's message list is ignored: the window stays where it is and nothing is sent. Dropping files on the message list sends them, as before.
+Applies to: every window. A file or link dropped anywhere on a window other than the open chat's message list is ignored: the window stays where it is and nothing is sent. Dropping files on the message list sends them, as before.
 
 ### electron-security::CON-003 IPC answers only Transfer's own main frames
 
@@ -42,7 +42,7 @@ Applies to: the default session. A page is granted writing to the clipboard when
 
 ### electron-security::CON-005 Sandboxed renderers (direct acceptance)
 
-Applies to: both windows. Their renderers run sandboxed, and the preload uses only what a sandboxed preload may.
+Applies to: every window. Their renderers run sandboxed (the dimming windows already were, by default), and the preload uses only what a sandboxed preload may.
 
 ### electron-security::CON-006 A ledger of the checklist (direct acceptance)
 
@@ -71,7 +71,7 @@ Applies to: both windows. Their renderers run sandboxed, and the preload uses on
 
 - The origin rule is one pure function shared by the navigation guard, the window-open handler, the IPC check and the permission handler: given a URL and whether the build is packaged (and the development server's URL from source), it says whether the URL is Transfer's own. It parses the URL and compares origins.
 - The navigation guard hangs off the app's `web-contents-created` event, so it covers every web contents, including ones created later; it handles `will-navigate`, `will-frame-navigate`, `will-attach-webview` and sets the window-open handler.
-- Both pages prevent `dragover` and `drop` at the document level; the message list keeps its own handler for sending files.
+- Transfer's two pages prevent `dragover` and `drop` at the document level; the message list keeps its own handler for sending files. The dimming windows' page has no script; a drop on one is held by the navigation guard alone.
 - IPC handlers are registered through one wrapper that checks the sender before calling the handler; a static check keeps `ipcMain.handle` from being called directly elsewhere.
 - The quarantine is applied to the partial file, after it is complete and its hash checked, and before it is renamed to its final name, by the system's `xattr` tool; the value names Transfer and a fresh event identifier, in the form browsers use.
 
