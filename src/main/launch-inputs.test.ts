@@ -103,6 +103,13 @@ describe('the launch inputs a packaged build refuses (mac-distribution::CON-006)
     expect(refusedLaunchInputs([arg], {})).toEqual([name])
   })
 
+  it.each([' --remote-debugging-port=0', '\t--remote-debugging-port=0', ' -psn_0_1', ' --user-data-dir=/tmp/x'])(
+    'refuses an argument with white space before its switch, which Chromium trims before reading it: %j',
+    (arg) => {
+      expect(refusedLaunchInputs([arg], {})).toEqual(['<argument>'])
+    }
+  )
+
   it('names every refused argument in order, beside an accepted one that shields none of them', () => {
     expect(refusedLaunchInputs(['--a=1', '--user-data-dir=/tmp/x', '/tmp/f', '--b'], {})).toEqual(['--a', '<argument>', '--b'])
   })

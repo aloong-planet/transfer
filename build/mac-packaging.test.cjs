@@ -932,6 +932,7 @@ describe('the launch inputs a packaged app must refuse', () => {
     assert.deepEqual(calls.map(given), [
       { args: ['--remote-debugging-port=0'], url: undefined },
       { args: ['-remote-debugging-port=0'], url: undefined },
+      { args: [' --remote-debugging-port=0'], url: undefined },
       { args: ['--remote-debugging-pipe'], url: undefined },
       { args: ['--type='], url: undefined },
       { args: ['--gpu-launcher=<program>'], url: undefined },
@@ -956,10 +957,15 @@ describe('the launch inputs a packaged app must refuse', () => {
     assert.deepEqual(calls.at(-1).env, { HOME: '/h', PATH: '/p' }, 'the plain launch inherits no refused variable')
   })
 
+  test('a switch after a space that the app does not refuse fails the packaging, named so', () => {
+    const { launch } = launcher(({ args }) => (args[0] === ' --remote-debugging-port=0' ? { exited: false } : undefined))
+    assert.throws(() => check(launch), { message: /Demo\.app did not refuse --remote-debugging-port after a space: it was still running at the limit/ })
+  })
+
   test('an app still running at the limit fails the packaging, naming the input', () => {
     const { calls, launch } = launcher(({ args }) => (args.some((arg) => arg === '--remote-debugging-pipe') ? { exited: false } : undefined))
     assert.throws(() => check(launch), { message: /Demo\.app did not refuse --remote-debugging-pipe: it was still running at the limit/ })
-    assert.equal(calls.length, 3, 'the first input it does not refuse ends the check')
+    assert.equal(calls.length, 4, 'the first input it does not refuse ends the check')
     assert.equal(calls.at(-1).args[0], '--remote-debugging-pipe')
   })
 
@@ -1084,7 +1090,7 @@ describe('the launch inputs a packaged app must refuse', () => {
       pkg(outputDir, run, profile, env, false, passing.launch)
       const launched = new Set(passing.calls.map(({ binary }) => /\/(mac[^/]*)\/Demo\.app\//.exec(binary)[1]))
       assert.deepEqual([...launched].sort(), ['mac-arm64', 'mac-universal'], 'every app an arm64 machine can run, and only those')
-      assert.equal(passing.calls.length, 2 * 10, 'each of them gets all nine inputs and the plain launch')
+      assert.equal(passing.calls.length, 2 * 11, 'each of them gets all ten inputs and the plain launch')
 
       const failedDir = tempDir()
       const failed = buildRunner(failedDir)

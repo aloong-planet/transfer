@@ -289,6 +289,8 @@ const LAUNCH_ENV = ['HOME', 'PATH', 'TMPDIR', 'USER', 'LOGNAME', 'LANG']
 /**
  * The inputs tried. The switches are the ones measured to open the debugging port or to run a program on a notarized
  * build (or to crash it), and a made-up one that only an allow-list refuses, since Chromium's switches are no fixed list.
+ * The port switch after a space is there because Chromium trims each argument before it reads it, so a guard that takes an
+ * argument for a switch by its leading dash lets it through (measured: the port opened).
  * An empty --type reaches the main process as any other launch does; with a process type's name, --type never reaches it,
  * because Chromium reads that first, and a build started that way by hand crashes with or without a guard, so it is not
  * tried. The variable is the URL the common Electron templates load in development; a project's own test seams are its
@@ -299,6 +301,7 @@ function launchInputs(program) {
   return [
     named('--remote-debugging-port=0'),
     named('-remote-debugging-port=0'),
+    { name: '--remote-debugging-port after a space', args: [' --remote-debugging-port=0'] },
     named('--remote-debugging-pipe'),
     named('--type='),
     named(`--gpu-launcher=${program}`),
