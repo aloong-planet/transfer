@@ -1,3 +1,5 @@
+// First, before anything of Transfer loads: a packaged build refuses launch inputs here (ADR-0024)
+import './launch-guard'
 import { join, basename, extname } from 'node:path'
 import { copyFile, readFile } from 'node:fs/promises'
 import { existsSync, mkdirSync } from 'node:fs'
