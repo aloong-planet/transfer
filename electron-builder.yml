@@ -24,12 +24,12 @@ electronFuses:
   runAsNode: false # ELECTRON_RUN_AS_NODE
   enableNodeOptionsEnvironmentVariable: false # NODE_OPTIONS (and NODE_EXTRA_CA_CERTS)
   enableNodeCliInspectArguments: false # --inspect and its relatives
-  # The code that runs is the code that was packaged
+  # App code loads only from app.asar, checked against the hash recorded at packaging (experimental in Electron 35)
   onlyLoadAppFromAsar: true
   enableEmbeddedAsarIntegrityValidation: true
   # Pages load from app:// (ADR-0007), never from file://
   grantFileProtocolExtraPrivileges: false
-  # Transfer sets no cookies, so encryption would protect nothing while bringing in the keychain
+  # Transfer sets no cookies, so encryption would protect nothing; and it is one-way (Electron's fuses docs)
   enableCookieEncryption: false
   # No browser-process-specific V8 snapshot is shipped
   loadBrowserProcessSpecificV8Snapshot: false

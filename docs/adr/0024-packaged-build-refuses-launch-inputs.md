@@ -1,6 +1,6 @@
 # ADR-0024: A packaged build refuses every launch input outside an allow-list, and the fuses close Node's entries
 
-- Status: Proposed
+- Status: Accepted (2026-11-06)
 
 ## Context
 
@@ -28,7 +28,7 @@ The same build's fuse wire has `runAsNode`, `nodeOptions` and `nodeCliInspect` e
 
 We choose **option 1**. In a packaged build — macOS Developer ID, Mac App Store and Windows — the main process exits with code 64 before anything loads when the launch carries an argument other than `--user-data-dir=<directory>` or the `-psn_` token, or an environment variable named `ELECTRON_RENDERER_URL` or starting with `TRANSFER_`, in any letter case. It names the refused inputs on standard error without any value, and shows nothing. `--user-data-dir` stays because it only moves where Transfer keeps its data and runs nothing, and it lets an installed copy be started without touching the real data. A run from source is not affected, so development, e2e and smoke runs keep their seams. The exit code is the contract with the packaging check, so that a crash never passes for a refusal.
 
-The fuses: `runAsNode`, `enableNodeOptionsEnvironmentVariable` and `enableNodeCliInspectArguments` are disabled, since Node reads those entries before any guard can run. `onlyLoadAppFromAsar` and `enableEmbeddedAsarIntegrityValidation` are enabled, so the code that runs is the code that was packaged. `grantFileProtocolExtraPrivileges` is disabled: Transfer's pages load from `app://` (ADR-0007), never from `file://`. `enableCookieEncryption` stays disabled: Transfer sets no cookies, so it would protect nothing while bringing in the keychain, an effect on existing data nobody has measured. `loadBrowserProcessSpecificV8Snapshot` stays disabled, as Transfer has no such snapshot.
+The fuses: `runAsNode`, `enableNodeOptionsEnvironmentVariable` and `enableNodeCliInspectArguments` are disabled, since Node reads those entries before any guard can run. `onlyLoadAppFromAsar` and `enableEmbeddedAsarIntegrityValidation` are enabled, so the app's code is loaded only from its `app.asar` and checked against the hash recorded at packaging — on macOS and on Windows, where Electron 35 supports it as an experimental feature. `grantFileProtocolExtraPrivileges` is disabled: Transfer's pages load from `app://` (ADR-0007), never from `file://`. `enableCookieEncryption` stays disabled: Transfer sets no cookies, so it would protect nothing, and Electron documents it as one-way — once enabled, turning it off again leaves the cookie store unreadable. `loadBrowserProcessSpecificV8Snapshot` stays disabled, as Transfer has no such snapshot.
 
 The refusal is checked on the real package, since a run from source never reaches it: every macOS Developer ID packaging, in either profile, launches the built app with inputs it must refuse and then with only its settings directory, through electron-scaffold's packaging asset.
 

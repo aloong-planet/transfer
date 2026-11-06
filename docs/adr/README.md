@@ -33,4 +33,4 @@
 | [0021](0021-schema-migration-by-declared-columns.md) | 表结构迁移用列声明单一事实源 + 按需补列,不引版本号;新增列必须可空 | 已接受 |
 | [0022](0022-receive-dir-user-selectable.md) | 接收文件夹可由用户选定;失效时自动退回默认且**不保留原路径**;展示路径解符号链接、落盘不解 | 已接受 |
 | [0023](0023-notarize-every-published-mac-build.md) | Notarize every published macOS build (prereleases included); local packages are signed only; no certificate, no package | Accepted |
-| [0024](0024-packaged-build-refuses-launch-inputs.md) | A packaged build refuses every launch argument outside an allow-list and every development-server or seam variable; the fuses close Node's entries | Proposed |
+| [0024](0024-packaged-build-refuses-launch-inputs.md) | A packaged build refuses every launch argument outside an allow-list and every development-server or seam variable; the fuses close Node's entries | Accepted |
