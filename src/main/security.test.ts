@@ -3,21 +3,14 @@
 // window-open handler, the permission handlers and the IPC check on a foreign page are driven through real windows by
 // e2e/electron-security.spec.ts.
 //
-// Known gaps:
-// - The IPC wrapper turns Electron's sender frame into `isMainFrame` by `parent === null`. No case can drive that mapping
-//   with a subframe: Transfer creates none, and its preload never runs in one (no `nodeIntegrationInSubFrames`). Add a
-//   case if either changes.
-// - The wrapper module's static case sees that every function it registers calls the sender check, not that the check
-//   runs before the listener: that is held through a real window for `handle` (e2e/electron-security.spec.ts). A new
-//   wrapper needs such a case of its own.
-// - The renderer scan reads Transfer's own source for a fixed list of sinks. A third-party component that turns received
-//   text into links or markup is not seen by it; a link it made could still not navigate the window or open one
-//   (electron-security::CON-001). Check any such component when it is added.
+// Known gap: the renderer scan reads Transfer's own source for a fixed list of sinks. A third-party component that turns
+// received text into links or markup is not seen by it; a link it made could still not navigate the window or open one
+// (electron-security::CON-001). Check any such component when it is added.
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import * as ts from 'typescript'
 import { describe, expect, it } from 'vitest'
-import { isAppUrl, isTrustedSender, permissionGranted } from './security'
+import { checkedListener, isAppUrl, isTrustedSender, permissionGranted } from './security'
 
 const DEV = 'http://localhost:5173/'
 
@@ -97,6 +90,35 @@ describe('the IPC sender decision (electron-security::CON-003/AC-02)', () => {
   })
 })
 
+describe('the check around every IPC handler (electron-security::CON-003/AC-02)', () => {
+  it("runs the handler for Transfer's own main frame, with the call's event and arguments, and returns its result", () => {
+    const handler = (event: { senderFrame: { url: string } | null }, a: number, b: string) => [event.senderFrame?.url, a, b]
+    expect(checkedListener('get-identity', handler)({ senderFrame: { url: 'app://bundle/index.html', parent: null } }, 1, 'two')).toEqual([
+      'app://bundle/index.html',
+      1,
+      'two'
+    ])
+  })
+
+  it('in a run from source, runs the handler for a main frame on the development server', () => {
+    const answer = checkedListener('get-identity', () => 'answered', DEV)
+    expect(answer({ senderFrame: { url: 'http://localhost:5173/', parent: null } })).toBe('answered')
+  })
+
+  it.each([
+    ["a subframe on Transfer's own page", { url: 'app://bundle/index.html', parent: { url: 'app://bundle/index.html' } }],
+    ['a main frame on another page', { url: 'file:///Users/a/evil.html', parent: null }],
+    ['a frame that is already gone', null]
+  ])('refuses %s with an error, and never runs the handler', (_name, senderFrame) => {
+    let ran = false
+    const answer = checkedListener('send-text', () => {
+      ran = true
+    })
+    expect(() => answer({ senderFrame })).toThrow('Transfer refused an IPC call on send-text')
+    expect(ran).toBe(false)
+  })
+})
+
 /** Every source file of the main process, tests excluded, by path relative to src/main */
 function mainSources(): Array<{ path: string; text: string }> {
   const root = new URL('.', import.meta.url).pathname
@@ -109,14 +131,11 @@ const REGISTERING_METHODS = new Set(['handle', 'handleOnce', 'on', 'once', 'addL
 
 /**
  * Every call in a source that registers for messages from a page — `ipcMain.<method>(`, `<x>.ipc.<method>(`, or a listener
- * for a web contents' `'ipc-message'` / `'ipc-message-sync'` — and whether the function it hands Electron is written in
- * place and itself calls `isTrustedSender`. A listener passed by name counts as unchecked.
+ * for a web contents' `'ipc-message'` / `'ipc-message-sync'` — and whether the function it hands Electron is the result
+ * of `checkedListener(…)`, whose check runs before the handler (the cases above). Anything else counts as unchecked.
  */
 function ipcRegistrations(text: string): Array<{ call: string; checked: boolean }> {
   const file = ts.createSourceFile('source.ts', text, ts.ScriptTarget.Latest, true)
-  const callsCheck = (node: ts.Node): boolean =>
-    (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'isTrustedSender') ||
-    (ts.forEachChild(node, (child) => callsCheck(child) || undefined) ?? false)
   const found: Array<{ call: string; checked: boolean }> = []
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && REGISTERING_METHODS.has(node.expression.name.text)) {
@@ -127,8 +146,12 @@ function ipcRegistrations(text: string): Array<{ call: string; checked: boolean 
       const ipcEvent = first !== undefined && ts.isStringLiteralLike(first) && /^ipc-message(-sync)?$/.test(first.text)
       if (onIpc || ipcEvent) {
         const listener = node.arguments[node.arguments.length - 1]
-        const inPlace = listener !== undefined && (ts.isArrowFunction(listener) || ts.isFunctionExpression(listener))
-        found.push({ call: node.expression.getText(file), checked: inPlace && callsCheck(listener) })
+        const wrapped =
+          listener !== undefined &&
+          ts.isCallExpression(listener) &&
+          ts.isIdentifier(listener.expression) &&
+          listener.expression.text === 'checkedListener'
+        found.push({ call: node.expression.getText(file), checked: wrapped })
       }
     }
     ts.forEachChild(node, visit)
@@ -148,7 +171,7 @@ describe('the wiring the main process may not bypass', () => {
     expect(direct.map(({ path }) => path)).toEqual([])
   })
 
-  it('hands Electron, for every registration in the wrapper module, a function that checks the sender (electron-security::CON-003/AC-01)', () => {
+  it('wraps every registration in the wrapper module in the sender check (electron-security::CON-003/AC-01)', () => {
     const found = ipcRegistrations(readFileSync(join(new URL('.', import.meta.url).pathname, 'web-guards.ts'), 'utf8'))
     expect(found.length).toBeGreaterThan(0)
     expect(found.filter(({ checked }) => !checked).map(({ call }) => call)).toEqual([])

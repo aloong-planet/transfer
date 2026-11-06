@@ -9,8 +9,9 @@
 // Known gaps: the screenshot overlay is created only by a real capture, which would record the screen, so its sandboxing
 // is held only by a static case (src/main/security.test.ts); that the overlay still works sandboxed is to be checked by
 // hand on a production build (pending as of 2026-11-06: the owner's report); a real drop from the desktop
-// cannot be made by a test (the page-level guard and the navigation guard are each covered below); the frame-to-sender
-// mapping has no subframe to drive it (see src/main/security.test.ts).
+// cannot be made by a test (the page-level guard and the navigation guard are each covered below). That a refused call's
+// handler never runs is held by the unit cases of the IPC check (src/main/security.test.ts); the IPC case here holds that
+// `handle` reaches that check with Electron's real sender frame.
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'

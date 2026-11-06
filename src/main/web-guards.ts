@@ -2,7 +2,7 @@
 // kept on Transfer's own pages, every IPC handler answers only Transfer's own main frames, and the default session grants
 // no permission but clipboard writing to Transfer's own pages. The decisions themselves are in security.ts.
 import { app, ipcMain, session, type IpcMainInvokeEvent } from 'electron'
-import { isAppUrl, isTrustedSender, permissionGranted } from './security'
+import { checkedListener, isAppUrl, permissionGranted } from './security'
 
 /** The development server's URL in a run from source; undefined in a packaged build, which refuses it at launch (ADR-0024) */
 const DEV_SERVER_URL = process.env['ELECTRON_RENDERER_URL']
@@ -12,12 +12,7 @@ const DEV_SERVER_URL = process.env['ELECTRON_RENDERER_URL']
  * handler for the renderer is registered through this function; `ipcMain.handle` appears nowhere else.
  */
 export function handle(channel: string, listener: (event: IpcMainInvokeEvent, ...args: any[]) => unknown): void {
-  ipcMain.handle(channel, (event, ...args) => {
-    const frame = event.senderFrame
-    const sender = frame ? { url: frame.url, isMainFrame: frame.parent === null } : null
-    if (!isTrustedSender(sender, DEV_SERVER_URL)) throw new Error(`Transfer refused an IPC call on ${channel}`)
-    return listener(event, ...args)
-  })
+  ipcMain.handle(channel, checkedListener(channel, listener, DEV_SERVER_URL))
 }
 
 /**

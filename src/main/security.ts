@@ -1,6 +1,5 @@
 // The decisions behind Transfer's Electron security baseline (docs/specs/electron-security.md, ADR-0025): pure functions,
-// so that their bypass vectors can be unit tested. web-guards.ts and ipc.ts feed them Electron's URLs, frames and
-// permissions.
+// so that their bypass vectors can be unit tested. web-guards.ts feeds them Electron's URLs, IPC events and permissions.
 import { APP_HOST } from './app-protocol'
 
 function parse(url: string): URL | null {
@@ -36,4 +35,26 @@ export function permissionGranted(permission: string, requestingUrl: string, dev
 /** Whether an IPC call may be answered: only from a main frame on Transfer's own page; Transfer has no subframes */
 export function isTrustedSender(frame: { url: string; isMainFrame: boolean } | null, devServerUrl?: string): boolean {
   return frame !== null && frame.isMainFrame && isAppUrl(frame.url, devServerUrl)
+}
+
+/** What the check reads of an IPC event: the frame that sent it, `null` once that frame is gone (Electron's `senderFrame`) */
+interface SenderEvent {
+  senderFrame: { url: string; parent: unknown } | null
+}
+
+/**
+ * Wraps an IPC handler so that it runs only for a call from a main frame on Transfer's own page
+ * (electron-security::CON-003/AC-02): any other call is refused with an error before the handler runs.
+ */
+export function checkedListener<E extends SenderEvent, A extends unknown[], R>(
+  channel: string,
+  listener: (event: E, ...args: A) => R,
+  devServerUrl?: string
+): (event: E, ...args: A) => R {
+  return (event, ...args) => {
+    const frame = event.senderFrame
+    const sender = frame ? { url: frame.url, isMainFrame: frame.parent === null } : null
+    if (!isTrustedSender(sender, devServerUrl)) throw new Error(`Transfer refused an IPC call on ${channel}`)
+    return listener(event, ...args)
+  }
 }
