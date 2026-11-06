@@ -51,3 +51,7 @@ ADR-0013 第 3 项把施工文档(tickets、事实层 file:line、进度表)放�
 - ADR-0013 第 3 项、ADR-0017(同型修订的先例)。
 - 全局 CLAUDE.md 第 4–7 步的 2026-08-16 修订(「施工记录落 `docs/.workings/<slug>/` 并保留,但不得被当作可靠依据」),本条是该约定在本仓库的落地。
 - 首次适用场景:字符图标清理三票,其中截图工具条一票判为暂缓,其图标库调研结论需跨轮保留。
+
+## Later note (2026-11-06)
+
+The tracker premise in option 3's rejection no longer holds: tickets moved to GitHub Issues on 2026-11-06 (see `docs/agents/issue-tracker.md`). The decision stands. Option 3 is still rejected on its other two grounds: a to-do section would make `CONTEXT.md` serve two kinds of reader, and "discard the process record, keep the leftover task" would force a judgement on every record before each change, which is itself error-prone. Only tickets moved; process records stay in `docs/.workings/` as decided here.
