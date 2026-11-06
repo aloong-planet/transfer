@@ -26,7 +26,7 @@ Before writing a document, decide which class it belongs to: each class rots at 
 
 | Location | Contents |
 |---|---|
-| `docs/.workings/<slug>/` | Tickets, `review-code.md`, `review-tests.md`, and other process notes |
+| `docs/.workings/<slug>/` | Each ticket's process records (`review-code.md`, `review-tests.md` and other notes), and local tickets: those filed before 2026-11-06, and the unfixed security findings that `issue-tracker.md` keeps off GitHub |
 
 **`docs/.workings/` is kept after merge, but no skill may treat it as a reliable basis.** Read it only to answer "why was this done that way at the time", never to infer the current state; check any line number or code claim in it against the code before citing it. When it conflicts with a conclusion document, the conclusion document wins, **and the process record does not need to be corrected**: it is meant to stay as it was. It is a hidden directory, excluded from documentation publishing and from globs such as `docs/**/*.md`.
 

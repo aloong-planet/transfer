@@ -12,7 +12,7 @@ workflow skills 装在用户全局 `~/.claude/skills`(八步流程见全局 CLAU
 
 ### Issue tracker
 
-Tickets are local markdown files under `docs/.workings/<slug>/`, not GitHub Issues. See `docs/agents/issue-tracker.md`.
+Tickets are GitHub Issues in this repository; an unfixed, exploitable security finding stays a local markdown ticket under `docs/.workings/`. See `docs/agents/issue-tracker.md`.
 
 ### Documentation layout
 
