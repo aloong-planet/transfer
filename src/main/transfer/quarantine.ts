@@ -12,12 +12,12 @@ export function quarantineValue(nowMs: number, eventId: string): string {
   return `0281;${Math.floor(nowMs / 1000).toString(16)};Transfer;${eventId.toUpperCase()}`
 }
 
-type Run = (file: string, args: string[]) => Promise<void>
+type Run = (file: string, args: string[], timeoutMs: number) => Promise<void>
 
 /** A tool that does not finish in time is killed and counts as a failure: the file is received either way */
 const TOOL_TIMEOUT_MS = 10_000
 
-export function runTool(file: string, args: string[], timeoutMs = TOOL_TIMEOUT_MS): Promise<void> {
+export function runTool(file: string, args: string[], timeoutMs: number): Promise<void> {
   return new Promise((resolve, reject) =>
     execFile(file, args, { timeout: timeoutMs }, (error) => (error ? reject(error) : resolve()))
   )
@@ -39,7 +39,7 @@ export async function quarantineReceivedFile(
 ): Promise<void> {
   if (platform !== 'darwin') return
   try {
-    await run('/usr/bin/xattr', ['-w', 'com.apple.quarantine', quarantineValue(now(), newId()), path])
+    await run('/usr/bin/xattr', ['-w', 'com.apple.quarantine', quarantineValue(now(), newId()), path], TOOL_TIMEOUT_MS)
   } catch (error) {
     log(`[receive] could not quarantine ${path}: ${error instanceof Error ? error.message : String(error)}`)
   }

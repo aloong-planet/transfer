@@ -1,5 +1,15 @@
 // The decisions behind Transfer's Electron security baseline (docs/specs/electron-security.md, ADR-0025), against their
-// bypass vectors. The wiring that feeds them real URLs, frames and permissions is held by e2e/electron-security.spec.ts.
+// bypass vectors, and static checks of rules the main process and the renderer must not bypass. The navigation guard, the
+// window-open handler, the permission handlers and the IPC check on a foreign page are driven through real windows by
+// e2e/electron-security.spec.ts.
+//
+// Known gaps:
+// - The IPC wrapper turns Electron's sender frame into `isMainFrame` by `parent === null`. No case can drive that mapping
+//   with a subframe: Transfer creates none, and its preload never runs in one (no `nodeIntegrationInSubFrames`). Add a
+//   case if either changes.
+// - The renderer scan reads Transfer's own source for a fixed list of sinks. A third-party component that turns received
+//   text into links or markup is not seen by it; a link it made could still not navigate the window or open one
+//   (electron-security::CON-001). Check any such component when it is added.
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -92,15 +102,30 @@ function mainSources(): Array<{ path: string; text: string }> {
 }
 
 describe('the wiring the main process may not bypass', () => {
-  it('registers every IPC handler through the sender check (electron-security::CON-003/AC-01)', () => {
+  it('registers every IPC handler through the sender check, in every form Electron offers (electron-security::CON-003/AC-01)', () => {
     const sources = mainSources()
     expect(sources.length).toBeGreaterThan(10)
-    const direct = sources.filter(({ path, text }) => path !== 'web-guards.ts' && text.includes('ipcMain.handle('))
+    // ipcMain and a web contents' own ipc object take the same listeners; a web contents also emits what a page sends
+    const registration =
+      /(ipcMain|\.ipc)\.(handle|handleOnce|on|once|addListener|prependListener|prependOnceListener)\(|['"]ipc-message(-sync)?['"]/
+    const direct = sources.filter(({ path, text }) => path !== 'web-guards.ts' && registration.test(text))
     expect(direct.map(({ path }) => path)).toEqual([])
   })
 
   it('creates no window with its sandbox or Node integration switched on the wrong way (electron-security::CON-005)', () => {
     const offending = mainSources().filter(({ text }) => /sandbox:\s*false|nodeIntegration:\s*true/.test(text))
     expect(offending.map(({ path }) => path)).toEqual([])
+  })
+})
+
+describe('what the renderer shows of another device\'s content', () => {
+  it('has none of the raw-markup or embedding sinks in its own code', () => {
+    const root = new URL('../renderer/', import.meta.url).pathname
+    const sources = (readdirSync(root, { recursive: true }) as string[])
+      .filter((path) => /\.(ts|tsx|html)$/.test(path) && !/\.test\.tsx?$/.test(path))
+      .map((path) => ({ path, text: readFileSync(join(root, path), 'utf8') }))
+    expect(sources.length).toBeGreaterThan(5)
+    const sink = /dangerouslySetInnerHTML|\binnerHTML\b|\bouterHTML\b|insertAdjacentHTML|document\.write\(|<a[\s>]|<iframe|<object|<embed|<webview/
+    expect(sources.filter(({ text }) => sink.test(text)).map(({ path }) => path)).toEqual([])
   })
 })

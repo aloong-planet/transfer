@@ -1,5 +1,13 @@
 // Received files are quarantined on macOS (electron-security::REQ-001, ADR-0025): the value and the step around the system
-// tool. That a real received file carries the attribute is held by transfer.integration.test.ts on macOS.
+// tool. That a real received file carries the attribute is held by transfer.integration.test.ts on macOS, and that the
+// step runs before the file gets its final name by receive-file.test.ts.
+//
+// Known gaps, each held elsewhere or recorded:
+// - That opening a quarantined app or script gets macOS's first-launch check (REQ-001/AC-02) needs Gatekeeper on screen:
+//   checked by hand (a quarantined script refused, an unquarantined copy run, a document opened), and to be checked
+//   again when the value's flags change.
+// - The Mac App Store build runs the tool from a sandboxed app, which no test here does; not measured (owner, 2026-11-06).
+//   Check it on a received file before the next Mac App Store submission. A failure there is logged and the file kept.
 import { describe, expect, it } from 'vitest'
 import { quarantineReceivedFile, quarantineValue, runTool } from './quarantine'
 
@@ -18,15 +26,16 @@ describe('the quarantine value (electron-security::REQ-001/AC-01)', () => {
 
 describe('quarantining a received file (electron-security::REQ-001)', () => {
   it('writes the attribute with the system tool on macOS', async () => {
-    const calls: Array<[string, string[]]> = []
+    const calls: Array<[string, string[], number]> = []
     await quarantineReceivedFile('/r/a.part', {
       platform: 'darwin',
-      run: async (file, args) => void calls.push([file, args]),
+      run: async (file, args, timeoutMs) => void calls.push([file, args, timeoutMs]),
       now: () => 1_778_384_896_000,
       newId: () => ID.toLowerCase(),
       log: () => {}
     })
-    expect(calls).toEqual([['/usr/bin/xattr', ['-w', 'com.apple.quarantine', `0281;6a000000;Transfer;${ID}`, '/r/a.part']]])
+    // The transfer's own call carries a time limit, so a stuck tool cannot hold up the transfer (10 s)
+    expect(calls).toEqual([['/usr/bin/xattr', ['-w', 'com.apple.quarantine', `0281;6a000000;Transfer;${ID}`, '/r/a.part'], 10_000]])
   })
 
   it('keeps going when the attribute cannot be set, and says so in the log (AC-03)', async () => {
@@ -51,7 +60,7 @@ describe('quarantining a received file (electron-security::REQ-001)', () => {
 })
 
 describe('the system tool is bounded in time (electron-security::REQ-001/AC-03)', () => {
-  it('gives up on a tool that does not finish, so a stuck tool cannot hold up a transfer', async () => {
+  it('gives up on a tool that does not finish within the limit it is given', async () => {
     const started = Date.now()
     await expect(runTool('/bin/sleep', ['5'], 200)).rejects.toThrow()
     expect(Date.now() - started).toBeLessThan(3000)

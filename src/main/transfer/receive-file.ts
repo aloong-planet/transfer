@@ -36,7 +36,9 @@ export async function receiveFileToDir(
   expectedSha256?: string,
   /** 接收进度回调(§12.3);total 从 Content-Length 头,未知则传 0 */
   onProgress?: (received: number, total: number) => void,
-  total = 0
+  total = 0,
+  /** Quarantines the complete partial file before it gets its final name (electron-security::REQ-001) */
+  quarantine: (path: string) => Promise<void> = quarantineReceivedFile
 ): Promise<ReceiveResult> {
   const safeName = sanitizeFileName(rawFileName)
   // 原子占位去重(S2 修复):用 O_EXCL(wx)独占创建最终文件名,消除 existsSync 的 TOCTOU。
@@ -70,7 +72,7 @@ export async function receiveFileToDir(
   }
 
   // Quarantined while still the partial file, so it never appears under its final name without it (electron-security::REQ-001)
-  await quarantineReceivedFile(partPath)
+  await quarantine(partPath)
 
   try {
     // rename 原子替换占位空文件(POSIX:目标存在则被替换),同目录不跨盘

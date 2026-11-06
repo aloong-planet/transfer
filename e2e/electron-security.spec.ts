@@ -1,12 +1,15 @@
-// e2e: the wiring of the Electron security baseline (docs/specs/electron-security.md, ADR-0025). The decisions are unit
-// tested in src/main/security.test.ts; these cases hold that the real windows, frames and sessions reach them.
+// e2e: the wiring of the Electron security baseline (docs/specs/electron-security.md, ADR-0025), through real windows:
+// the navigation guard and the window-open handler on the main window, the page-level drop guard, the permission request
+// and check handlers, the main window's sandbox, and the IPC check against a foreign page in a window of its own. The
+// decisions themselves are unit tested in src/main/security.test.ts.
 //
 // Quiet like every e2e case (TRANSFER_E2E_QUIET): no window shown, nothing on the LAN. The only other page used is served
 // on 127.0.0.1 by this file. The clipboard case writes its own marker and puts the previous text back.
 //
-// Not covered here: the screenshot overlay is created only by a real capture, which would record the screen, so its
-// sandboxing is held by a static case (src/main/security.test.ts) and checked by hand on a real package; and a real drop
-// from the desktop, which no test can make (the page-level guard and the navigation guard are each covered below).
+// Known gaps: the screenshot overlay is created only by a real capture, which would record the screen, so its sandboxing
+// is held by a static case (src/main/security.test.ts) and checked by hand on a real build; a real drop from the desktop
+// cannot be made by a test (the page-level guard and the navigation guard are each covered below); the frame-to-sender
+// mapping has no subframe to drive it (see src/main/security.test.ts).
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
@@ -92,6 +95,23 @@ test('a drop outside any drop target is taken by the page and goes nowhere (elec
   expect(page.url()).toBe(before)
 })
 
+test('a drop target in the page still receives a drop, which the page guard takes without stopping (electron-security::CON-002)', async () => {
+  // As the chat's message list does: its handlers run from React's root listener, in the bubble phase
+  const result = await page.evaluate(() => {
+    const target = document.createElement('div')
+    document.body.append(target)
+    let received = false
+    target.addEventListener('drop', () => {
+      received = true
+    })
+    const event = new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() })
+    target.dispatchEvent(event)
+    target.remove()
+    return { received, prevented: event.defaultPrevented }
+  })
+  expect(result).toEqual({ received: true, prevented: true })
+})
+
 test('the main window runs sandboxed (electron-security::CON-005)', async () => {
   // getLastWebPreferences is documented but missing from Electron 35's type definitions
   const sandboxed = await app.evaluate(({ BrowserWindow }) =>
@@ -118,11 +138,27 @@ test('every other permission is refused, even to Transfer\'s own page (electron-
   expect(await page.evaluate(() => Notification.requestPermission())).toBe('denied')
 })
 
-// Last: it replaces the window's page
+test("a permission check from Transfer's own page is denied too (electron-security::CON-004)", async () => {
+  expect(await page.evaluate(async () => (await navigator.permissions.query({ name: 'notifications' })).state)).toBe('denied')
+})
+
 test("a page that is not Transfer's gets no answer from IPC (electron-security::CON-003/AC-02)", async () => {
-  // A load the main process starts itself, which the navigation guard does not see: the only way to put a foreign page
-  // in the window, and so to reach the IPC check from one
-  await app.evaluate(({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0].loadURL(url), pathToFileURL(join(dir, 'probe.html')).href)
-  await page.waitForFunction(() => document.title.startsWith('probe:'))
-  expect(await page.title()).toBe('probe:refused')
+  // A hidden window of its own, with Transfer's preload, loaded by the main process itself: a programmatic load is not
+  // seen by the navigation guard, so this is the only way to put a foreign page next to the API. The shared main window
+  // never leaves Transfer's page, and this window is closed at the end.
+  const preload = join(process.cwd(), 'out', 'preload', 'index.cjs')
+  const title = await app.evaluate(
+    async ({ BrowserWindow }, { url, preload }) => {
+      const win = new BrowserWindow({ show: false, webPreferences: { preload, contextIsolation: true, sandbox: true } })
+      try {
+        await win.loadURL(url)
+        for (let i = 0; i < 100 && !win.webContents.getTitle().startsWith('probe:'); i++) await new Promise((r) => setTimeout(r, 50))
+        return win.webContents.getTitle()
+      } finally {
+        win.destroy()
+      }
+    },
+    { url: pathToFileURL(join(dir, 'probe.html')).href, preload }
+  )
+  expect(title).toBe('probe:refused')
 })
