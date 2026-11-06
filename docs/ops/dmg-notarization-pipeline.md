@@ -4,7 +4,7 @@
 
 - Formal tags (e.g. `v0.9.1`) and prerelease tags (`-beta`, `-rc`, `-alpha`, `-dev`) both publish only DMGs that passed Apple notarization, stapling and Gatekeeper, with the app inside each carrying its own ticket (ADR-0023). Prereleases go to GitHub Pre-release only.
 - 只有正式版同步 GitHub Release 产物到 Cloudflare R2;预发布不更新 R2 安装包和 `latest.json`。
-- Windows 发布行为不变。
+- Windows packaging and publishing are unchanged by this pipeline; the Windows build shares only the launch guard and the fuses (ADR-0024).
 
 ## 已确认事实
 
@@ -18,7 +18,7 @@
 ### 正式版
 
 1. Before packaging, the job fails if `CSC_LINK` is missing (every tier) or, on the release path, if any of the three Apple credentials is missing.
-2. `dist:mac:release` runs one electron-builder call with built-in notarization off: each app is signed with Developer ID, notarized and stapled by the afterSign hook (notarytool, our own checks), and its DMG is then built from it and signed in the same call. The release build and the hook refuse to run without all three credentials; the last check of step 4 still asserts the app inside each DMG carries its ticket.
+2. `dist:mac:release` runs one electron-builder call with built-in notarization off: each app is signed with Developer ID, notarized and stapled by the afterSign hook (notarytool, our own checks), and its DMG is then built from it and signed in the same call. The release build and the hook refuse to run without all three credentials; the last check of step 4 still asserts the app inside each DMG carries its ticket. After the build, each app this machine can run is launched with inputs it must refuse (exit code 64 required) and then with only a settings directory (must stay up); a failure stops here, before any DMG is submitted ([mac-signing.md](./mac-signing.md#launch-inputs)).
 3. 公证脚本严格识别同一产品版本的三个预期 DMG,缺失、重复或出现未知架构均失败。
 4. 每个 DMG 串行执行:
    - `hdiutil verify`
@@ -54,6 +54,7 @@
 - Apple 返回 `Accepted` 但成功日志无法读取、submission 不匹配、状态异常或包含 error:在 staple 前失败。
 - Apple 网络错误、超时、staple、镜像完整性或 Gatekeeper 失败:job 失败,不上传。
 - 挂载、内部 App 定位或签名验证失败:尝试卸载并清理;原始验证错误优先返回。
+- A built app accepts a launch input it must refuse, or exits on a plain launch: the release build fails before the DMG gate; no DMG is submitted and nothing is uploaded.
 - 前两个 DMG 已成功、第三个失败:整个 job 失败,三个都不进入 GitHub Release/R2;已有 Apple submission 仅作为审计记录保留。
 - GitHub artifact/Release 上传失败:macOS job 失败;R2 `sync` 因 `needs` 不运行。
 - R2 上传失败:GitHub Release 已存在;安装包先于 `latest.json` 上传,重跑 `sync` 可恢复。
@@ -73,7 +74,7 @@
 - The packaging script (`build/mac-packaging.cjs`, the electron-scaffold asset) does DMG discovery, result parsing, command sequencing and cleanup, with no npm dependency of its own: it reads `electron-builder.yml` with the js-yaml that electron-builder already depends on.
 - 可测试的纯逻辑与命令执行 seam 分离;单测覆盖集合校验、Accepted/Invalid/畸形 JSON、失败传播、含空格路径和卸载清理。
 - GitHub Actions 只负责 tag 分类、凭据门禁、调用脚本和上传顺序。
-- 不修改应用运行时代码、Windows 打包器或下载页版本机制。
+- 不修改 Windows 打包器或下载页版本机制。The launch check relies on the app's own launch guard (ADR-0024); the pipeline itself changes no app code.
 
 ## 成功标准与验证边界
 

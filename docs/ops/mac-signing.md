@@ -4,6 +4,7 @@
 > - Manual workflow run: with `verify_formal_macos=true` it runs the release packaging and gate; without it, local packaging (signed, not notarized). Neither creates a GitHub Release or touches R2.
 > - No Developer ID certificate → every packaging command and every CI tier fails; there is no unsigned macOS build. A release missing an Apple credential, or any architecture failing the gate, publishes nothing (fail-closed).
 > - The commands each environment runs are declared in `capabilities.toml` (`macos-distribution.profiles`); the requirements and boundaries are in [specs/mac-distribution.md](../specs/mac-distribution.md), the decision in ADR-0023.
+> - Every packaged build refuses launch inputs, and both packaging commands launch the built app to prove it — a local packaging therefore opens a Transfer window for a few seconds and announces a device on the LAN. See [Launch inputs](#launch-inputs) below and ADR-0024.
 
 详细设计和失败路径见 [dmg-notarization-pipeline.md](./dmg-notarization-pipeline.md)。
 
@@ -20,8 +21,8 @@
 
 The release order is fixed. Each packaging is one electron-builder call (`build/mac-packaging.cjs`); the release call adds the same script as the builder's afterSign hook, and the DMG gate runs after the build:
 
-- `dist:mac:local` = `node build/mac-packaging.cjs local`: certificate check → one build of every configured arch's `.app` and DMG, signed, notarization off → signature checks on every app and DMG.
-- `dist:mac:release` = `node build/mac-packaging.cjs release` → `node build/mac-packaging.cjs notarize-dmg` (the per-DMG gate below). The release build also checks the three Apple credentials first, and its afterSign hook notarizes each `.app` as the builder signs it: zip (`ditto --keepParent`), submit, check the Accepted log, keep it as `Transfer-<v>-mac-<arch>.app.notary-log.json`, staple, validate. After the build every app must carry its stapled ticket.
+- `dist:mac:local` = `node build/mac-packaging.cjs local`: certificate check → one build of every configured arch's `.app` and DMG, signed, notarization off → signature checks on every app and DMG → the launch check on every app this machine can run ([Launch inputs](#launch-inputs)).
+- `dist:mac:release` = `node build/mac-packaging.cjs release` → `node build/mac-packaging.cjs notarize-dmg` (the per-DMG gate below). The release build also checks the three Apple credentials first, and its afterSign hook notarizes each `.app` as the builder signs it: zip (`ditto --keepParent`), submit, check the Accepted log, keep it as `Transfer-<v>-mac-<arch>.app.notary-log.json`, staple, validate. After the build every app must carry its stapled ticket, and passes the same launch check before the DMG gate runs.
 
 ```text
 build and sign Transfer.app (each arch)
@@ -132,6 +133,45 @@ pnpm run dist:mac:release
 
 Built-in notarization is off in `electron-builder.yml` (`mac.notarize: false`) and every builder call also passes `-c.mac.notarize=false`, so loaded Apple credentials never make a local packaging submit anything. Without credentials, `dist:mac:release` stops before building, with the missing names. Rebuilding removes the notarization logs left by an earlier run, so a local DMG never sits next to a log claiming it was notarized.
 
+## Launch inputs
+
+What a packaged build refuses, and why, is in [specs/mac-distribution.md](../specs/mac-distribution.md) (mac-distribution::CON-006, mac-distribution::CON-007) and ADR-0024: every argument except `--user-data-dir=<directory>`, plus `ELECTRON_RENDERER_URL` and any `TRANSFER_*` variable in any letter case; it exits with code 64 and one line on standard error. A run from source (`pnpm dev`, e2e, smoke) is not affected.
+
+**The packaging check.** Both packaging commands launch each built app this machine can run (on Apple silicon: universal and arm64; x64 is reported and skipped), each launch with its own temporary `--user-data-dir` and with only `HOME`, `PATH`, `TMPDIR`, `USER`, `LOGNAME` and `LANG` of the environment — never the certificate or the Apple credentials:
+
+- once per input on the asset's list of inputs to refuse — among them the debugging port and pipe, the switches that name a program, a made-up switch and `ELECTRON_RENDERER_URL`: each must end with exit code 64 within 30 s, and the program a switch names must not have run;
+- then with only the settings directory: the app must still be running after 8 s, when it is killed.
+
+A failure stops the packaging before the DMG gate, so nothing is uploaded; the message names the input or the plain launch.
+
+**What a local packaging does to the machine.** The plain launch is a real launch: a Transfer window appears for about 8 s per app, and the app announces itself on the LAN as a device nobody has seen — it has a fresh identity in its temporary directory — which other devices then list, offline, for their offline-keep time (60 minutes by default). Whether F1 stays with an installed copy that is running meanwhile has not been measured. Quit the installed copy first if that matters, and package on a network where a passing device does not. CI runners reach no other device.
+
+**What the check cannot see, checked by hand on a real package.** Do these on a package of each new Electron major version and before releasing on a new macOS version:
+
+```bash
+APP="release/<version>/mac-arm64/Transfer.app"
+T=$(mktemp -d)
+
+# The refusal and its message: exit 64, one line naming the inputs without values, no window
+"$APP/Contents/MacOS/Transfer" --remote-debugging-port=0 --user-data-dir="$T/a"; echo "exit=$?"
+TRANSFER_USERDATA=/tmp/x "$APP/Contents/MacOS/Transfer" --user-data-dir="$T/b"; echo "exit=$?"
+ls -A "$T/a" "$T/b"            # empty: nothing ran, the debugging port never opened (no DevToolsActivePort)
+
+# The system's own launch path: open passes only what it is given
+open -n "$APP" --args --user-data-dir="$T/c"
+ps -o args= -p "$(pgrep -n -f "$APP/Contents/MacOS/Transfer")"   # only --user-data-dir=…
+ls -A "$T/c"                    # Transfer's data is written here, not under ~/Library/Application Support/Transfer
+# then quit that copy from its menu
+
+# The fuses, read from the binary (a correct electron-builder.yml proves nothing). @electron/fuses comes in through
+# electron-builder and is not a direct dependency, so `pnpm exec` cannot find it; this is the version the builder uses
+npx --yes --package=@electron/fuses@1.8.0 electron-fuses read --app "$APP"
+```
+
+The Mac App Store build (`pnpm dist:mas:dev`) and the Windows builds carry the same guard and fuses but no packaging check: launch them the same way by hand, or, for Windows, from a temporary workflow on a scratch branch that builds `dist:win` and launches `win-unpacked\Transfer.exe` and the portable exe. On Windows a switch can also be written with a leading `/`, and variable names are read without regard to case; both are refused.
+
+**Testing two copies on one machine.** `TRANSFER_USERDATA` and `TRANSFER_PORT` work only in a run from source. An installed copy takes `--user-data-dir=<directory>` instead; a second copy finds the next free port by itself.
+
 ## 每个 DMG 的验证门禁
 
 The DMG gate (`node build/mac-packaging.cjs notarize-dmg`) requires exactly one DMG per configured architecture (arm64, x64, universal), named `Transfer-<version>-mac-<arch>.dmg` for the current version; a missing DMG, or any other `.dmg` in the version directory, fails before anything is submitted. Each file then goes through:
@@ -197,4 +237,4 @@ Transfer-<version>-mac-universal.dmg
 
 ## 验证边界
 
-Unit tests use a fake command runner: they check command order, failure propagation and cleanup, and never contact Apple. A real end-to-end result comes only from a `v*` tag (formal or prerelease), a manual run with `verify_formal_macos=true`, or a local `dist:mac:release`; notarization counts as verified only once every app and DMG has passed signature identity and timestamp, the Accepted log, stapled tickets and Gatekeeper.
+Unit tests use a fake command runner: they check command order, failure propagation and cleanup, and never contact Apple. The launch check is the one part that runs the real app; the guard's own decision is unit tested in `src/main/launch-inputs.test.ts`. A real end-to-end result comes only from a `v*` tag (formal or prerelease), a manual run with `verify_formal_macos=true`, or a local `dist:mac:release`; notarization counts as verified only once every app and DMG has passed signature identity and timestamp, the Accepted log, stapled tickets and Gatekeeper.

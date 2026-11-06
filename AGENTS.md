@@ -6,6 +6,11 @@ Cross-skill project facts live in `capabilities.toml` at the repository root.
 
 Each class of document has exactly one home, chosen by how fast it rots; see `docs/agents/docs-layout.md`.
 
+## Invariants
+
+- A test seam the main process reads is an environment variable named `TRANSFER_*`; the main process reads no other launch argument or variable (ADR-0024).
+- The packaging check's plain launch is the only automated launch of Transfer that may announce on the LAN (ADR-0024).
+
 ## Agent skills
 
 workflow skills 装在用户全局 `~/.claude/skills`(八步流程见全局 CLAUDE.md 骨架),仓库不携带。多 session 大 feature 走:`/grill-with-docs` → `/to-spec` → `/to-tickets`(三步同一上下文)→ 每张 ticket 新鲜上下文 `/implement`。
