@@ -1,7 +1,7 @@
 // Received files are quarantined on macOS (electron-security::REQ-001, ADR-0025): the value and the step around the system
 // tool. That a real received file carries the attribute is held by transfer.integration.test.ts on macOS.
 import { describe, expect, it } from 'vitest'
-import { quarantineReceivedFile, quarantineValue } from './quarantine'
+import { quarantineReceivedFile, quarantineValue, runTool } from './quarantine'
 
 const ID = 'F2E1D9C3-0000-4000-8000-000000000001'
 
@@ -47,5 +47,13 @@ describe('quarantining a received file (electron-security::REQ-001)', () => {
     let ran = false
     await quarantineReceivedFile('/r/a.part', { platform, run: async () => void (ran = true), log: () => {} })
     expect(ran).toBe(false)
+  })
+})
+
+describe('the system tool is bounded in time (electron-security::REQ-001/AC-03)', () => {
+  it('gives up on a tool that does not finish, so a stuck tool cannot hold up a transfer', async () => {
+    const started = Date.now()
+    await expect(runTool('/bin/sleep', ['5'], 200)).rejects.toThrow()
+    expect(Date.now() - started).toBeLessThan(3000)
   })
 })

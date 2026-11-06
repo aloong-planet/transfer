@@ -14,8 +14,14 @@ export function quarantineValue(nowMs: number, eventId: string): string {
 
 type Run = (file: string, args: string[]) => Promise<void>
 
-const runTool: Run = (file, args) =>
-  new Promise((resolve, reject) => execFile(file, args, (error) => (error ? reject(error) : resolve())))
+/** A tool that does not finish in time is killed and counts as a failure: the file is received either way */
+const TOOL_TIMEOUT_MS = 10_000
+
+export function runTool(file: string, args: string[], timeoutMs = TOOL_TIMEOUT_MS): Promise<void> {
+  return new Promise((resolve, reject) =>
+    execFile(file, args, { timeout: timeoutMs }, (error) => (error ? reject(error) : resolve()))
+  )
+}
 
 /**
  * Sets the quarantine attribute on a received file on macOS; does nothing elsewhere. A failure (a volume that keeps no
