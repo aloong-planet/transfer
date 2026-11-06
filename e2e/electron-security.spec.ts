@@ -7,7 +7,8 @@
 // on 127.0.0.1 by this file. The clipboard case writes its own marker and puts the previous text back.
 //
 // Known gaps: the screenshot overlay is created only by a real capture, which would record the screen, so its sandboxing
-// is held by a static case (src/main/security.test.ts) and checked by hand on a real build; a real drop from the desktop
+// is held only by a static case (src/main/security.test.ts); that the overlay still works sandboxed is to be checked by
+// hand on a production build (pending as of 2026-11-06: the owner's report); a real drop from the desktop
 // cannot be made by a test (the page-level guard and the navigation guard are each covered below); the frame-to-sender
 // mapping has no subframe to drive it (see src/main/security.test.ts).
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
