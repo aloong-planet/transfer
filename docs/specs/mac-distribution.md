@@ -200,9 +200,9 @@ Applies to: the same builds as mac-distribution::CON-006. Read from each built E
 - The workflow and `package.json` are covered by static tests as a regression guard; they do not replace a real run.
 - The certificate checks, signature assertions and both entry commands are verified by real runs: `dist:mac:local` with and without an identity, and the release path once (locally with the credentials, or a manual CI run with the verification switch).
 - Unit tests that use a fake runner say in the test file that they never contacted Apple.
-- The guard's decision is unit tested through its pure function, over its bypass vectors. The guard's wiring runs only in a packaged build, which no unit or e2e test starts: the packaging check holds its exit code on the built macOS app at every packaging (mac-distribution::REQ-006), and the message, the Mac App Store build and the Windows builds are checked by hand on real packages, as the runbook describes.
+- The guard's decision is unit tested through its pure function, over its bypass vectors. The guard's wiring runs only in a packaged build, which no unit or e2e test starts: the packaging check holds its exit code on the built macOS app at every packaging (mac-distribution::REQ-006), and the message, the Mac App Store build and the Windows builds are checked by hand on real packages, as the runbook describes. Its place as the main module's first statement is pinned by a static check of the source; that it then decides before the debugging port and the single-instance lock is measured on real packages.
 - The fuses are verified by reading the fuse wire of each built Electron binary; a correct config alone proves nothing.
-- The e2e suite is the regression guard for mac-distribution::CON-006/AC-05: it runs from source through the seams the guard refuses in a package.
+- The e2e suite is the regression guard for mac-distribution::CON-006/AC-05: it runs from source through the seams the guard refuses in a package. One e2e case starts Transfer with only `--user-data-dir`, without the seam that would otherwise put the data in the same place, to hold the storage clause of mac-distribution::CON-006/AC-04.
 
 ## Out of Scope
 

@@ -5,8 +5,11 @@
 //   only in a packaged build, which no unit or e2e test starts. The packaging check holds the exit code on the built
 //   macOS app at every packaging (mac-distribution::REQ-006); the message on standard error, the Mac App Store build and
 //   the Windows builds are checked by hand on real packages (docs/ops/mac-signing.md).
-// - That the guard decides before the debugging port opens, and that nothing after it runs, is a property of Electron's
-//   startup, measured on a real package rather than tested here.
+// - That the guard decides before the debugging port opens and before the single-instance lock, and that nothing after it
+//   runs, depends on Electron's startup and on two things in Transfer: launch-guard.ts is the main module's first import
+//   (pinned by the last case below) and it exits at its own top level. Measured on real packages; check it again by hand
+//   (docs/ops/mac-signing.md, Launch inputs) whenever either of those two changes or Electron's major version does.
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { launchRefusal, refusedLaunchInputs } from './launch-inputs'
 
@@ -93,6 +96,13 @@ describe('the launch inputs a packaged build refuses (mac-distribution::CON-006)
     expect(refusedLaunchInputs([arg], {})).toEqual([name])
   })
 
+  it.each([
+    ['--gpu-launcher=/tmp/p--user-data-dir=/tmp/x', '--gpu-launcher'],
+    ['--js-flags=-psn_0_1', '--js-flags']
+  ])('accepts an argument only when it starts as an accepted one, not when it merely contains one: %s', (arg, name) => {
+    expect(refusedLaunchInputs([arg], {})).toEqual([name])
+  })
+
   it('names every refused argument in order, beside an accepted one that shields none of them', () => {
     expect(refusedLaunchInputs(['--a=1', '--user-data-dir=/tmp/x', '/tmp/f', '--b'], {})).toEqual(['--a', '<argument>', '--b'])
   })
@@ -166,5 +176,15 @@ describe('what a launch does about its inputs (mac-distribution::CON-006)', () =
         env: { TRANSFER_PORT: '1' }
       })
     ).toEqual({ message: 'Transfer: an installed copy does not start with --a, <argument>, TRANSFER_PORT.', exitCode: 64 })
+  })
+})
+
+describe('where the guard sits (mac-distribution::CON-006/AC-01)', () => {
+  it('is the main module\'s first statement, so it decides before the single-instance lock or any other module loads', () => {
+    const statements = readFileSync(new URL('./index.ts', import.meta.url), 'utf8')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '' && !line.startsWith('//'))
+    expect(statements[0]).toBe("import './launch-guard'")
   })
 })
