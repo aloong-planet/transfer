@@ -7,6 +7,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { pipeline } from 'node:stream/promises'
 import type { Readable } from 'node:stream'
 import { sanitizeFileName } from '@shared/safe-name'
+import { quarantineReceivedFile } from './quarantine'
 
 export interface ReceiveResult {
   /** 最终落盘的文件名(经 sanitize + 去重) */
@@ -67,6 +68,9 @@ export async function receiveFileToDir(
     await cleanup(partPath, finalPath)
     throw new Error(`sha256 mismatch: expected ${expectedSha256}, got ${sha256}`)
   }
+
+  // Quarantined while still the partial file, so it never appears under its final name without it (electron-security::REQ-001)
+  await quarantineReceivedFile(partPath)
 
   try {
     // rename 原子替换占位空文件(POSIX:目标存在则被替换),同目录不跨盘
