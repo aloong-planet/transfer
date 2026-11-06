@@ -9,25 +9,19 @@ const LINK = ['text/uri-list', 'text/plain']
 
 describe('which drags keep their default (electron-security::CON-002)', () => {
   it.each([
-    ['a text area', { tagName: 'TEXTAREA' }],
-    ['a text input (also an input with no type, which reads as text)', { tagName: 'INPUT', type: 'text' }],
-    ['a search input', { tagName: 'INPUT', type: 'search' }],
-    ['a number input', { tagName: 'INPUT', type: 'number' }]
-  ])('text or a link dragged onto %s keeps its default, which inserts it', (_name, target) => {
-    expect(keepsDefaultDrop(TEXT, target)).toBe(true)
-    expect(keepsDefaultDrop(LINK, target)).toBe(true)
-  })
-
-  it.each([
-    ['a range slider', { tagName: 'INPUT', type: 'range' }],
-    ['a checkbox', { tagName: 'INPUT', type: 'checkbox' }],
-    ['any other element', { tagName: 'DIV' }],
-    ['no element', null],
-    ['a read-only text area', { tagName: 'TEXTAREA', readOnly: true }],
-    ['a disabled input', { tagName: 'INPUT', type: 'text', disabled: true }]
-  ])('text or a link dragged onto %s is taken by the page', (_name, target) => {
-    expect(keepsDefaultDrop(TEXT, target)).toBe(false)
-    expect(keepsDefaultDrop(LINK, target)).toBe(false)
+    ['a text area', true, { tagName: 'TEXTAREA' }],
+    ['a text input (also an input with no type, which reads as text)', true, { tagName: 'INPUT', type: 'text' }],
+    ['a search input', true, { tagName: 'INPUT', type: 'search' }],
+    ['a number input', true, { tagName: 'INPUT', type: 'number' }],
+    ['a range slider', false, { tagName: 'INPUT', type: 'range' }],
+    ['a checkbox', false, { tagName: 'INPUT', type: 'checkbox' }],
+    ['any other element', false, { tagName: 'DIV' }],
+    ['no element', false, null],
+    ['a read-only text area', false, { tagName: 'TEXTAREA', readOnly: true }],
+    ['a disabled input', false, { tagName: 'INPUT', type: 'text', disabled: true }]
+  ])('text or a link dragged onto %s keeps its default, so it is inserted: %s', (_name, keeps, target) => {
+    expect(keepsDefaultDrop(TEXT, target)).toBe(keeps)
+    expect(keepsDefaultDrop(LINK, target)).toBe(keeps)
   })
 
   it.each([

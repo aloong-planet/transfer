@@ -1,7 +1,8 @@
 // e2e: the wiring of the Electron security baseline (docs/specs/electron-security.md, ADR-0025), through real windows:
-// the navigation guard and the window-open handler on the main window, the page-level drop guard, the permission request
-// and check handlers, the main window's sandbox, and the IPC check against a foreign page in a window of its own. The
-// decisions themselves are unit tested in src/main/security.test.ts.
+// the navigation guard and the window-open handler on the main window, the page-level drop guard in the main page and in
+// the screenshot overlay's page, the permission request and check handlers, the main window's sandbox, and the IPC check
+// against a foreign page in a window of its own. The decisions themselves are unit tested in src/main/security.test.ts
+// and src/renderer/src/drop-default.test.ts.
 //
 // Quiet like every e2e case (TRANSFER_E2E_QUIET): no window shown, nothing on the LAN. The only other page used is served
 // on 127.0.0.1 by this file. The clipboard case writes its own marker and puts the previous text back.
@@ -135,6 +136,36 @@ test('text dragged onto a text field keeps its default, a file dragged onto it i
     }
     field.remove()
     return result
+  })
+  expect(prevented).toEqual({ text: [false, false], file: [true, true] })
+})
+
+test("the screenshot overlay's page takes the same drags the same way (electron-security::CON-002)", async () => {
+  // The overlay's own page, in a hidden window of its own without a preload: its entry loads the guard first, and with no
+  // API nothing the page tries reaches the main process. The window is closed at the end.
+  const prevented = await app.evaluate(async ({ BrowserWindow }) => {
+    const win = new BrowserWindow({ show: false, webPreferences: { contextIsolation: true, sandbox: true } })
+    try {
+      await win.loadURL('app://bundle/overlay.html')
+      return await win.webContents.executeJavaScript(`(() => {
+        const field = document.createElement('textarea')
+        document.body.append(field)
+        const drag = (type, data) => {
+          const event = new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: data })
+          field.dispatchEvent(event)
+          return event.defaultPrevented
+        }
+        const text = new DataTransfer()
+        text.setData('text/plain', 'dragged text')
+        const file = new DataTransfer()
+        file.items.add(new File(['x'], 'a.txt', { type: 'text/plain' }))
+        const result = { text: [drag('dragover', text), drag('drop', text)], file: [drag('dragover', file), drag('drop', file)] }
+        field.remove()
+        return result
+      })()`)
+    } finally {
+      win.destroy()
+    }
   })
   expect(prevented).toEqual({ text: [false, false], file: [true, true] })
 })

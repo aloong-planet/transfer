@@ -14,25 +14,9 @@ import { checkedListener, isAppUrl, isTrustedSender, permissionGranted } from '.
 
 const DEV = 'http://localhost:5173/'
 
-describe('the origin rule with mixed case (electron-security::CON-001)', () => {
-  it('reads the scheme without regard to case', () => {
-    expect(isAppUrl('APP://bundle/index.html')).toBe(true)
-  })
-
-  it("refuses Transfer's host in another case: an app: host keeps its case and is compared exactly", () => {
-    expect(isAppUrl('app://BUNDLE/index.html')).toBe(false)
-  })
-
-  it.each(['http://LOCALHOST:5173/', 'HTTP://localhost:5173/overlay.html'])(
-    'from source, takes the development server in any case as the same origin: %s',
-    (url) => {
-      expect(isAppUrl(url, DEV)).toBe(true)
-    }
-  )
-})
-
 describe("the origin rule: is this one of Transfer's own pages (electron-security::CON-001)", () => {
-  it.each(['app://bundle/index.html', 'app://bundle/overlay.html', 'app://bundle/', 'app://bundle'])(
+  // The scheme is read without regard to case
+  it.each(['app://bundle/index.html', 'app://bundle/overlay.html', 'app://bundle/', 'app://bundle', 'APP://bundle/index.html'])(
     'accepts Transfer\'s own page in a packaged build: %s',
     (url) => {
       expect(isAppUrl(url)).toBe(true)
@@ -52,15 +36,19 @@ describe("the origin rule: is this one of Transfer's own pages (electron-securit
     'javascript:alert(1)',
     'about:blank',
     '',
-    'not a url'
+    'not a url',
+    // an app: host keeps its case and is compared exactly
+    'app://BUNDLE/index.html'
   ])('refuses anything else in a packaged build, however it starts: %s', (url) => {
     expect(isAppUrl(url)).toBe(false)
   })
 
-  it('accepts the development server\'s pages from source, by origin', () => {
-    expect(isAppUrl('http://localhost:5173/', DEV)).toBe(true)
-    expect(isAppUrl('http://localhost:5173/overlay.html', DEV)).toBe(true)
-  })
+  it.each(['http://localhost:5173/', 'http://localhost:5173/overlay.html', 'http://LOCALHOST:5173/', 'HTTP://localhost:5173/overlay.html'])(
+    'accepts the development server\'s pages from source, by origin, in any case: %s',
+    (url) => {
+      expect(isAppUrl(url, DEV)).toBe(true)
+    }
+  )
 
   it.each(['http://localhost:5173.evil.com/', 'http://localhost:5174/', 'https://localhost:5173/', 'http://evil@localhost:5173/', 'app://bundle/index.html'])(
     'refuses what only resembles the development server from source: %s',
