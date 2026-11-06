@@ -10,13 +10,14 @@ import { describe, expect, test } from 'vitest'
 const require = createRequire(import.meta.url)
 
 const { resolveLayout, yamlParser } = require('../../build/mac-packaging.cjs') as {
-  resolveLayout: (config: unknown, packageJsonText: string) => { productName: string; version: string; outputDir: string; arches: string[] }
+  resolveLayout: (config: unknown, packageJsonText: string) => { productName: string; version: string; outputDir: string; arches: string[]; zip: boolean }
   yamlParser: () => { load: (text: string) => unknown }
 }
 
 // Parsed the way the packaging script parses it at run time
 const BUILDER_CONFIG = yamlParser().load(readFileSync(new URL('../../electron-builder.yml', import.meta.url), 'utf8')) as {
   mac: { notarize: unknown }
+  electronFuses: unknown
 }
 const scripts = (JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
   scripts: Record<string, string>
@@ -29,13 +30,29 @@ describe('the builder config satisfies the packaging script', () => {
       productName: 'Transfer',
       version: '9.8.7',
       outputDir: 'release/9.8.7',
-      arches: ['universal', 'arm64', 'x64']
+      arches: ['universal', 'arm64', 'x64'],
+      // Transfer has no in-app updater, so its mac targets build no ZIP
+      zip: false
     })
   })
 
   test('built-in notarization is off', () => {
     // electron-builder notarizes whenever Apple credentials are loaded unless this is explicitly false
     expect(BUILDER_CONFIG.mac.notarize).toBe(false)
+  })
+
+  test('every build is given the fuses ADR-0024 sets (mac-distribution::CON-007)', () => {
+    // A guard on the config only: whether the fuses reached a binary is read from the built binary's fuse wire
+    expect(BUILDER_CONFIG.electronFuses).toEqual({
+      runAsNode: false,
+      enableNodeOptionsEnvironmentVariable: false,
+      enableNodeCliInspectArguments: false,
+      onlyLoadAppFromAsar: true,
+      enableEmbeddedAsarIntegrityValidation: true,
+      grantFileProtocolExtraPrivileges: false,
+      enableCookieEncryption: false,
+      loadBrowserProcessSpecificV8Snapshot: false
+    })
   })
 })
 

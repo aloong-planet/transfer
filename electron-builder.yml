@@ -17,6 +17,23 @@ files:
 asarUnpack:
   - '**/node_modules/fastify/**'
 
+# Fuses, written into every platform's Electron binary before it is signed (ADR-0024, mac-distribution::CON-007).
+# Verify them by reading the fuse wire of a built binary: a correct config here proves nothing on its own.
+electronFuses:
+  # Node's own entries act before the main module runs, where the launch guard cannot reach them
+  runAsNode: false # ELECTRON_RUN_AS_NODE
+  enableNodeOptionsEnvironmentVariable: false # NODE_OPTIONS (and NODE_EXTRA_CA_CERTS)
+  enableNodeCliInspectArguments: false # --inspect and its relatives
+  # App code loads only from app.asar, checked against the hash recorded at packaging (experimental in Electron 35)
+  onlyLoadAppFromAsar: true
+  enableEmbeddedAsarIntegrityValidation: true
+  # Pages load from app:// (ADR-0007), never from file://
+  grantFileProtocolExtraPrivileges: false
+  # Transfer sets no cookies, so encryption would protect nothing; and it is one-way (Electron's fuses docs)
+  enableCookieEncryption: false
+  # No browser-process-specific V8 snapshot is shipped
+  loadBrowserProcessSpecificV8Snapshot: false
+
 # 局域网直连需要网络权限;无签名(测试用,朋友端会有一次性安全提示)
 win:
   target:

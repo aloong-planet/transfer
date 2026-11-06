@@ -292,7 +292,7 @@ export const T_CONNECT_MS     = 10_000      // 建连级短超时,握手成功�
   - `deviceModel`:`process.platform` 映射("darwin"→"macOS","win32"→"Windows")。
 - fingerprint 用于**防止发现到自己**:收到多播 announce **或** `/register` 请求时,若对端 fingerprint == 本机,忽略(H4:两条发现入口都要做此比对,不只多播)。
 - **为何同机也必需(②-a 事实层):** 多播 `IP_MULTICAST_LOOP` **默认开启**,本机会收到自己发的广告,同机另一实例也会收到——所以防自发现必须在应用层用 fingerprint 过滤;`setMulticastLoopback(false)` 只关本 socket 的回环,防不住同机另一进程,不能替代 fingerprint 过滤。
-- **多实例同机测试注意(M4)**:fingerprint 持久化在 userData,同机两实例默认共享 userData → 同 fingerprint → 互判为"自己"而互相隐藏。测试多实例时必须用**不同 userData 目录 / 不同 fingerprint**(通过 env 覆盖,见 §9 验收前置)。
+- **多实例同机测试注意(M4)**:fingerprint 持久化在 userData,同机两实例默认共享 userData → 同 fingerprint → 互判为"自己"而互相隐藏。测试多实例时必须用**不同 userData 目录 / 不同 fingerprint**(通过 env 覆盖,见 §9 验收前置)。The env overrides (`TRANSFER_USERDATA`, `TRANSFER_PORT`) work only in a run from source; an installed copy refuses them and takes `--user-data-dir=<directory>` instead, finding the next free port by itself (ADR-0024).
 - **userData 目录名统一(`app.setName('Transfer')`)**:index.ts 顶部(override/单实例锁/首次读 userData 之前)显式 `app.setName('Transfer')`。否则 dev 未打包时 `getName()` 读 `package.json` name=`transfer`(小写)、打包版读 `productName='Transfer'`(大写),两者 userData 目录名不一致。统一后 dev 与打包共用同一目录(mac 大小写不敏感,dev 原数据无缝复用)。`TRANSFER_USERDATA` override 仍优先,不受影响。详见 [CONTEXT.md](../CONTEXT.md) 的 userData 条目。
 
 ---
@@ -362,7 +362,7 @@ export const T_CONNECT_MS     = 10_000      // 建连级短超时,握手成功�
 
 ## 9. MVP 验收标准(可验证)
 
-**前置(M4):** 多实例测试用不同 userData / 不同 fingerprint(env 覆盖);两实例不同 TCP 端口时,断言对方**按 announce 的 port** 连接。
+**前置(M4):** 多实例测试用不同 userData / 不同 fingerprint(env 覆盖 — from source only; an installed copy takes `--user-data-dir`, ADR-0024);两实例不同 TCP 端口时,断言对方**按 announce 的 port** 连接。
 
 1. 两个实例(不同 userData/fingerprint/端口)启动后,**互相出现在对方设备列表**;各自不出现在自己列表(fingerprint 防自发现)。
 2. A 选一个文件发给 B,B **弹框**显示"来自 A 的 X 文件,是否接收"。
