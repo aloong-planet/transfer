@@ -114,6 +114,31 @@ test('a drop target in the page still receives a drop, which the page guard take
   expect(result).toEqual({ received: true, prevented: true })
 })
 
+test('text dragged onto a text field keeps its default, a file dragged onto it is taken (electron-security::CON-002)', async () => {
+  // A text field made in the page: the chat's input exists only with a device selected, and the guard reads only the
+  // field's kind and what the drag carries
+  const prevented = await page.evaluate(() => {
+    const field = document.createElement('textarea')
+    document.body.append(field)
+    const drag = (type: 'dragover' | 'drop', data: DataTransfer): boolean => {
+      const event = new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: data })
+      field.dispatchEvent(event)
+      return event.defaultPrevented
+    }
+    const text = new DataTransfer()
+    text.setData('text/plain', 'dragged text')
+    const file = new DataTransfer()
+    file.items.add(new File(['x'], 'a.txt', { type: 'text/plain' }))
+    const result = {
+      text: [drag('dragover', text), drag('drop', text)],
+      file: [drag('dragover', file), drag('drop', file)]
+    }
+    field.remove()
+    return result
+  })
+  expect(prevented).toEqual({ text: [false, false], file: [true, true] })
+})
+
 test('the main window runs sandboxed (electron-security::CON-005)', async () => {
   // getLastWebPreferences is documented but missing from Electron 35's type definitions
   const sandboxed = await app.evaluate(({ BrowserWindow }) =>

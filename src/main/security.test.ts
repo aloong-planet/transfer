@@ -14,6 +14,23 @@ import { checkedListener, isAppUrl, isTrustedSender, permissionGranted } from '.
 
 const DEV = 'http://localhost:5173/'
 
+describe('the origin rule with mixed case (electron-security::CON-001)', () => {
+  it('reads the scheme without regard to case', () => {
+    expect(isAppUrl('APP://bundle/index.html')).toBe(true)
+  })
+
+  it("refuses Transfer's host in another case: an app: host keeps its case and is compared exactly", () => {
+    expect(isAppUrl('app://BUNDLE/index.html')).toBe(false)
+  })
+
+  it.each(['http://LOCALHOST:5173/', 'HTTP://localhost:5173/overlay.html'])(
+    'from source, takes the development server in any case as the same origin: %s',
+    (url) => {
+      expect(isAppUrl(url, DEV)).toBe(true)
+    }
+  )
+})
+
 describe("the origin rule: is this one of Transfer's own pages (electron-security::CON-001)", () => {
   it.each(['app://bundle/index.html', 'app://bundle/overlay.html', 'app://bundle/', 'app://bundle'])(
     'accepts Transfer\'s own page in a packaged build: %s',
