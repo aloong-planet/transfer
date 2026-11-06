@@ -10,7 +10,10 @@
 // Known gaps: the screenshot overlay is created only by a real capture, which would record the screen, so its sandboxing
 // is held only by a static case (src/main/security.test.ts); that the overlay still works sandboxed is to be checked by
 // hand on a production build (pending as of 2026-11-06: the owner's report); a real drop from the desktop
-// cannot be made by a test (the page-level guard and the navigation guard are each covered below). That a refused call's
+// cannot be made by a test (the page-level guard and the navigation guard are each covered below); the overlay's text
+// tool, and the listeners a capture session registers, exist only during a capture, so the overlay case drags onto a
+// text field of its own in the overlay's running page (closing this needs a way to start a capture without recording
+// the screen). That a refused call's
 // handler never runs is held by the unit cases of the IPC check (src/main/security.test.ts); the IPC case here holds that
 // `handle` reaches that check with Electron's real sender frame.
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
@@ -141,13 +144,20 @@ test('text dragged onto a text field keeps its default, a file dragged onto it i
 })
 
 test("the screenshot overlay's page takes the same drags the same way (electron-security::CON-002)", async () => {
-  // The overlay's own page, in a hidden window of its own without a preload: its entry loads the guard first, and with no
-  // API nothing the page tries reaches the main process. The window is closed at the end.
-  const prevented = await app.evaluate(async ({ BrowserWindow }) => {
-    const win = new BrowserWindow({ show: false, webPreferences: { contextIsolation: true, sandbox: true } })
+  // The overlay's own page with Transfer's preload, as the screenshot service creates it, in a hidden window of its own.
+  // Until a capture begins it only subscribes to show and hide events, reads the language and listens for Escape, so the
+  // shared instance does not change. The drags go out only once its components have rendered and their effects have run.
+  // The window is closed at the end.
+  const preload = join(process.cwd(), 'out', 'preload', 'index.cjs')
+  const result = await app.evaluate(async ({ BrowserWindow }, preload) => {
+    const win = new BrowserWindow({ show: false, webPreferences: { preload, contextIsolation: true, sandbox: true } })
     try {
       await win.loadURL('app://bundle/overlay.html')
-      return await win.webContents.executeJavaScript(`(() => {
+      return await win.webContents.executeJavaScript(`(async () => {
+        const root = document.getElementById('overlay-root')
+        for (let i = 0; i < 100 && !(root && root.childElementCount > 0); i++) await new Promise((r) => setTimeout(r, 50))
+        await new Promise((r) => setTimeout(r, 50))
+        const mounted = !!root && root.childElementCount > 0
         const field = document.createElement('textarea')
         document.body.append(field)
         const drag = (type, data) => {
@@ -159,15 +169,15 @@ test("the screenshot overlay's page takes the same drags the same way (electron-
         text.setData('text/plain', 'dragged text')
         const file = new DataTransfer()
         file.items.add(new File(['x'], 'a.txt', { type: 'text/plain' }))
-        const result = { text: [drag('dragover', text), drag('drop', text)], file: [drag('dragover', file), drag('drop', file)] }
+        const result = { mounted, text: [drag('dragover', text), drag('drop', text)], file: [drag('dragover', file), drag('drop', file)] }
         field.remove()
         return result
       })()`)
     } finally {
       win.destroy()
     }
-  })
-  expect(prevented).toEqual({ text: [false, false], file: [true, true] })
+  }, preload)
+  expect(result).toEqual({ mounted: true, text: [false, false], file: [true, true] })
 })
 
 test('the main window runs sandboxed (electron-security::CON-005)', async () => {

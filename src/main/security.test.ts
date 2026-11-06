@@ -15,47 +15,42 @@ import { checkedListener, isAppUrl, isTrustedSender, permissionGranted } from '.
 const DEV = 'http://localhost:5173/'
 
 describe("the origin rule: is this one of Transfer's own pages (electron-security::CON-001)", () => {
-  // The scheme is read without regard to case
-  it.each(['app://bundle/index.html', 'app://bundle/overlay.html', 'app://bundle/', 'app://bundle', 'APP://bundle/index.html'])(
-    'accepts Transfer\'s own page in a packaged build: %s',
-    (url) => {
-      expect(isAppUrl(url)).toBe(true)
-    }
-  )
-
-  it.each([
-    'app://bundle.evil/',
-    'app://evil/',
-    'app://bundle@evil/',
-    'app://evil@bundle/',
-    'app://user:pass@bundle/',
-    'file:///Users/a/evil.html',
-    'http://bundle/',
-    'https://bundle/',
-    'data:text/html,<p>x</p>',
-    'javascript:alert(1)',
-    'about:blank',
-    '',
-    'not a url',
+  // [build, url, accepted, development server]; a packaged build has no development server
+  it.each<[string, string, boolean, string | undefined]>([
+    ['packaged', 'app://bundle/index.html', true, undefined],
+    ['packaged', 'app://bundle/overlay.html', true, undefined],
+    ['packaged', 'app://bundle/', true, undefined],
+    ['packaged', 'app://bundle', true, undefined],
+    // the scheme is read without regard to case
+    ['packaged', 'APP://bundle/index.html', true, undefined],
+    ['packaged', 'app://bundle.evil/', false, undefined],
+    ['packaged', 'app://evil/', false, undefined],
+    ['packaged', 'app://bundle@evil/', false, undefined],
+    ['packaged', 'app://evil@bundle/', false, undefined],
+    ['packaged', 'app://user:pass@bundle/', false, undefined],
+    ['packaged', 'file:///Users/a/evil.html', false, undefined],
+    ['packaged', 'http://bundle/', false, undefined],
+    ['packaged', 'https://bundle/', false, undefined],
+    ['packaged', 'data:text/html,<p>x</p>', false, undefined],
+    ['packaged', 'javascript:alert(1)', false, undefined],
+    ['packaged', 'about:blank', false, undefined],
+    ['packaged', '', false, undefined],
+    ['packaged', 'not a url', false, undefined],
     // an app: host keeps its case and is compared exactly
-    'app://BUNDLE/index.html'
-  ])('refuses anything else in a packaged build, however it starts: %s', (url) => {
-    expect(isAppUrl(url)).toBe(false)
+    ['packaged', 'app://BUNDLE/index.html', false, undefined],
+    ['from source', 'http://localhost:5173/', true, DEV],
+    ['from source', 'http://localhost:5173/overlay.html', true, DEV],
+    // the same origin once parsed, in any case
+    ['from source', 'http://LOCALHOST:5173/', true, DEV],
+    ['from source', 'HTTP://localhost:5173/overlay.html', true, DEV],
+    ['from source', 'http://localhost:5173.evil.com/', false, DEV],
+    ['from source', 'http://localhost:5174/', false, DEV],
+    ['from source', 'https://localhost:5173/', false, DEV],
+    ['from source', 'http://evil@localhost:5173/', false, DEV],
+    ['from source', 'app://bundle/index.html', false, DEV]
+  ])('%s build, %s: accepted = %s', (_build, url, accepted, devServer) => {
+    expect(isAppUrl(url, devServer)).toBe(accepted)
   })
-
-  it.each(['http://localhost:5173/', 'http://localhost:5173/overlay.html', 'http://LOCALHOST:5173/', 'HTTP://localhost:5173/overlay.html'])(
-    'accepts the development server\'s pages from source, by origin, in any case: %s',
-    (url) => {
-      expect(isAppUrl(url, DEV)).toBe(true)
-    }
-  )
-
-  it.each(['http://localhost:5173.evil.com/', 'http://localhost:5174/', 'https://localhost:5173/', 'http://evil@localhost:5173/', 'app://bundle/index.html'])(
-    'refuses what only resembles the development server from source: %s',
-    (url) => {
-      expect(isAppUrl(url, DEV)).toBe(false)
-    }
-  )
 })
 
 describe('the permission decision (electron-security::CON-004)', () => {
