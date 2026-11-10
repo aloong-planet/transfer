@@ -1,4 +1,5 @@
 import React from 'react'
+import './ignore-stray-drops'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import { ErrorBoundary } from './ErrorBoundary'

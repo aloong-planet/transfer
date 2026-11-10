@@ -1,5 +1,6 @@
 import { test, expect, describe, afterEach, beforeEach } from 'vitest'
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { randomBytes, createHash } from 'node:crypto'
@@ -178,6 +179,18 @@ describe('文件收发(集成)', () => {
     expect(received.equals(f.content)).toBe(true)
     expect(sha256(received)).toBe(sha256(f.content))
   })
+
+  test.skipIf(process.platform !== 'darwin')(
+    'a received file carries the quarantine attribute naming Transfer (electron-security::REQ-001/AC-01)',
+    async () => {
+      const f = makeFile('quarantined.bin', 100)
+      const res = await sendFiles(target, selfInfo('Sender', 'FP_SEND'), [{ id: f.id, path: f.path }])
+      expect(res.kind).toBe('done')
+      // Read back through the system tool, not through the code that wrote it
+      const value = execFileSync('/usr/bin/xattr', ['-p', 'com.apple.quarantine', join(recvDir, 'quarantined.bin')], { encoding: 'utf8' }).trim()
+      expect(value).toMatch(/^0281;[0-9a-f]{8};Transfer;[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/)
+    }
+  )
 
   test('多文件并行收发:全部完整落盘(B2)', async () => {
     const files = [makeFile('a.bin', 3000), makeFile('b.bin', 7000), makeFile('c.bin', 1500)]

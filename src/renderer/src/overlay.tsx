@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import './ignore-stray-drops'
 import { createRoot } from 'react-dom/client'
 import type { ShotSource } from '@shared/ipc'
 import {

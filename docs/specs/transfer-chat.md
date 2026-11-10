@@ -108,6 +108,7 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 | 临时文件与最终文件跨盘 | 不允许——必须同目录,否则改名不是原子操作 | 〔缺〕 |
 | 接收目录不存在或不可写 | 自动接收要退回询问,不能默默失败 | 〔测〕 |
 | 超大文件 | 全程流式,内存占用与文件大小无关(ADR-0020) | 〔测〕 |
+| A received file on macOS | Carries the system's quarantine attribute, naming Transfer, from the moment it has its final name; if it cannot be set, the file is still received and the failure is logged (electron-security::REQ-001) | 〔测〕; the Mac App Store build is not measured (electron-security, Testing Decisions) |
 
 ### D. 发送侧的失败分类
 
@@ -173,6 +174,7 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 | 历史分页 | 有上限,超出被钳制 | 〔测〕 |
 | 状态是无约束文本列 | 读到**联合类型之外**的值(用户装过新版本写了库、再降级回旧版)必须优雅降级:集合归属写成覆盖每个成员的查表并收敛成布尔,映射查表要带兜底 | 〔测〕 |
 | 应用退出 | 挂起中的确认全部拒绝 + 库里待定消息标记过期,否则发送方要等到协议默认超时(以天计) | 〔测〕 |
+| Files dropped anywhere on the window but the message list, or a link or text dropped anywhere but a text field | Nothing happens: nothing is sent and the window stays where it is; the message list still receives a drop, and text or a link dropped into a text field is inserted (electron-security::CON-002) | 〔测〕 with drops made in the page; a real drop from the desktop is not measured (electron-security, Testing Decisions) |
 
 ### I. Image context menu and copy
 

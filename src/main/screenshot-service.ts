@@ -5,7 +5,6 @@ import {
   BrowserWindow,
   globalShortcut,
   screen,
-  ipcMain,
   desktopCapturer,
   systemPreferences,
   shell,
@@ -15,6 +14,7 @@ import {
   type Display
 } from 'electron'
 import { SHOT_CMD, EVT, type ShotSource } from '@shared/ipc'
+import { handle } from './web-guards'
 import { computeRatios } from '@shared/screenshot-geometry'
 import { APP_HOST } from './app-protocol'
 import { t, getMainLang } from './i18n'
@@ -401,7 +401,7 @@ export class ScreenshotService {
         preload: this.deps.preload,
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: false
+        sandbox: true
       }
     })
     // 失焦即取消会话,避免僵尸遮罩(§4.5)。
@@ -458,20 +458,20 @@ export class ScreenshotService {
 
   // ── IPC(overlay → main)──
   private registerIpc(): void {
-    ipcMain.handle(SHOT_CMD.cancel, () => this.endSession())
+    handle(SHOT_CMD.cancel, () => this.endSession())
     // 聊天区截图按钮触发:隐主窗再截图(与 F1 同守卫,防重入)。
-    ipcMain.handle(SHOT_CMD.beginFromMain, () => this.onButtonCapture())
+    handle(SHOT_CMD.beginFromMain, () => this.onButtonCapture())
     // overlay 进会话后拉背景 + display 信息(§4.3)。
-    ipcMain.handle(SHOT_CMD.getShot, () => this.pending)
+    handle(SHOT_CMD.getShot, () => this.pending)
 
     // ── 三出口(§4.3):都在完成后 endSession 回 idle ──
     // 复制到剪贴板(不落盘)。
-    ipcMain.handle(SHOT_CMD.toClipboard, (_e, png: Uint8Array) => {
+    handle(SHOT_CMD.toClipboard, (_e, png: Uint8Array) => {
       clipboard.writeImage(nativeImage.createFromBuffer(Buffer.from(png)))
       this.endSession()
     })
     // 另存为:直接写到用户选定路径,不经临时文件。返回保存路径或 null(取消)。
-    ipcMain.handle(SHOT_CMD.saveAs, async (_e, png: Uint8Array): Promise<string | null> => {
+    handle(SHOT_CMD.saveAs, async (_e, png: Uint8Array): Promise<string | null> => {
       const win = this.overlay && !this.overlay.isDestroyed() ? this.overlay : null
       // dialogBusy 抑制"对话框抢焦点→遮罩 blur→endSession"(否则对话框一弹遮罩就被收、对话框随之沉底)。
       // 不主动 app.focus 抢前台:对话框依附遮罩窗(screen-saver 置顶)已能呈现,且要保持"不抢最前"
@@ -492,7 +492,7 @@ export class ScreenshotService {
       }
     })
     // 发到当前聊天:fire-and-forget,peer 从缓存取;写临时文件→sendFiles→finally 清理。
-    ipcMain.handle(SHOT_CMD.sendToChat, (_e, png: Uint8Array) => {
+    handle(SHOT_CMD.sendToChat, (_e, png: Uint8Array) => {
       const peer = this.activePeer
       this.endSession() // 立即收起遮罩回 idle,不阻塞(§4.2)
       if (!peer) return // 无对象不该走到这(overlay 已禁用按钮),兜底忽略
