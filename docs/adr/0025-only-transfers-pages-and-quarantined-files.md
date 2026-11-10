@@ -1,6 +1,6 @@
 # ADR-0025: Windows hold only Transfer's own pages, IPC answers only them, and received files are quarantined
 
-- Status: Proposed
+- Status: Accepted (2026-11-10)
 
 ## Context
 
@@ -34,5 +34,5 @@ We choose **option 1**. The rule "is this URL one of Transfer's own pages" is on
 
 - Spec: [electron-security](../specs/electron-security.md).
 - electron-scaffold's `electron-security.md` (items 4, 5, 12, 13, 14, 17) and `electron-security-howto.md`.
-- Measurements on 2026-11-06 (kept with the working records).
+- Measurements on 2026-11-06, and the owner's check of the sandboxed screenshot overlay on 2026-11-10 (kept with the working records).
 - Owner's decision on quarantining received files (2026-11-06).
