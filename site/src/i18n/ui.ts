@@ -123,7 +123,7 @@ const en: Record<UIKey, string> = {
     'Text and files unified into a message-bubble stream with local SQLite history. Unread badges + system-level new-message alerts.',
   'features.screenshot.title': 'Screenshot annotation',
   'features.screenshot.desc':
-    'Global shortcut to select a region, with a full annotation toolkit (rectangle/arrow/pen/text/mosaic/blur, etc.). Three outputs: send to chat / copy to clipboard / save to file.',
+    'Global shortcut to select a region, with a full annotation toolkit (rectangle / arrow / pen / text / mosaic / blur, etc.). Three outputs: send to chat / copy to clipboard / save to file.',
   'features.multilang.title': 'Multi-language (follows system)',
   'features.multilang.desc':
     'The UI supports Chinese / English, following the system language by default, switchable manually with instant effect — no restart.',

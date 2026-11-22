@@ -39,11 +39,16 @@ const icons: Record<string, string> = {
   </div>
 
   <style>
+    /* minmax(0, 1fr), not 1fr: a bare 1fr track never shrinks below its longest unbreakable
+       word, so one long word widens its column: past the container in one column, past the other
+       columns in three (landing-page::QR-001). overflow-wrap on .feat breaks such a word inside
+       the card instead. */
     .feat-grid {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .feat {
       padding: 26px;
+      overflow-wrap: break-word;
     }
     .feat-icon {
       width: 44px;
@@ -70,7 +75,7 @@ const icons: Record<string, string> = {
     }
     @media (max-width: 860px) {
       .feat-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
     }
   </style>
