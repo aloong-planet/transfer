@@ -201,12 +201,15 @@ const home = localizedPath(locale, '/')
           display: none;
         }
       }
-      /* The breadcrumb in narrow windows: landing-page::REQ-001/AC-03. */
+      /* The breadcrumb in narrow windows: landing-page::REQ-001/AC-02 and landing-page::REQ-001/AC-03. */
       @media (max-width: 400px) {
         .crumbs {
           flex-direction: column;
           align-items: flex-start;
           gap: 1px;
+        }
+        .crumbs-up {
+          gap: 4px;
         }
         .crumbs-home,
         .crumbs-sep {
