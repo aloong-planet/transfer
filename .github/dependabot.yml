@@ -12,6 +12,9 @@ updates:
     # first. GitHub's default is 3 days; 7 is zizmor's recommended minimum.
     cooldown:
       default-days: 7
+    # At the default limit of 5 open pull requests Dependabot stops opening more and reports an error. 10 leaves room
+    # for a major update of every action the workflows use, each in its own pull request, plus the grouped one.
+    open-pull-requests-limit: 10
     groups:
       # Minor and patch updates of every action come in one pull request. Each major update still comes in its own,
       # since a major release may contain breaking changes.
