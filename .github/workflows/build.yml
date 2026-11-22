@@ -59,7 +59,7 @@ jobs:
       # tag 触发时,直接在 GitHub 服务器上把 exe 发布成 Release —— 免去本地下载
       - name: Publish to Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           files: |
             release/*/*-setup.exe
@@ -145,7 +145,7 @@ jobs:
       # 与 build-win 发到同一个 tag 的 Release(action-gh-release 对同 tag 是 upsert,追加文件)
       - name: Publish to Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           files: release/*/*.dmg
           fail_on_unmatched_files: true
