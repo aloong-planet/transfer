@@ -4,7 +4,7 @@
 // 而站点没有任何自动关卡能发现——`astro build` 不做类型检查(esbuild 只剥类型),
 // CI 的 build.yml 只跑打包、不跑 typecheck/test,`astro check` 有脚本但无人调用。
 // 类型上的 `Record<UIKey, string>` 只在编辑器与 `astro check` 里报错;这条测试是
-// 目前唯一进入 `pnpm test` 的关卡(根 vitest 的 include 已覆盖 site/src)。
+// 目前唯一进入测试命令的关卡(site 自己的 `pnpm test`,见 site/vitest.config.ts)。
 import { test, expect, describe } from 'vitest'
 import { ui, languages, defaultLocale, useTranslations } from './ui'
 

@@ -12,7 +12,8 @@ export default defineConfig({
   test: {
     // 核心逻辑均为纯 Node 模块,不依赖 Electron / jsdom
     environment: 'node',
-    include: ['src/**/*.test.ts', 'site/src/**/*.test.ts'],
+    // site/ has its own vitest on its Astro config (site/vitest.config.ts).
+    include: ['src/**/*.test.ts'],
     globals: false,
     server: {
       deps: {
