@@ -1,8 +1,9 @@
 // The header's link back to the aloong planet homepage: landing-page::REQ-001/AC-01.
 //
-// Gap: landing-page::REQ-001/AC-02 and landing-page::REQ-001/AC-03 (sizes, colours, gaps, hover and
-// the narrow-window layout) are not tested here. They are computed styles and geometry, which only
-// a browser can read, and the site has no browser test runner.
+// Gap: landing-page::REQ-001/AC-02, landing-page::REQ-001/AC-03, landing-page::QR-001/AC-01 and
+// landing-page::QR-001/AC-02 (sizes, colours, gaps, hover and the narrow-window layout) are not
+// tested here. They are computed styles and geometry, which only a browser can read, and the site
+// has no browser test runner.
 import { experimental_AstroContainer as AstroContainer } from 'astro/container'
 import { Window } from 'happy-dom'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
