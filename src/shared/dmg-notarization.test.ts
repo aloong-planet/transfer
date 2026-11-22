@@ -1,5 +1,10 @@
 // The release workflow's macOS gate (docs/specs/mac-distribution.md). The DMG gate itself is tested with the
 // packaging script, in build/mac-packaging.test.cjs.
+//
+// Gap: whether actions/upload-artifact and softprops/action-gh-release exit non-zero when an upload or the Release
+// creation fails is the actions' own code. Only a tag run in which that upload really fails exercises it; the test
+// for that failure mode below covers only the workflow lines that turn a failed step into a failed job and a skipped
+// R2 sync.
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import YAML from 'yaml'
@@ -108,5 +113,28 @@ describe('GitHub Actions 发布门禁', () => {
       expect(step.env?.CSC_IDENTITY_AUTO_DISCOVERY, step.name).toBeUndefined()
       expect(step.run ?? '', step.name).not.toMatch(/electron-builder/)
     }
+  })
+
+  // docs/specs/mac-distribution.md, Failure modes and boundaries: Publisher
+  test('a failed upload or Release creation fails its job, and the R2 sync then does not run', () => {
+    const jobs = (YAML.parse(readFileSync(new URL('../../.github/workflows/build.yml', import.meta.url), 'utf8')) as {
+      jobs: Record<string, {
+        'continue-on-error'?: unknown
+        needs?: string | string[]
+        if?: string
+        steps: Array<{ name?: string; uses?: string; 'continue-on-error'?: unknown }>
+      }>
+    }).jobs
+
+    for (const platform of ['build-win', 'build-mac']) {
+      const job = jobs[platform]
+      const publishing = job.steps.filter((step) => /^(actions\/upload-artifact|softprops\/action-gh-release)@/.test(step.uses ?? ''))
+
+      expect(publishing.map((step) => step.uses?.split('@')[0]).sort(), platform).toEqual(['actions/upload-artifact', 'softprops/action-gh-release'])
+      expect(job['continue-on-error'] ?? false, platform).toBe(false)
+      for (const step of publishing) expect(step['continue-on-error'] ?? false, `${platform}: ${step.name}`).toBe(false)
+    }
+    expect([jobs.sync.needs].flat().sort()).toEqual(['build-mac', 'build-win'])
+    expect(jobs.sync.if).not.toMatch(/\b(?:always|failure|cancelled)\s*\(/)
   })
 })
