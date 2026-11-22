@@ -28,7 +28,7 @@ jobs:
       # 必须是 22,不能沿用 build.yml 的 20:测试经 src/main/db/messages.ts 加载
       # node:sqlite,该模块 Node 22.5 才有。build.yml 用 20 没暴露,是因为它只打包不跑测试。
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: 'pnpm'
@@ -83,7 +83,7 @@ jobs:
 
       # 同 checks:必须 22,e2e 会加载主进程,而它经 messages.ts 用 node:sqlite
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: 'pnpm'
