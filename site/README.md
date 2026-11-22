@@ -15,6 +15,7 @@ pnpm dev        # http://localhost:4321/
 ```bash
 pnpm build      # 构建到 site/dist/
 pnpm preview    # 预览构建产物
+pnpm test       # 运行站点测试(vitest,用站点自己的 Astro 配置,可渲染 .astro 页面)
 ```
 
 ## 结构

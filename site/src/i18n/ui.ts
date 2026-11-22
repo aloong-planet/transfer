@@ -17,6 +17,7 @@ export const defaultLocale: Locale = 'zh'
  */
 const zh = {
   'site.name': 'Transfer',
+  'nav.planet': 'aloong planet',
   'nav.features': '功能',
   'nav.how': '工作原理',
   'nav.download': '下载',
@@ -93,6 +94,7 @@ export type UIKey = keyof typeof zh
 // en 必须实现同一组键(缺键编译报错)
 const en: Record<UIKey, string> = {
   'site.name': 'Transfer',
+  'nav.planet': 'aloong planet',
   'nav.features': 'Features',
   'nav.how': 'How it works',
   'nav.download': 'Download',

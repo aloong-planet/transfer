@@ -39,7 +39,7 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      # 根 vitest 的 include 覆盖 src/** 与 site/src/**,两侧测试一次跑完。
+      # The root vitest covers src/**; the site's tests run in their own step below.
       # pnpm test also runs the macOS packaging script's own tests (node --test build/mac-packaging.test.cjs), before vitest.
       - name: Test
         run: pnpm test
@@ -51,6 +51,11 @@ jobs:
       # site 有独立的 package.json / lockfile / node_modules,不在根 workspace 里。
       - name: Install site dependencies
         run: pnpm install --frozen-lockfile
+        working-directory: site
+
+      # The site's vitest runs on its Astro config (site/vitest.config.ts), so its tests can render .astro pages.
+      - name: Test site
+        run: pnpm test
         working-directory: site
 
       - name: Build site (Astro)
