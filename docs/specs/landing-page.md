@@ -13,8 +13,8 @@ The header's left end reads "aloong planet / Transfer", and "aloong planet" open
 ### landing-page::REQ-001 Back to the aloong planet homepage
 
 - landing-page::REQ-001/AC-01: On every page of the website (the landing page and the privacy page, in both languages), the header's left end shows, in order, "aloong planet", the separator "/" and the brand (icon and name). "aloong planet" is a link that opens `https://aloongplanet.com/` in the current tab; the "/" is not a link and assistive technology does not read it; the brand keeps its link to the page's own home. Both languages show "aloong planet", untranslated.
-- landing-page::REQ-001/AC-02: "aloong planet" and "/" take the size and grey of the header's navigation links, with 10px between each of the three ("aloong planet", "/", the brand). Hovering "aloong planet" turns it the navigation links' hover colour, without an underline.
-- landing-page::REQ-001/AC-03: In a window 400px wide or narrower, "aloong planet /" shrinks to 11px on its own line above the brand; the header keeps its height and the language switch stays at the right.
+- landing-page::REQ-001/AC-02: "aloong planet" and "/" take the size and grey of the header's navigation links, with 10px between each of the three ("aloong planet", "/", the brand); in the narrow window of landing-page::REQ-001/AC-03, "aloong planet" and "/" are 4px apart. Hovering "aloong planet" turns it the navigation links' hover colour, without an underline.
+- landing-page::REQ-001/AC-03: In a window 400px wide or narrower, "aloong planet /" shrinks to 11px, with a line height 1.3 times that size, on its own line 1px above the brand's line; the header keeps its height and the language switch stays at the right.
 
 ## Failure modes and boundaries
 - The mainland copy ([landing-page-deploy](landing-page-deploy.md)) shows the same link to `https://aloongplanet.com/`.
