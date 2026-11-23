@@ -13,8 +13,8 @@ export const defaultLocale: Locale = 'zh'
  *
  * Why the types must hold the line: t() falls back to defaultLocale (zh) when the current
  * locale lacks a key, so the English page would silently show a Chinese sentence, and
- * `astro build` does not type-check. The site's `pnpm check` (`astro check`, run by CI's
- * checks job) reports the missing key; ui.test.ts also compares the key sets.
+ * `astro build` does not type-check. The site's `pnpm check` (the type check CI's checks job
+ * runs) reports the missing key; ui.test.ts also compares the key sets.
  */
 const zh = {
   'site.name': 'Transfer',

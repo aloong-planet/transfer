@@ -53,9 +53,12 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: site
 
-      # The root typecheck does not cover site/; astro check type-checks the site's .astro and .ts
+      # The root typecheck does not cover site/; the site's `pnpm check` type-checks its .astro and .ts
       # files against site/tsconfig.json, so a key missing from the site dictionary fails here.
-      - name: Typecheck site (astro check)
+      # It runs `astro sync` and then @astrojs/check's own `astro-check` binary, not `astro check`:
+      # Astro 4's `astro check` exits 0 when @astrojs/check cannot be loaded (fixed upstream after
+      # 4.x in withastro/astro#18589), whereas a missing `astro-check` fails this step.
+      - name: Typecheck site (@astrojs/check)
         run: pnpm check
         working-directory: site
 

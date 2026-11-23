@@ -3,7 +3,7 @@
 // Why it is needed: t() falls back to defaultLocale (zh) when the current locale lacks a key,
 // so the English page would silently show Chinese, and `astro build` does not type-check
 // (esbuild only strips types). `Record<UIKey, string>` reports a missing key only in the
-// editor and in the site's `pnpm check` (`astro check`, run by CI's checks job); this test is
+// editor and in the site's `pnpm check` (the type check CI's checks job runs); this test is
 // the dictionary check inside the site's test command (`pnpm test`, see site/vitest.config.ts).
 import { test, expect, describe } from 'vitest'
 import { ui, languages, defaultLocale, useTranslations } from './ui'
