@@ -16,6 +16,7 @@ pnpm dev        # http://localhost:4321/
 pnpm build      # 构建到 site/dist/
 pnpm preview    # 预览构建产物
 pnpm test       # 运行站点测试(vitest,用站点自己的 Astro 配置,可渲染 .astro 页面)
+pnpm check      # type-check the site (astro check, against site/tsconfig.json; CI runs it too)
 ```
 
 ## 结构

@@ -3,8 +3,13 @@ working-language = "en"
 
 [i18n]
 enabled = true
-source = "src/shared/i18n"
-enforced-by = ["pnpm test"]
+source = ["src/shared/i18n", "site/src/i18n"]
+enforced-by = [
+  "pnpm typecheck",
+  "pnpm test",
+  "pnpm --dir site check",
+  "pnpm --dir site test src/i18n/ui.test.ts",
+]
 
 [enumeration-wording-gate]
 enabled = false

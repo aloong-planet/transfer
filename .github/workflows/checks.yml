@@ -53,6 +53,12 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: site
 
+      # The root typecheck does not cover site/; astro check type-checks the site's .astro and .ts
+      # files against site/tsconfig.json, so a key missing from the site dictionary fails here.
+      - name: Typecheck site (astro check)
+        run: pnpm check
+        working-directory: site
+
       # The site's vitest runs on its Astro config (site/vitest.config.ts), so its tests can render .astro pages.
       - name: Test site
         run: pnpm test
