@@ -47,8 +47,8 @@ As either party, I right-click an image in the conversation — one I received o
 
 ### transfer-chat::REQ-001 Thumbnails follow the EXIF orientation
 
-- transfer-chat::REQ-001/AC-01: A JPEG with a non-default EXIF orientation shows its thumbnail in the orientation the full-size view shows (it used to show as stored, e.g. sideways), generated at the same width as every other thumbnail — a photo turned upright by a quarter turn is not narrower than one that is not; every other image's thumbnail is unchanged.
-- transfer-chat::REQ-001/AC-02: Messages received before the upgrade get the corrected thumbnail the next time they are displayed; nothing is migrated or stored.
+- transfer-chat::REQ-001/AC-01: A JPEG with a non-default EXIF orientation shows its thumbnail in the orientation the full-size view shows, generated at the same width as every other thumbnail — a photo turned upright by a quarter turn is not narrower than one that is not. The thumbnail of every other image keeps the orientation its pixels are stored in.
+- transfer-chat::REQ-001/AC-02: A thumbnail is produced each time its message is displayed and is never stored, so transfer-chat::REQ-001/AC-01 holds for every message, however long ago it was received.
 
 ### transfer-chat::REQ-002 The image menu stays inside the window
 
@@ -63,9 +63,9 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 
 - transfer-chat::REQ-004/AC-01: The view is at the bottom when the end of the message stream is within 24 px of the bottom edge of the view; a stream that fits the view is at the bottom.
 - transfer-chat::REQ-004/AC-02: A message sent from this device, text, file or image, scrolls the stream to the bottom at once, wherever the view was.
-- transfer-chat::REQ-004/AC-03: A message received while the view is at the bottom scrolls the stream to the bottom; one received while the view is more than 24 px above the bottom leaves the view where it is.
-- transfer-chat::REQ-004/AC-04: While the view is more than 24 px above the bottom, a round button with a down-pointing chevron and the tooltip 跳到最新 / Jump to latest floats at the bottom right of the stream, and clicking it scrolls to the bottom. At the bottom the button is not shown.
-- transfer-chat::REQ-004/AC-05: The button carries a dot after a message was received while the view was more than 24 px above the bottom. The dot goes when the view reaches the bottom, when the button is clicked, or when a sent message scrolls the stream.
+- transfer-chat::REQ-004/AC-03: A message received while the view is at the bottom scrolls the stream to the bottom; one received while the view is not at the bottom leaves the view where it is.
+- transfer-chat::REQ-004/AC-04: While the view is not at the bottom, a round button with a down-pointing chevron and the tooltip 跳到最新 / Jump to latest floats at the bottom right of the stream, and clicking it scrolls to the bottom. At the bottom the button is not shown.
+- transfer-chat::REQ-004/AC-05: The button carries a dot after a message was received while the view was not at the bottom. The dot goes when the view reaches the bottom, when the button is clicked, or when a sent message scrolls the stream.
 
 ### transfer-chat::REQ-005 Connect timeout
 
@@ -79,8 +79,8 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 
 ### transfer-chat::REQ-007 The message input takes screenshots and pasted images
 
-- transfer-chat::REQ-007/AC-01: The message input bar has a screenshot button, an icon to the left of the attach button with the tooltip 截图 / Screenshot. It hides the main window and starts a capture (screenshot::REQ-001); the capture's Send exit goes to the chat that is open (screenshot::REQ-004/AC-03).
-- transfer-chat::REQ-007/AC-02: Pasting into the message input while the clipboard holds one or more images sends each of them at once to the chat that is open, with no preview and no confirmation, as a file named 图片_ (Chinese interface) or image_ (English interface), followed by a time stamp and a random suffix, ending in .png. Text on the same clipboard is not pasted. A clipboard with no image pastes as it always does.
+- transfer-chat::REQ-007/AC-01: The message input bar has a screenshot button, an icon to the left of the attach button with the tooltip 截图 / Screenshot. It hides the main window and starts a capture ([screenshot::REQ-002/AC-01](screenshot.md)).
+- transfer-chat::REQ-007/AC-02: Pasting into the message input while the clipboard holds one or more images sends each of them at once to the chat that is open, with no preview and no confirmation, as a file named 图片_ (Chinese interface) or image_ (English interface), followed by a time stamp and a random suffix, ending in .png. Text on the same clipboard is not pasted. A clipboard with no image pastes as in any text field.
 
 ### transfer-chat::REQ-008 Asking and auto-accept
 
@@ -91,7 +91,7 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 
 ### transfer-chat::REQ-009 No cap on file size or count
 
-- transfer-chat::REQ-009/AC-01: No limit applies to the size of a file or to the number of files in a request. What bounds a transfer is the free disk space of the receiver, which is not checked beforehand (已知缺口), not the speed of the network.
+- transfer-chat::REQ-009/AC-01: No limit applies to the size of a file or to the number of files in a request. What bounds a transfer is the free disk space of the receiver, not the speed of the network.
 
 ## 失败模式与边界穷举
 
