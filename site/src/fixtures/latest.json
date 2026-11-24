@@ -1,0 +1,38 @@
+{
+  "version": "1.2.3",
+  "releasedAt": "2026-11-10T20:56:42+08:00",
+  "files": [
+    {
+      "name": "Transfer-1.2.3-mac-arm64.dmg",
+      "size": 98370041,
+      "os": "mac",
+      "arch": "arm64"
+    },
+    {
+      "name": "Transfer-1.2.3-mac-universal.dmg",
+      "size": 187724521,
+      "os": "mac",
+      "arch": "universal"
+    },
+    {
+      "name": "Transfer-1.2.3-mac-x64.dmg",
+      "size": 105438771,
+      "os": "mac",
+      "arch": "x64"
+    },
+    {
+      "name": "Transfer-1.2.3-win-portable.exe",
+      "size": 93309706,
+      "os": "win",
+      "arch": "x64",
+      "variant": "portable"
+    },
+    {
+      "name": "Transfer-1.2.3-win-setup.exe",
+      "size": 93524711,
+      "os": "win",
+      "arch": "x64",
+      "variant": "setup"
+    }
+  ]
+}
