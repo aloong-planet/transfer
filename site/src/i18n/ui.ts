@@ -11,9 +11,10 @@ export const defaultLocale: Locale = 'zh'
  * zh 是键集合的唯一真源:UIKey 从它推导,en 必须实现同一组键(Record<UIKey, string>),
  * 缺键即编译报错。与 app 侧 src/shared/i18n/dict.ts 同款做法。
  *
- * 为什么非得靠类型卡死:t() 在当前语言缺键时会回落到 defaultLocale(= zh),
- * 于是英文页会静默混进一句中文——astro build 不做类型检查、CI 也不跑 check,
- * 漏译能一路上线且无任何告警。键集合对齐另有 ui.test.ts 兜底。
+ * Why the types must hold the line: t() falls back to defaultLocale (zh) when the current
+ * locale lacks a key, so the English page would silently show a Chinese sentence, and
+ * `astro build` does not type-check. The site's `pnpm check` (the type check CI's checks job
+ * runs) reports the missing key; ui.test.ts also compares the key sets.
  */
 const zh = {
   'site.name': 'Transfer',

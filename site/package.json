@@ -8,14 +8,16 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check",
+    "check": "astro sync && astro-check",
     "test": "vitest run"
   },
   "dependencies": {
     "astro": "^4.16.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.12",
     "happy-dom": "^21.0.4",
+    "typescript": "^5.9.3",
     "vitest": "^2.1.8"
   }
 }

@@ -1,10 +1,10 @@
 // 落地页字典的键集合对齐。
 //
-// 为什么需要它:t() 在当前语言缺键时回落到 defaultLocale(= zh),英文页会静默混进中文,
-// 而站点没有任何自动关卡能发现——`astro build` 不做类型检查(esbuild 只剥类型),
-// CI 的 build.yml 只跑打包、不跑 typecheck/test,`astro check` 有脚本但无人调用。
-// 类型上的 `Record<UIKey, string>` 只在编辑器与 `astro check` 里报错;这条测试是
-// 目前唯一进入测试命令的关卡(site 自己的 `pnpm test`,见 site/vitest.config.ts)。
+// Why it is needed: t() falls back to defaultLocale (zh) when the current locale lacks a key,
+// so the English page would silently show Chinese, and `astro build` does not type-check
+// (esbuild only strips types). `Record<UIKey, string>` reports a missing key only in the
+// editor and in the site's `pnpm check` (the type check CI's checks job runs); this test is
+// the dictionary check inside the site's test command (`pnpm test`, see site/vitest.config.ts).
 import { test, expect, describe } from 'vitest'
 import { ui, languages, defaultLocale, useTranslations } from './ui'
 
