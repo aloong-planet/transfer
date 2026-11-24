@@ -16,7 +16,7 @@ The interface follows the system's language, or the user fixes it to Chinese or 
 
 ### language::REQ-002 Following the system
 
-- language::REQ-002/AC-01: Following the system uses the first language in the system's list of preferred languages, read when the app starts: one beginning with zh, whatever its script or region, gives Chinese, and any other language, or an empty list, gives English.
+- language::REQ-002/AC-01: Following the system uses the first language in the system's list of preferred languages, read when the app starts or the preference is set: one beginning with zh, whatever its script or region, gives Chinese, and any other language, or an empty list, gives English.
 - language::REQ-002/AC-02: While the preference is follow the system, Settings shows 改系统语言后需重启应用生效 / Changing the system language takes effect after restarting the app.
 
 ### language::REQ-003 What the language covers

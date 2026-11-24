@@ -85,7 +85,7 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 ### transfer-chat::REQ-008 Asking and auto-accept
 
 - transfer-chat::REQ-008/AC-01: With auto-accept off, which is the default, every file of a request waits in the chat as a bubble with the buttons 接收 / Accept and 拒绝 / Decline.
-- transfer-chat::REQ-008/AC-02: With auto-accept on, a request is received without asking when each of its files is no larger than the size limit, which is 100 MB (100 × 1024 × 1024 bytes) until changed. One file over the limit makes the whole request wait for the user. Text messages are not subject to it (section E).
+- transfer-chat::REQ-008/AC-02: With auto-accept on, a request is received without asking when each of its files is no larger than the size limit, which is 100 MB (100 × 1024 × 1024 bytes) until changed. One file over the limit makes the whole request wait for the user.
 - transfer-chat::REQ-008/AC-03: Settings has the checkbox 启用自动接收(文本消息始终自动接收) / Enable auto-accept (text messages always auto-accepted) and the number input 自动接收文件大小上限: / Auto-accept file size limit:, in MB, greyed out while the checkbox is off; a negative number counts as 0. They apply when the user presses 保存 / Save, and 取消 / Cancel discards them.
 - transfer-chat::REQ-008/AC-04: The settings are stored in `settings.json` as `autoAccept`, with `enabled` and `maxBytes` (in bytes).
 
