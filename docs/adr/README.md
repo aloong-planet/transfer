@@ -31,15 +31,15 @@ The files named without a link in the Sources of older entries (such as `https-m
 | [0010](0010-mac-three-arch-plus-locale-prune.md) | macOS 三架构全打(universal + arm64 + x64)+ locale 裁剪 | 已接受 |
 | [0011](0011-remove-gitee-mirror.md) | 移除 Gitee 镜像,下载源精简为 R2(主)+ GitHub(兜底) | 已接受 |
 | [0012](0012-notarization-gate-fail-closed.md) | 正式版 macOS 发布公证门禁 fail-closed;预发布只签名 | Superseded by [ADR-0023](0023-notarize-every-published-mac-build.md) |
-| [0013](0013-docs-lifecycle-by-rot-risk.md) | 文档体系按"腐烂速度"分类管理(采纳 harness workflow) | 已接受(第 3 项经 [ADR-0017](0017-spec-is-persistent-not-scratch.md)、[ADR-0019](0019-workings-replace-scratch.md) 两次修订) |
+| [0013](0013-docs-lifecycle-by-rot-risk.md) | Documents are governed by how fast their content rots (adopting the harness workflow) | Accepted |
 | [0014](0014-prototypes-as-persistent-asset.md) | 原型目录 docs/prototypes/ 作为持久资产保留 | 已接受 |
-| [0015](0015-ops-runbooks-as-fifth-doc-class.md) | 运维手册作为第五类文档,就地更新 | 已接受 |
+| [0015](0015-ops-runbooks-as-fifth-doc-class.md) | Operations runbooks are a document class of their own, updated in place | Accepted |
 | [0016](0016-mas-separate-bundle-id.md) | App Store 版用独立 bundle id `com.aloongplanet.transfer` | 已接受 |
-| [0017](0017-spec-is-persistent-not-scratch.md) | spec 从"用完即丢"改为持久产物,与 tickets 分家 | 已接受 |
+| [0017](0017-spec-is-persistent-not-scratch.md) | Specs are persistent artifacts, kept apart from tickets | Accepted |
 | [0018](0018-cn-mirror-landing-page-only.md) | The landing page goes to a mainland node, the download source stays on R2 | Accepted |
-| [0019](0019-workings-replace-scratch.md) | 施工文档从 `.scratch/` 迁到 `docs/.workings/`,并从"合并后删除"改为"本机保留" | 已接受 |
-| [0020](0020-upload-idle-timeout-not-total.md) | 传输超时改为空闲语义,不再限制总时长 | 已接受 |
-| [0021](0021-schema-migration-by-declared-columns.md) | 表结构迁移用「列声明单一事实源 + 按需补列」,不引版本号 | 已接受 |
+| [0019](0019-workings-replace-scratch.md) | Process records live in `docs/.workings/`, kept on the machine and not committed | Accepted |
+| [0020](0020-upload-idle-timeout-not-total.md) | Transfer timeouts are idle timeouts and no longer cap the total duration | Accepted |
+| [0021](0021-schema-migration-by-declared-columns.md) | Schema migration uses declared columns as the single source of truth and adds missing columns, with no version number | Accepted |
 | [0022](0022-receive-dir-user-selectable.md) | 接收文件夹可由用户选定,失效时自动退回默认且不保留原路径 | 已接受 |
 | [0023](0023-notarize-every-published-mac-build.md) | Notarize every published macOS build; local packages are signed only; no certificate, no package | Accepted |
 | [0024](0024-packaged-build-refuses-launch-inputs.md) | A packaged build refuses every launch input outside an allow-list, and the fuses close Node's entries | Accepted |

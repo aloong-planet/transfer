@@ -71,6 +71,7 @@
 - **构建失败 pnpm 版本** → Pages 会读 `site/package.json` 的 `packageManager`?本项目 site 没写该字段,Pages 默认 pnpm 版本一般够用;若报错,在 infra 的 `transfer-org` 条目的 `build_env` 里加环境变量 `PNPM_VERSION=9`。
 - **页面 404 / 样式丢失** → Build output directory 应为 `dist`(相对 site/),别写成绝对或 `site/dist`。
 - **下载按钮 404** → 检查 R2 桶里 `latest.json` 所指版本的 `releases/v<版本>/` 下确有对应文件。
+- **想把安装包放进 `site/` 一起部署** → 不行:Cloudflare Pages 单文件上限 25 MiB,安装包比它大得多。落地页在 Pages,安装包只放 R2(`dl.aloongplanet.com`),二者不合并。
 
 ## Organization repository
 

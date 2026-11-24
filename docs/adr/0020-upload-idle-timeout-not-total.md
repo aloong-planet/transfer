@@ -1,47 +1,37 @@
-# ADR-0020: 传输超时改为空闲语义,不再限制总时长
+# ADR-0020: Transfer timeouts are idle timeouts and no longer cap the total duration
 
-状态:已采纳(2026-08-21)
+- Status: Accepted (2026-08-21)
 
-## 背景与问题
+## Context
 
-"最大能传多大文件"这个问题在本项目里**没有对应的设置项**,但实际存在两道天花板,都不是有意设的:
+How large a file Transfer can send has no setting, yet two ceilings exist that nobody chose: the sender reads the whole file into memory to compute its sha256, and two time limits cut long transfers off, a 5-minute total-duration timeout on each upload request and a 30-second idle timeout on the receiving session whose timer was never refreshed while the body flows. The session misjudgement also fails silently: the file lands and upload answers 200, but the receiver finds the session gone and never reports completion, so the sender shows success, the receiver's message stays "in transfer" forever, and the session's other files are cleared with it. Both come from one assumption, that how long a transfer takes decides whether it failed.
 
-1. **发送端算 sha256 时把整个文件读进内存**。实测(Electron 35 / Node 22):512MB 文件让主进程 RSS 从 62MB 涨到 578MB,1GB 文件涨到 1085MB —— 峰值与文件大小 1:1。于是能传多大取决于内存而不是磁盘。
-2. **两个时间上限**:单个 upload 请求有 5 分钟**总时长**硬超时;接收方会话有 30 秒空闲超时,而空闲计时器**在传输体流动期间从不刷新**(常量注释写着"任一 upload 有字节即 reset",实现里从来没有)。后者先咬人:实际能传多大 = 30 秒 × 链路带宽,千兆有线约 3GB、Wi-Fi 5 约 750MB。
+## Options
 
-第 2 条里的会话误判还是个**静默**故障:文件照常落盘、upload 照常回 200,只是接收方发现会话已不在而不上报完成 —— 发送方显示成功,接收方那条消息永远停在传输中,同会话其他文件一起被清掉。
+1. **Idle semantics: ask only whether anything is still moving, and cap no total duration**
+2. Only raise the fixed values (5 min to 60 min, 30 s to 5 min) — rejected: a hard ceiling coupled to bandwidth remains and a real disconnect takes long to report, so both directions get worse.
+3. Idle semantics plus a very large total-duration backstop — deferred: it is the most robust, but it keeps two timeouts whose relation must be maintained and the second never fires in normal use; it returns if Transfer ever faces untrusted peers.
 
-根子是同一个观念错误:**把"传完要多久"当成了失败判据**。慢不等于断。
+## Decision
 
-## 备选项
+We choose **option 1**, and remove the memory ceiling with it, since only fixing memory stalls at the 30-second idle limit and only fixing timeouts runs out of memory.
 
-1. **只把固定值调大**(5min → 60min、30s → 5min)。改动最小、风险最低。代价:仍然存在一个与带宽耦合的硬上限,并且真断线时要干等很久才报错 —— 两个方向同时变差。
-2. **改成空闲语义**:只问"还有没有动静",不限总时长。大文件传多久都行,真断线照样很快失败。代价:失去总时长这道兜底(见后果)。
-3. **两者都要**:空闲语义 + 一个很大的总时长兜底。最稳,但要同时维护两套超时的相互关系,而第二套在正常场景里永远不触发。
+- The sender computes sha256 chunk by chunk, so peak memory does not depend on file size.
+- The receiving session's idle timer refreshes on every byte, on the write-to-disk path and on the idempotent-retransmit path that discards the body alike, and every new path that receives or sends upload bytes refreshes it too.
+- The sender's timeout for one upload is an idle timeout of 45 seconds, not a 5-minute total.
+- The order of the two ends' thresholds is locked into a guard test: the sender's must exceed the receiver's upper bound for judging idle, `T_IDLE_MS + T_SWEEP_MS` (the sweep interval is part of it), plus a 5-second margin. The session's owner, the receiver, then cleans up first and the sender gets a clear connection error, where the other way round the sender gives up first and the receiver keeps an orphan session holding the single-session lock until its own timeout.
 
-## 决策
+## Consequences
 
-取备选 2,**并把内存那一条一起解掉**——三者缺一都到不了"能传大文件":只改内存会卡在 30 秒空闲,只改超时会 OOM。
+- Positive: The size of a file that can be sent no longer depends on bandwidth or memory, a large file on a slow link is no longer taken for a disconnect, and the silent inconsistency (sender succeeded, receiver stuck "in transfer" forever) is gone.
+- Negative: There is no total-duration backstop, so a peer that trickles bytes at intervals under the idle threshold can hang a transfer indefinitely and neither end times out. A LAN point-to-point link has no adversarial peer, so this is accepted; an untrusted peer would need option 3's backstop.
+- Negative: The sender's "something is moving" signal is coarser than a refresh per chunk: after `req.write()` returns false, `pipe` pauses until `drain`, which fires only when the whole user-space buffer has emptied, so two refreshes are about the buffered bytes divided by the peer's consumption rate apart. The 45-second threshold leaves a 30-fold margin on a 1 MB/s link, but it cannot be sized as if every chunk refreshed.
+- Negative: Waiting for the response after the body is sent shares one budget with the body phase, so a peer may take up to 45 seconds to answer, which is the receiver hang the sender's upload timeout was meant to catch.
+- Negative: Only the order of the two thresholds has a guard test, so a new path that receives or sends upload bytes and forgets to refresh the idle timer fails silently as described in the Context, and only the invariant in `AGENTS.md` holds it.
+- Neutral: The ceiling on the size of a file is now disk space.
+- Negative: Three problems this decision did not solve remain: no disk-space pre-check before writing (lack of space shows as that message turning failed), a hash failure on any file in `buildFileMap` failing the whole batch's prepare-upload, and no interface feedback while a large file is hashed (about 40 seconds for 50 GB).
 
-- 发送端算 sha256 改为逐 chunk 流式,峰值内存与文件大小无关。
-- 接收端会话的空闲计时器**按字节刷新**(落盘路径与幂等丢弃路径都要),让常量注释描述的行为真正成立。
-- 发送端单个 upload 的超时从"总时长 5 分钟"改为"空闲 45 秒"。
-- 两端阈值的**序关系**锁进护栏测试:发送端阈值必须大于接收端判空闲的上界(`T_IDLE_MS + T_SWEEP_MS`,扫描粒度必须算进去)加 5 秒余量。理由是让**会话的所有者**先清理,发送端随后拿到明确的连接错误;反过来发送端先放弃,接收端会留着孤儿会话占住单会话锁直到自己超时。
+## Sources
 
-新的上限因此变成**磁盘空间**(注:目前没有落盘前的空间预检,空间不足表现为该条消息转 failed)。
-
-## 后果
-
-**得到**:能传的文件大小不再与带宽或内存耦合;慢链路上的大文件不再被误判为断线;顺带修掉一个静默的状态不一致(发送方成功、接收方永远"传输中")。流式 hash 还更快(1GB:799ms vs 1113ms),因为省掉了一次大块分配。
-
-**失去 / 已知代价**:
-
-- **没有总时长兜底了**。对端只要以低于空闲阈值的间隔涓流,一次传输可以无限期挂着,两端都不会超时。局域网点对点、无对抗性对端,按可接受处理;若将来要面对不可信对端,需要重新引入备选 3 的那层兜底。
-- **发送端的"有动静"信号比想象的粗**:`pipe` 在 `req.write()` 返回 false 后暂停,而 `drain` 要等用户态缓冲**整个清空**才触发。实测本地环回一次吞下约 1.4MB 才暂停,于是两次刷新的间隔 ≈ 已缓冲字节 ÷ 对端消费速率。45 秒的阈值对 1MB/s 的弱链路仍有 30 倍余量,但**不能按"每个 chunk 都会刷新"来估**这个阈值。
-- **body 交完后等响应与传输体阶段共用同一份预算**:对端最多可以拖 45 秒才回包(这正是原本 S4 想防的"接收方异常挂起")。
-
-**未随本决策解决、已知仍在的**:落盘前无磁盘空间预检;`buildFileMap` 里任一文件 hash 失败会让整批 prepare-upload 失败;大文件 hash 期间(50GB 约 40 秒)界面无反馈。三者都记在施工记录的重构清单里。
-
-## 来源
-
-调研与实测记录见 `docs/.workings/large-file-transfer/`(施工记录,不作现状依据)。超时常量与序关系的正本在 `src/shared/protocol.ts` 与其护栏测试;两端"什么算空闲"的不变量在 `CONTEXT.md`。
+- Research and measurements: `docs/.workings/large-file-transfer/` (a process record, not a basis for the current state). The constants and their order are in `src/shared/protocol.ts` and its guard test, and the constraint on every byte path is in the Invariants section of `AGENTS.md`.
+- Measured on Electron 35 and Node 22: reading a 512 MB file into memory raised the main process RSS from 62 MB to 578 MB and a 1 GB file to 1085 MB, so the peak grows 1:1 with the file; the receiver's former idle limit gave 30 s times the link bandwidth, about 3 GB on gigabit wired and about 750 MB on Wi-Fi 5; streaming the hash of 1 GB took 799 ms against 1113 ms; on local loopback about 1.4 MB was swallowed before the pipe paused.

@@ -1,37 +1,30 @@
-# ADR-0017: spec 从"用完即丢"改为持久产物,与 tickets 分家
+# ADR-0017: Specs are persistent artifacts, kept apart from tickets
 
-- 状态: 已接受(2026-08-04)
+- Status: Accepted (2026-08-04)
 
-## 背景与问题
+## Context
 
-ADR-0013 把文档按腐烂速度分四类,其中第 3 项把 **spec 与 tickets 归为同一类**「施工文档」,一起丢进 gitignore 的 `.scratch/`,feature 合并后整目录删除。
+What a feature enumerated, its boundaries and what it explicitly does not do, is held by no other document: ADRs record trade-offs and `docs/features/` records visible behaviour. Kept with tickets and process records, which are not committed documents, it never reaches whoever next changes the code, who must enumerate again, usually worse because the original scenarios are no longer at hand. Where should it live?
 
-实践下来这两者的性质并不相同。tickets 描述的是「怎么施工」——纵切顺序、进度、事实层的 file:line 引用,合并后确实失去价值,腐烂得也最快。spec 描述的是「这个功能穷举过哪些边界、哪些明确不做」,而这一层内容**没有任何其它文档承载**:ADR 记的是决策取舍,`docs/features/` 记的是当前可见行为,两者都不覆盖边界穷举。
+## Options
 
-于是每合并一个 feature,那份穷举成果就被删掉一次。下一个改这块代码的人(或模型)无从判断前人是否想全了,只能重新穷举一遍——而重新穷举的结果通常更差,因为当初的场景已经不在眼前。
+1. **A persistent class of its own: `docs/specs/`, one file per functional module, a current description rewritten in place and deleted when the module is removed**
+2. Keep specs with tickets and process records as working papers — rejected: the enumeration of boundaries has no home and is rebuilt every round of development.
+3. Fold the enumeration into `docs/features/` — rejected: features is written from the user's side with no implementation detail, so failure modes and "explicitly not done" would make it serve two kinds of reader and both would be written badly.
+4. Fold the enumeration into ADRs — rejected: boundaries evolve with the implementation and are mostly not hard-to-reverse trade-offs, so they fail the ADR thresholds and would crowd the index.
 
-## 备选项
+## Decision
 
-1. **把 spec 从「施工文档」拆出,单列一类持久产物** —— `docs/specs/`,现行描述、就地改写;tickets 仍留在 `.scratch/` 用完即丢。
-2. 维持 ADR-0013 原状 —— 否决:边界穷举无处安放,每轮开发重造一遍。
-3. 把边界穷举并进 `docs/features/` —— 否决:features 面向用户/产品视角、零实现细节,塞进失败模式与"明确不做"会让它同时服务两类读者,两边都写不好。
-4. 把边界穷举并进 ADR —— 否决:ADR 只追加不改写,而边界会随实现演化;强行放进去会逼出一串"修订前一条"的 ADR,索引很快失去可读性。
+We choose **option 1**: specs are a persistent class of their own in `docs/specs/`, one file per functional module, a current description rewritten in place and deleted when the module is removed.
 
-## 决策
+## Consequences
 
-选定**方案 1**:我们把 spec 从 ADR-0013 第 3 项的「施工文档」中拆出,单列为一类持久产物,归 `docs/specs/`,一个功能模块一篇、就地改写、功能移除即删。tickets 不变,仍在 `.scratch/` 用完即丢。
+- Positive: Boundary enumerations have one home and no longer evaporate when a feature merges, and the coverage list of `/tdd` and the coverage dimension of `/review-tests` have a stable basis.
+- Positive: A spec's body is user stories and enumerated boundaries, far more stable than implementation detail, and its implementation layer keeps only abstract decisions, with no type names or module layout.
+- Negative: There is one more class of documents to maintain, and specs rot, since the implementation detail they describe goes stale. Only the discipline of writing deviations found during implementation back into the spec holds it, the same cost for which persistent design documents were rejected in ADR-0013.
+- Neutral: Slugs correspond to `docs/features/` entries but not one to one: distribution-channel specs such as the landing page have no features entry under the features directory's own inclusion rules.
 
-**本条只修订 ADR-0013 的第 3 项**,该 ADR 的其余分类与「按腐烂速度治理」的核心判断继续有效。
+## Sources
 
-## 后果
-
-- 正面:边界穷举有了唯一归宿,不再随 feature 合并蒸发;`/tdd` 的覆盖清单与 `/review-tests` 的覆盖维度有了稳定依据。
-- 负面:多一类文档要维护。spec 会腐烂——它描述的实现细节会过时,必须靠「实现期偏离回写 spec」这道纪律顶住,而那正是 ADR-0013 当初否决持久设计文档的理由。
-- **缓解**:与当年的 feature 设计文档不同,spec 的主体是用户故事与边界穷举,这些比实现细节稳定得多;易腐的实现层内容只留抽象决策,具体类型名/模块划分不写。
-- 中性:slug 与 `docs/features/` 对应,但不强求一一映射——分发渠道类(如落地页)按 features 自身的收录规则不入功能目录,于是只有 spec 而无 features 条目。
-
-## 来源
-
-- ADR-0013 第 3 项。
-- 全局 workflow skill `/to-spec` 的 2026-08-01 定案(「spec 改为持久产物」),本条是该约定在本仓库的落地。
-- 首次适用场景:落地页国内镜像一轮,其边界穷举含空环境变量语义、非首页页面的备案号、部署时漏设变量三条,均为实现期之前才想到、且不属于任何既有文档类别的内容。
+- The global `/to-spec` convention that specs are persistent artifacts (set 2026-08-01), which this entry applies in this repository.
+- First case: the landing-page domestic-mirror round, whose enumeration held three boundaries found only before implementation (empty environment-variable semantics, the ICP number on non-home pages, a variable forgotten at deploy), none of which any existing document class could hold.

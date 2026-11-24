@@ -225,7 +225,7 @@ Image copy and orientation (transfer-chat::US-001, transfer-chat::REQ-001 to REQ
 - **超时类边界用注入的小阈值 + 真实时钟**,不用假时钟。假时钟测不出背压与缓冲这类真实成因;而阈值是构造参数,缩小它不改变机制。**例外**是纯粹的计时器单元,那里用假时钟,因为它本来就只有时间这一个输入。
 - **每条"不该发生"的断言都要配一条反向用例**。空闲判定就是典型:只写"长传输不被清掉",一个永不清理的实现照样全绿。
 - **内存类断言断增长率,不断绝对值**。绝对值受垃圾回收时机左右,拿它当阈值卡的是回收器的脾气,不是实现。
-- **门禁只守得住它查的那部分**:两端阈值的序关系有护栏,但"新增的收发字节路径要刷新计时器"没有——那是开放形态,靠 `CONTEXT.md` 的不变量约束人。
+- **门禁只守得住它查的那部分**:两端阈值的序关系有护栏,但"新增的收发字节路径要刷新计时器"没有——那是开放形态,靠项目 `AGENTS.md` 的不变量约束人。
 
 ## 明确不做的
 
@@ -236,7 +236,7 @@ Image copy and orientation (transfer-chat::US-001, transfer-chat::REQ-001 to REQ
 - **防主动冒充**:身份广播本身是明文,同网段的主动攻击者可以冒充任意对端(与官方 LocalSend 同级局限,见 ADR-0004)。**接收确认是唯一的人肉防线**,请在可信局域网使用。
 - **PIN 校验**:只识别对端要求 PIN 并提示,不实现。
 - **多播报文伪造 / 放大攻击**:属发现层,不在本模块处理。
-- **总时长上限**:选了空闲语义就意味着放弃它;涓流可以让传输无限期挂着(ADR-0020 的代价节)。
+- **总时长上限**:选了空闲语义就意味着放弃它;涓流可以让传输无限期挂着(ADR-0020 的负面后果)。
 - **不为"传输中用时在走"与"速度的渲染"补端到端测试**(2026-08-22 用户裁定)。两者的计算逻辑有纯函数单测、显示形态有真机渲染核对过;补齐它们需要能驱动渲染层连续多帧的 e2e 基建,投入与收益不成比例。**这是决定,不是遗漏** —— 后来者不必再把它当待办。
 - **A file reference on the clipboard** (so that pasting in Finder or Explorer yields the file): rejected 2026-10-22. Electron has no API for it, each platform would need its own low-level clipboard format, and chat apps that see a file reference may attach a file instead of inserting the image.
 - **Feedback after copying** (a "Copied" toast, or an error on failure): decided against, 2026-10-22. It matches the screenshot's copy exit and the image menu's other two items, which give none either.

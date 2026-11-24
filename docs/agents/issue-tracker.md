@@ -20,7 +20,7 @@ Tickets cut by `/to-tickets` carry this label by default: by construction, an un
 
 ## What a ticket holds
 
-A ticket is not a home for durable knowledge: enumerated boundaries go to `docs/specs/`, decisions to `docs/adr/`, terms and invariants to `CONTEXT.md`, incidents to `docs/postmortems/` (see `docs-layout.md`). A ticket's process records (reviews, document-sync lists, evidence) stay in `docs/.workings/<slug>/`, and the ticket names their paths.
+A ticket is not a home for durable knowledge: enumerated boundaries go to `docs/specs/`, decisions to `docs/adr/`, terms to `docs/CONTEXT.md`, constraints on code to the Invariants section of `AGENTS.md`, incidents to `docs/postmortems/` (see `docs-layout.md`). A ticket's process records (reviews, document-sync lists, evidence) stay in `docs/.workings/<slug>/`, and the ticket names their paths.
 
 A deferred ticket stays open with a dated comment: where the work stopped, which conclusions can be reused as they are, and what to re-check before restarting (line numbers, whether each conclusion still holds).
 

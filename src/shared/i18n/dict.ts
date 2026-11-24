@@ -5,6 +5,10 @@
 //
 // 完整性由类型保证:TKey 取自 zh 的键集合,en 必须实现同一组键(Record<TKey,string>),
 // 缺键编译报错——自研相比 i18next 的优势(引擎多为运行时键、漏译静默回退)。
+//
+// Copy never lists the interface languages as if the list were complete (e.g. "available in Chinese,
+// English and Japanese"): when the language set changes, that sentence becomes false in every language
+// at once.
 
 import type { Lang } from './t'
 

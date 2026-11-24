@@ -55,7 +55,8 @@ import {
 // 统一 userData 目录名:dev(未打包)默认读 package.json name='transfer'(小写),
 // 打包版读 productName='Transfer'(大写)→ 两者目录名不一致。显式 setName 统一为 'Transfer',
 // dev 与打包共用同一 userData。必须在任何 getPath('userData') / override / 单实例锁之前。
-// (mac 大小写不敏感,dev 原 'transfer' 数据即同目录,无缝复用,无需迁移。)
+// (mac 大小写不敏感,dev 原 'transfer' 数据即同目录,无缝复用,无需迁移。
+// Windows and Linux are case-sensitive: there, such a rename would need a migration.)
 app.setName('Transfer')
 
 /**
@@ -63,6 +64,7 @@ app.setName('Transfer')
  * **用户实例正在运行时跑一轮测试,用户或同网的他人能否察觉**——察觉得到的一律关断:
  *   ① 不显示窗口:实测 `dock.hide()` 与 accessory 活动策略都挡不住抢前台,只有不显示才不打扰;
  *      窗口不显示不影响断言 —— 布局、计算样式、CDP 输入都照常工作(焦点语义除外)。
+ *      `toBeVisible()` on such a window tests layout visibility only, not whether a user could see it.
  *   ② 不注册全局快捷键:F1 同一时刻只有一个进程占得住,注册了就把用户实例的截图快捷键抢走,
  *      且 `globalShortcut.register` 静默返回 false —— 用户只发现 F1 突然不好使。
  *   ③ 不起 core(HTTP server + 多播发现)。**真正的危害是多播 announce,不是端口**:
