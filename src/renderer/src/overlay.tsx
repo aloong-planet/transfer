@@ -698,7 +698,7 @@ const TOOL_ICON = 15
  * **唯一的例外是「文字」工具的字面 `A`**(2026-08-21 用户裁定):它是纯 ASCII,
  * 没有 `▚ ◍ ①` 那种字体缺字风险,而字母 A 本身就是该工具最直白的记号。
  * 代价明知:它由系统字体渲染,笔画与光学尺寸与相邻 SVG 不是一套,且不随 TOOL_ICON 缩放。
- * 这条例外记在 CONTEXT.md,不是遗漏——**别再"顺手"把它换成图标**。
+ * 这条例外记在项目 AGENTS.md 的不变量里,不是遗漏——**别再"顺手"把它换成图标**。
  */
 const TOOLS: Array<{ tool: ShotTool; icon: React.ReactNode; labelKey: TKey }> = [
   { tool: 'rect', icon: <RectIcon size={TOOL_ICON} />, labelKey: 'overlay.tool.rect' },

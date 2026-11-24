@@ -1,34 +1,38 @@
-# ADR-0013: 文档体系按"腐烂速度"分类管理(采纳 harness workflow)
+# ADR-0013: Documents are governed by how fast their content rots (adopting the harness workflow)
 
-- 状态: 已接受(2026-07-22)
+- Status: Accepted (2026-11-25)
 
-## 背景与问题
+## Context
 
-原做法:每个 feature 一份持久设计文档(决策+事实层 file:line+方案+进度),完成后靠"回同步"维持真实性。实测多份文档状态栏已陈旧(如 app-scheme-migration 仍写"待实测→发v0.4.0"而项目已 v0.9.1;userdata-dirname 写"待实现"实则已实现)——持久化施工文档的同步成本是结构性的。文档体系该如何治理?
+Each feature kept one persistent design document (decisions, file:line facts, plan, progress) and relied on syncing it back after the work to stay true. Several of them carried stale status lines, so the sync cost of persistent working documents is structural. How should the project's documents be governed?
 
-## 备选项
+## Options
 
-1. **按内容腐烂速度分四类管理**(见决策)
-2. 维持原状(持久设计文档 + 回同步)——否决:回同步是持续付利息,且"design 描述已被修掉的行为"这一最危险偏离只能缓解不能根除
-3. 全盘照搬 Matt Pocock 体系(代码/测试/CONTEXT.md/ADR 四件套,其余用完即丢)——否决:装不下复盘/踩坑叙事(如 electron-graceful-quit),那是本仓库最值钱的排查资产
+1. **Classify documents by how fast their content rots, each class with one home and its own lifecycle (see Decision)**
+2. Keep one persistent design document per feature and sync it back after the work — rejected: syncing is interest paid continuously, and the most dangerous deviation, a design that describes behaviour since fixed, can be mitigated but never removed.
+3. Adopt Matt Pocock's system wholesale (code, tests, `CONTEXT.md` and ADRs, everything else discarded after use) — rejected: it has no room for postmortem and pitfall narratives (such as electron-graceful-quit), the most valuable troubleshooting asset in this repository.
+4. Keep terms and invariants together in one glossary at the repository root, as before — rejected: someone changing code reads the glossary by its contents and single entries, so constraints kept in it go unread, while `AGENTS.md` is read in every session, and `docs/` holds every other class of document.
+5. Keep ADRs append-only, a changed decision getting a new entry that marks the old one superseded, as before — rejected: the decision in force ends up spread over a chain of entries that a reader must follow, while an entry rewritten in place states what holds now and git keeps the earlier wording.
 
-## 决策
+## Decision
 
-选定**方案 1**,文档按内容分四类,生命周期各异:
+We choose **option 1**: documents are classified by how fast their content rots, and each class has one home.
 
-1. **决策(why)** → `docs/adr/`,一决策一文件,**只追加不改写**;决策变更新开条目并标记旧条被取代。
-2. **术语/不变量** → 根目录 `CONTEXT.md`,主动维护,喂给每个新上下文。
-3. **施工文档**(spec、tickets、事实层 file:line、进度表)→ `.scratch/<feature-slug>/`,**gitignore、用完即丢**,feature 合并后整目录删除。
-4. **复盘/踩坑叙事** → `docs/` 持久保留。
+1. **Decisions (why)** go to `docs/adr/`, one decision per file. An entry states only the decision in force and is rewritten in place, with the user's confirmation, when the decision changes.
+2. **Terms** go to `docs/CONTEXT.md`, actively maintained and fed to every new context.
+3. **Constraints on whoever changes code** go to the Invariants section of `AGENTS.md`, one line each, with the reason in the ADR, postmortem, spec, gate or code comment that the line points to.
+4. **Postmortems and pitfall narratives** go to `docs/` and are kept permanently.
 
-已有的 feature 设计文档保持原样作历史存档,**不再维护其状态栏真实性**;其决策已提炼进 ADR-0001~0012。
+## Consequences
 
-## 后果
+- Positive: Durable assets (ADRs, the glossary, postmortems) hold no fast-rotting implementation detail, so their upkeep trends to zero.
+- Neutral: "Syncing back" now means breaking the work down into homes: decisions to ADRs, terms to the glossary, constraints to `AGENTS.md`, pitfalls to postmortems.
+- Neutral: The workflow skills are installed in the user's global `~/.claude/skills` (the core ones are local forks of mattpocock/skills, versioned in git), and the repository does not carry them.
+- Negative: Every constraint is one more line of `AGENTS.md`, which is read in every session, so the section's length is paid by every task and each line has to stay short with its reason elsewhere.
+- Negative: An entry's earlier wording, and the reason it changed, are found only in git history, not in the entry.
 
-- 正面:持久资产(ADR/CONTEXT.md/复盘)不含易腐实现细节,维护成本趋零;施工文档公开承认一次性,可写得更详尽。
-- 中性:"回同步"的对象从"整份设计文档"变为"拆解归档":决策→ADR、术语→CONTEXT.md、踩坑→复盘。
-- 工具链:workflow skills 安装于用户全局 `~/.claude/skills`(核心件为基于 mattpocock/skills 的本地 fork 定制,git 版本管理),tracker 用本地 `.scratch/`;仓库内不携带 skills。
+## Sources
 
-## 来源
-
-memory「文档按腐烂速度分类管理」;https://github.com/mattpocock/skills 。
+- Memory note "documents are governed by how fast their content rots"; https://github.com/mattpocock/skills.
+- Stale status lines found in two feature design documents: app-scheme-migration still read "pending measurement, then release v0.4.0" when the project was at v0.9.1, and userdata-dirname read "pending" though it was implemented.
+- `/domain-modeling`'s CONTEXT-FORMAT (constraints belong in `AGENTS.md`) and the global rule for reading the glossary (contents first, then one entry), on which the rejection in option 4 rests.

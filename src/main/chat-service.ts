@@ -325,6 +325,9 @@ export class ChatService {
 
   /**
    * 进度推送(不落库,§12.3/§12.6)。节流:每 100ms 最多推一次;100% 强制推(终态不丢)。
+   * What stays out of the database is what keeps changing during a transfer; a terminal result,
+   * the total duration for one, is stored. The line is whether a value keeps changing, not whether
+   * it concerns the transfer.
    */
   private emitProgress(
     messageId: string,

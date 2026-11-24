@@ -26,7 +26,7 @@ Measured on Electron 35.7.5, macOS: a 200×100 JPEG tagged 6 decodes to 200×100
 
 - The main process reads the tag itself and turns the decoded bitmap (`src/main/image-orientation.ts`), for both the copy and the thumbnail; a quarter-turned thumbnail is fitted by the stored height so it keeps the usual width.
 - e2e `image-copy.spec.ts` copies and thumbnails a JPEG whose metadata is shaped like a real phone photo's, tagged 6, with an asymmetric mark so orientations 5 and 6 can't be confused.
-- CONTEXT.md invariant: every main-process path that shows or copies an image must apply the tag.
+- `AGENTS.md` invariant: every main-process path that shows or copies an image must apply the tag.
 
 ## How to measure it again
 

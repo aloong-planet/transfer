@@ -1,57 +1,33 @@
-# ADR-0019: 施工文档从 `.scratch/` 迁到 `docs/.workings/`,并从"合并后删除"改为"本机保留"
+# ADR-0019: Process records live in `docs/.workings/`, kept on the machine and not committed
 
-- 状态: 已接受(2026-08-16)
+- Status: Accepted (2026-08-16)
 
-## 背景与问题
+## Context
 
-ADR-0013 第 3 项把施工文档(tickets、事实层 file:line、进度表)放进 gitignore 的 `.scratch/`,**合并后整目录删除**;ADR-0017 把 spec 拆出去单列持久产物后,`.scratch/` 只剩 tickets 与施工过程记录,"用完即丢"的设定沿用未动。
+Working papers (process records, research intermediates) were discarded at merge, on the premise that merging ends the work. Two kinds of content break that premise: an investigation of work set aside unfinished, which would have to be redone and usually comes out worse because the original context is gone, and the decision to set work aside, with its reason and restart criterion, which fits no document class (not an ADR, not a term or constraint, not visible behaviour) and evaporates in conversation. Where should working papers live, and for how long?
 
-丢弃的前提是"合并即完结"。实际有两类内容不满足这个前提:
+## Options
 
-**一、暂缓不做的工作。** 一张票查清了现状、列全了候选、只差拍板,用户决定本轮不做——此时它既没完结、也不该丢。删掉意味着下次重启要把调研重做一遍;而重做的结果通常更差,因为当初的语境已不在眼前。这与 ADR-0017 拆出 spec 的理由是同一条,只是那次针对边界穷举,这次针对**未完结的施工调研**。
+1. **Move them to `docs/.workings/<slug>/`, still gitignored but no longer deleted at merge** — the dot name keeps them visually apart from the reader-facing classes in `docs/`, and they stay on the machine for reuse across rounds.
+2. Move them to `docs/.workings/` and commit them — rejected: process records rot fastest and are explicitly not to be relied on, so committing them adds noise to every PR diff and invites later readers to cite them, while all they need is "I can still see it next time", not "everyone can see it".
+3. Keep `.scratch/` as throwaway and find another home for leftover tasks (GitHub Issues or a to-do section in the glossary) — rejected: a to-do section would make the glossary serve two kinds of reader, and discarding the record while keeping the task forces a judgement on every record before each change, which is itself error-prone.
+4. Put working papers in `docs/` level with the other classes — rejected: their trustworthiness is of a different order, and equal placement invites later readers to cite them.
 
-**二、决定本身。** "暂不做"是一个决定,附带理由与重启判据。它够不上 ADR 门槛(不是架构取舍),也不属于 CONTEXT.md(不是术语或不变量),features/ 更不收(用户不可见)。旧体系里它无处可放,只能留在对话里——而对话会蒸发。
+## Decision
 
-触发场景:字符图标清理拆成三票,其中截图工具条一票在选型完成、候选齐备后被判为暂不做。该票承载的图标库对照结论(七个库的全量索引搜索所得)若随合并删除,下次重启要重跑一遍全部调研。
+We choose **option 1**. Process records, research intermediates and the local tickets that `docs/agents/issue-tracker.md` still keeps are written to `docs/.workings/<slug>/`: still gitignored and never committed, but not deleted when the feature merges, so that unfinished work restarts from them.
 
-## 备选项
+Keeping is not trusting: the content is never a basis for the current state, which is defined by `docs/specs/`, `docs/features/`, `docs/adr/`, `docs/CONTEXT.md` and `AGENTS.md`. Its value is only that restarting unfinished work does not start research from zero, and any line number or code claim cited from it is first checked against the code.
 
-1. **迁到 `docs/.workings/<slug>/`,仍 gitignore,但不再随合并删除** —— 目录名带点,与 `docs/` 下面向读者的六类文档在视觉上分开;本机保留,跨轮可复用。
-2. 迁到 `docs/.workings/` 并**入库** —— 否决:施工记录腐烂最快且明确不可作为依据,入库会让它出现在每个 PR 的 diff 里成为噪音,更会诱使后人把它当依据引用;而它需要的只是"下次我还能看到",不是"所有人都能看到"。
-3. 维持 `.scratch/` 用完即丢,遗留任务另找归宿(GitHub Issues 或 CONTEXT.md 开待办节) —— 否决:tracker 已明确不用 GitHub Issues(见 `docs/agents/issue-tracker.md`),而 CONTEXT.md 收术语与不变量,塞待办会让它同时服务两类读者;且"施工记录丢、遗留任务留"要求每次动手前先判断这份记录属于哪种,判断本身就会出错。
-4. 施工文档归 `docs/` 与其余六类平级 —— 否决:可信度不在一个量级,平级摆放会诱使后人引用它。
+## Consequences
 
-## 决策
+- Positive: Work set aside keeps its research when restarted, and the decision "not now", with its reason and restart criterion, can be written down instead of evaporating in conversation.
+- Positive: Not being committed, the records leave PR diffs untouched and do not gain the visibility of the persistent classes.
+- Negative: The content exists only on this machine, so a new machine, a fresh clone or CI has none of it, and without version history a wrong edit cannot be traced. Whatever someone elsewhere must know is therefore promoted out of it, decisions to ADRs, terms to `docs/CONTEXT.md`, constraints on code to `AGENTS.md`, boundary enumerations to specs and visible behaviour to features, the test being whether anyone would be caught out if only this machine held the item.
+- Negative: The directory accumulates content that nobody cleans up. Keeping is the default, not an obligation: once a feature is fully done with nothing left over, its whole slug directory may be deleted.
+- Neutral: `.gitignore` lists `docs/.workings/`, and `.scratch/` is not used.
 
-选定**方案 1**。施工文档(tickets、施工过程记录、调研中间产物)落 `docs/.workings/<slug>/`,**仍在 gitignore 内、不入库**,但**不再随 feature 合并删除**——本机保留,供跨轮重启复用。
+## Sources
 
-改的是生命周期与位置,不是可见性:
-
-| | 旧(`.scratch/`) | 新(`docs/.workings/`) |
-|---|---|---|
-| 入库 | 否 | 否(不变) |
-| 合并后 | 整目录删除 | 保留 |
-| 定位 | 施工完即弃 | 未完结工作的重启起点 |
-
-**保留不等于可信**:该目录的内容不得被当作现状依据——现状以 `docs/specs/` / `docs/features/` / `docs/adr/` / `CONTEXT.md` 为准。它的价值只在"重启一件未完结的工作时,不必从零调研";凡引用其中的行号与代码结论,必须先核对是否仍成立。
-
-**本条修订 ADR-0013 的两处**:第 3 项(施工文档的存放位置与生命周期),以及「后果」小节工具链条目里「tracker 用本地 `.scratch/`」的表述——两处提到 `.scratch/` 的地方一并作废,均改为 `docs/.workings/`。该 ADR 的其余分类与「按腐烂速度治理」的核心判断继续有效;同条目「仓库内不携带 skills」不受影响(其外延见 CONTEXT.md 的「仓库不携带 agent 配置」不变量);ADR-0017 对 spec 的拆分不受影响。
-
-## 后果
-
-- 正面:暂缓任务有了归宿,重启时调研成果仍在;"暂不做"这个决定连同理由与重启判据可以落盘,不再蒸发在对话里。
-- 正面:不入库,PR diff 不受影响,也不会把不可信内容摆到与六类持久文档同等的可见度上。
-- **负面(本决策的主要代价):内容只存在于这台机器**。换机器、新 clone、CI 环境都没有它;也没有版本历史,改错了无法回溯。
-- **缓解**:凡"另一台机器上的人(或模型)也必须知道"的内容,一律不能停在本目录——决策升 ADR、术语与不变量进 CONTEXT.md、边界穷举进 spec、用户可见行为进 features。本目录只承载"我下次接着干时想省掉的重复劳动"。判据:问一句"这条信息如果只有我这台机器有,会不会有人踩坑"——会,就必须升级。
-- 负面:目录会随时间累积无人清理的内容。**缓解**:功能彻底完成且无遗留时整个 slug 目录可删——保留是默认,不是义务。
-- 中性:`.gitignore` 中 `.scratch/` 条目替换为 `docs/.workings/`,`.scratch/` 不再使用。
-
-## 来源
-
-- ADR-0013 第 3 项、ADR-0017(同型修订的先例)。
-- 全局 CLAUDE.md 第 4–7 步的 2026-08-16 修订(「施工记录落 `docs/.workings/<slug>/` 并保留,但不得被当作可靠依据」),本条是该约定在本仓库的落地。
-- 首次适用场景:字符图标清理三票,其中截图工具条一票判为暂缓,其图标库调研结论需跨轮保留。
-
-## Later note (2026-11-06)
-
-The tracker premise in option 3's rejection no longer holds: tickets moved to GitHub Issues on 2026-11-06 (see `docs/agents/issue-tracker.md`). The decision stands. Option 3 is still rejected on its other two grounds: a to-do section would make `CONTEXT.md` serve two kinds of reader, and "discard the process record, keep the leftover task" would force a judgement on every record before each change, which is itself error-prone. Only tickets moved; process records stay in `docs/.workings/` as decided here.
+- The global CLAUDE.md steps 4–7 (revised 2026-08-16: process records go to `docs/.workings/<slug>/` and are kept, but never relied on), which this entry applies in this repository.
+- First case: the character-icon cleanup, split into three tickets, one of which (the screenshot toolbar) was set aside after an icon-library comparison by full index search across seven libraries; that comparison had to survive across rounds.

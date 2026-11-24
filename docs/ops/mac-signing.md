@@ -41,6 +41,8 @@ The architecture set (`arm64`, `x64`, `universal`) is read from `mac.target` in 
 
 任何签名或公证都必须发生在最终上传之前;staple 后不能再修改 DMG 字节。
 
+**签名之后不改任何产物**:签名把框架内文件的哈希封进 `CodeResources`,签名之后动一个文件,封印就对不上。所以 locale 与架构的裁剪必须在签名之前由 electron-builder 完成;不在构建后删文件,不事后用 `lipo` 抽薄,不用 `codesign --deep` 补签。
+
 ## GitHub Actions 分档
 
 The macOS job in `.github/workflows/build.yml` uses three job-level values:

@@ -55,7 +55,8 @@ import {
 // 统一 userData 目录名:dev(未打包)默认读 package.json name='transfer'(小写),
 // 打包版读 productName='Transfer'(大写)→ 两者目录名不一致。显式 setName 统一为 'Transfer',
 // dev 与打包共用同一 userData。必须在任何 getPath('userData') / override / 单实例锁之前。
-// (mac 大小写不敏感,dev 原 'transfer' 数据即同目录,无缝复用,无需迁移。)
+// (mac 大小写不敏感,dev 原 'transfer' 数据即同目录,无缝复用,无需迁移。
+// Windows and Linux are case-sensitive: there, such a rename would need a migration.)
 app.setName('Transfer')
 
 /**

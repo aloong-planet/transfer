@@ -309,7 +309,7 @@ mv /Applications/Transfer.app ~/Desktop/Transfer-DMG备份.app
 ## 已知的坑
 
 - **`mas-dev` 包没有 QUIET 开关**,一启动就往局域网多播 announce,会在同网设备的列表里
-  留下一个用新指纹的陌生条目(默认滞留 60 分钟,见 CONTEXT.md 的 offlineKeep)。
+  留下一个用新指纹的陌生条目(默认滞留 60 分钟,见 `src/shared/offline-keep.ts`)。
   验完记得退出:`osascript -e 'tell application id "com.aloongplanet.transfer" to quit'`。
   按 **bundle id** 退,别按进程名——DMG 版进程同名,会误杀正在用的那个。
 - **两个版本可以并存**(bundle id 不同 → userData 与单实例锁都分开),但正因为同名,

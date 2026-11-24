@@ -27,7 +27,10 @@ interface Session {
   requested: Record<string, FileMeta>
   /** 接受集合:fileId -> token(仅 active 阶段有) */
   accepted: Map<string, string>
-  /** 尚未收完的 fileId(接受集合的子集) */
+  /**
+   * 尚未收完的 fileId(接受集合的子集)。传输完成的判据是它清空,不是请求列表跑完:
+   * 用户可只接受部分文件,且 upload 可并行、乱序。
+   */
   pending: Set<string>
   /** 最近一次活动时间(pending 起算弹框超时;active 起算空闲超时) */
   lastActivity: number
