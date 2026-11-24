@@ -66,7 +66,7 @@
 
 ## R2 CORS
 
-落地页与 R2 自定义域是不同 origin。进入 R2 → `transfer-releases` → **Settings → CORS Policy → Add CORS policy**,粘贴 `build/r2-download-stats-cors.json` 的内容并保存。规则允许两处落地页部署发起 `GET`:`https://transfer.aloongplanet.com`(Cloudflare Pages)与 `https://transfer.aloongplanet.com.cn`(国内镜像,见 [cn-mirror-deploy.md](cn-mirror-deploy.md))。**两个域名都要在白名单里**,漏掉哪个哪边的统计行就静默消失。同一份策略也让落地页读取最新版指针 `latest.json`,它的验证命令见 [cn-mirror-deploy.md](cn-mirror-deploy.md)。
+落地页与 R2 自定义域是不同 origin。进入 R2 → `transfer-releases` → **Settings → CORS Policy → Add CORS policy**,粘贴 `build/r2-download-stats-cors.json` 的内容并保存。规则允许两处落地页部署发起 `GET`:`https://transfer.aloongplanet.com`(Cloudflare Pages)与 `https://transfer.aloongplanet.com.cn`(国内镜像,见 [cn-mirror-deploy.md](cn-mirror-deploy.md))。**两个域名都要在白名单里**,漏掉哪个,哪边的统计行就静默消失,下载区也静默退到 GitHub 状态。同一份策略也让落地页读取最新版指针 `latest.json`,它的验证命令见 [cn-mirror-deploy.md](cn-mirror-deploy.md)。
 
 首次工作流成功后验证。**两个 origin 都要验,而且必须带阴性对照**——只验白名单内的 origin 分不清「白名单生效」与「桶对所有人开放」,后者同样会返回该响应头:
 

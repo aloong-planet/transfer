@@ -136,6 +136,14 @@ describe('the releases GitHub lists', () => {
     expect(parseReleases(list)).toBe('1.2.3')
   })
 
+  // In the sample the two dates order the releases alike, so a release has to be built to tell them apart
+  test.each([
+    ['published later than the newest one but created earlier is the newest', [releaseOf('1.3.0', NEWER, { created_at: '2020-01-01T00:00:00Z' }), ...releasesSample], '1.3.0'],
+    ['created later than the newest one but published earlier is not the newest', [releaseOf('1.1.9', '2020-01-01T00:00:00Z', { created_at: NEWER }), ...releasesSample], '1.2.3'],
+  ])('the newest is the one published last, not the one created last: a release %s', (_, list, expected) => {
+    expect(parseReleases(list)).toBe(expected)
+  })
+
   test.each([
     ['a draft', releaseOf('1.3.0', NEWER, { draft: true })],
     ['a pre-release flagged as one, under a plain tag', releaseOf('1.3.0', NEWER, { prerelease: true })],

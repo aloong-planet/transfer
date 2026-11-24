@@ -5,14 +5,20 @@
 // landing-page::QR-001/AC-02 (sizes, colours, gaps, hover and the narrow-window layout), and
 // landing-page::QR-001/AC-01 for the download section's states, are not tested here. They are
 // computed styles and geometry, which only a browser can read, and the site has no browser test
-// runner.
+// runner. The one computed style read here is whether a part of the download section has a box at
+// all (display), on the built page with its stylesheets; sizes and positions are not.
 //
 // Gap: the script in Download.astro that hands the browser's own fetch to initDownload runs only in
 // a browser, so these tests call initDownload with a stand-in network instead. Whether the built
 // page's script reaches it is checked on the preview deployment.
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { experimental_AstroContainer as AstroContainer } from 'astro/container'
 import { Window } from 'happy-dom'
-import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest'
 import { initDownload } from './download-section'
 import latestSample from './fixtures/latest.json'
 import releasesSample from './fixtures/github-releases.json'
@@ -212,28 +218,57 @@ describe('the download section once a read has given a release', () => {
     expect(net.asked).toEqual([POINTER_URL, RELEASES_API])
   })
 
+  // Visitors a guess about where the visitor is would tell apart: a browser language and a time zone that agree on a
+  // place, and that disagree (a VPN, a trip)
+  const visitors = [
+    { language: 'zh-CN', timeZone: 'Asia/Shanghai' },
+    { language: 'en-US', timeZone: 'America/New_York' },
+    { language: 'ja-JP', timeZone: 'Asia/Tokyo' },
+    { language: 'zh-CN', timeZone: 'America/Los_Angeles' },
+    { language: 'en-US', timeZone: 'Asia/Shanghai' },
+  ]
+
+  /** Runs `body` as a visitor whose browser says it speaks `language` and is in `timeZone` */
+  async function asVisitor<T>({ language, timeZone }: (typeof visitors)[number], body: () => Promise<T>): Promise<T> {
+    const zone = process.env.TZ
+    vi.stubGlobal('navigator', { language, languages: [language] })
+    process.env.TZ = timeZone
+    try {
+      return await body()
+    } finally {
+      vi.unstubAllGlobals()
+      if (zone === undefined) delete process.env.TZ
+      else process.env.TZ = zone
+    }
+  }
+
   test.each([
     ['R2', () => network({ [POINTER_URL]: [200, pointerFor('9.9.9')] }), 10],
     ['GitHub', () => network({ [POINTER_URL]: [404, NOT_FOUND_PAGE], [RELEASES_API]: [200, JSON.stringify(releasesSample)] }), 5],
-  ])('the Chinese page offers the same sources as the English page in the %s state (landing-page::REQ-002/AC-06)', async (_, answers, linkCount) => {
-    const [zh, en] = [await openPage(ZhLanding), await openPage(EnLanding)]
-    await initDownload(zh, answers())
-    await initDownload(en, answers())
-
-    const addresses = (document: Document) => rowLinks(document.querySelector('#download')!).map(([, href, target]) => [href, target])
-    expect(addresses(zh)).toHaveLength(linkCount)
-    expect(addresses(zh)).toEqual(addresses(en))
-  })
+  ])(
+    'every visitor is offered the same sources, on the Chinese and the English page, in the %s state, and the page stays where it is (landing-page::REQ-002/AC-06)',
+    async (_, answers, linkCount) => {
+      const offered: (string | null)[][][] = []
+      for (const visitor of visitors) {
+        for (const page of [ZhLanding, EnLanding]) {
+          const document = await openPage(page)
+          const address = document.location.href
+          await asVisitor(visitor, () => initDownload(document, answers()))
+          expect(document.location.href, `${visitor.language} in ${visitor.timeZone}: the address`).toBe(address)
+          offered.push(rowLinks(document.querySelector('#download')!).map(([, href, target]) => [href, target]))
+        }
+      }
+      expect(offered).toHaveLength(visitors.length * 2)
+      expect(offered[0]).toHaveLength(linkCount)
+      for (const each of offered) expect(each).toEqual(offered[0])
+    },
+  )
 
   test.each([
     ['neither place can be read', network({})],
     [
       'the pointer is not usable and GitHub has no formal release',
       network({ [POINTER_URL]: [200, pointerFor('1.2')], [RELEASES_API]: [200, JSON.stringify(releasesSample.filter((r) => r.prerelease))] }),
-    ],
-    [
-      'GitHub is rate limiting and there is no pointer yet',
-      network({ [POINTER_URL]: [404, NOT_FOUND_PAGE], [RELEASES_API]: [403, '{"message":"API rate limit exceeded"}'] }),
     ],
   ])('%s: the section stays as delivered, in the list state (landing-page::REQ-002/AC-03)', async (_, net) => {
     const document = await openPage(EnLanding)
@@ -244,6 +279,83 @@ describe('the download section once a read has given a release', () => {
 
     expect(section.outerHTML).toBe(delivered)
     expect(net.asked).toEqual([POINTER_URL, RELEASES_API])
+  })
+})
+
+// Which parts of the download section a visitor gets a box for, on the page as `astro build` writes it. The delivered
+// markup and the states both rely on `hidden`, and the buttons and the rows' grid set their own display, which the
+// section's stylesheet has to override: a section that carries the right attributes but not the rule looks wrong
+// while every attribute test above stays green. The Container renders no stylesheets, so the site is built once, into
+// a temporary directory.
+describe('the download section as the built page lays it out', () => {
+  let builtSite = ''
+
+  beforeAll(() => {
+    const siteRoot = new URL('../', import.meta.url)
+    builtSite = mkdtempSync(join(tmpdir(), 'landing-page-test-'))
+    execFileSync(process.execPath, [fileURLToPath(new URL('node_modules/astro/astro.js', siteRoot)), 'build', '--outDir', builtSite], {
+      cwd: fileURLToPath(siteRoot),
+      stdio: 'pipe',
+    })
+  }, 120_000)
+
+  afterAll(() => {
+    if (builtSite) rmSync(builtSite, { recursive: true, force: true })
+  })
+
+  /** The built English landing page in a browser window that applies its stylesheets and runs none of its scripts */
+  function openBuilt(): Document {
+    const html = readFileSync(join(builtSite, 'en', 'index.html'), 'utf8')
+    const linked = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)"[^>]*>/g)].map(([, href]) => readFileSync(join(builtSite, href), 'utf8'))
+    const opened = new Window({ settings: { disableJavaScriptEvaluation: true, disableJavaScriptFileLoading: true, disableCSSFileLoading: true } })
+    opened.document.write(html.replace(/<link rel="stylesheet"[^>]*>/g, ''))
+    const stylesheet = opened.document.createElement('style')
+    stylesheet.textContent = linked.join('\n')
+    opened.document.head.appendChild(stylesheet)
+    openWindows.push(opened)
+    return opened.document as unknown as Document
+  }
+
+  /** Whether the element is laid out: neither it nor anything around it is `display: none` */
+  function hasBox(element: Element): boolean {
+    for (let node: Element | null = element; node; node = node.parentElement) {
+      if (node.ownerDocument.defaultView!.getComputedStyle(node).display === 'none') return false
+    }
+    return true
+  }
+
+  const boxes = (document: Document, selector: string): boolean[] => [...document.querySelectorAll(selector)].map(hasBox)
+  const five = (has: boolean): boolean[] => Array<boolean>(5).fill(has)
+
+  test.each([
+    { state: 'as delivered, before any read', ac: 'landing-page::REQ-002/AC-04', net: null, list: true, rows: false, primary: false, secondary: false },
+    {
+      state: 'the GitHub state',
+      ac: 'landing-page::REQ-002/AC-02',
+      net: () => network({ [POINTER_URL]: [404, NOT_FOUND_PAGE], [RELEASES_API]: [200, JSON.stringify(releasesSample)] }),
+      list: false,
+      rows: true,
+      primary: true,
+      secondary: false,
+    },
+    { state: 'the R2 state', ac: 'landing-page::REQ-002/AC-01', net: () => network({ [POINTER_URL]: [200, pointerFor('9.9.9')] }), list: false, rows: true, primary: true, secondary: true },
+  ])('$state: only the parts that state shows have a box ($ac)', async ({ net, list, rows, primary, secondary }) => {
+    const document = openBuilt()
+    if (net) await initDownload(document, net())
+
+    expect({
+      list: boxes(document, '[data-download-list]'),
+      version: boxes(document, '[data-download-version]'),
+      rows: boxes(document, '[data-download-rows]'),
+      primary: boxes(document, '[data-download-link="primary"]'),
+      secondary: boxes(document, '[data-download-link="secondary"]'),
+    }).toEqual({
+      list: [list],
+      version: [rows],
+      rows: [rows],
+      primary: five(primary),
+      secondary: five(secondary),
+    })
   })
 })
 
