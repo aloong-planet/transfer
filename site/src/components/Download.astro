@@ -1,19 +1,25 @@
 ---
 import { useTranslations, type Locale } from '../i18n/ui'
-import { DOWNLOADS, DOWNLOAD_STATS_URL, VERSION } from '../download-config'
+import { DOWNLOAD_STATS_URL, RELEASES_LATEST_URL, VARIANTS } from '../download-config'
 interface Props { locale: Locale }
 const { locale } = Astro.props
 const t = useTranslations(locale)
 
-const macItems = DOWNLOADS.filter((d) => d.os === 'mac')
-const winItems = DOWNLOADS.filter((d) => d.os === 'win')
+const macItems = VARIANTS.filter((v) => v.os === 'mac')
+const winItems = VARIANTS.filter((v) => v.os === 'win')
 ---
 
+{/*
+  The download section as delivered is the list state (landing-page::REQ-002/AC-04): it names no version and points at
+  no file, only at GitHub's latest release. The script below replaces it, in place, with the R2 or GitHub state once a
+  read has given a release (landing-page::REQ-002/AC-01, landing-page::REQ-002/AC-02): it fills in the version line
+  and the links of the rows, and swaps what is hidden.
+*/}
 <section id="download" class="download">
   <div class="container">
     <h2 class="section-title">{t('download.title')}</h2>
-    <p class="section-sub">
-      {t('download.version')}: <strong>v{VERSION}</strong>
+    <p class="section-sub" data-download-version hidden>
+      {t('download.version')}: <strong data-download-version-value></strong>
     </p>
     <p
       class="download-statistics"
@@ -27,18 +33,22 @@ const winItems = DOWNLOADS.filter((d) => d.os === 'win')
       <span aria-hidden="true"> · </span>Windows <strong data-download-windows></strong>
     </p>
 
-    <div class="dl-grid grid">
+    <div class="dl-list" data-download-list>
+      <a class="btn btn-primary" href={RELEASES_LATEST_URL} target="_blank" rel="noopener">{t('download.list.button')}</a>
+    </div>
+
+    <div class="dl-grid grid" data-download-rows hidden>
       <!-- macOS -->
       <div class="card dl-col">
         <div class="dl-head">
           <span class="dl-os">{t('download.mac.heading')}</span>
         </div>
         {macItems.map((item) => (
-          <div class="dl-row">
+          <div class="dl-row" data-download-row={item.id}>
             <div class="dl-label">{t(item.labelKey)}</div>
             <div class="dl-actions">
-              <a class="btn btn-primary btn-sm" href={item.sources.r2}>{t('download.source.primary')}</a>
-              <a class="btn btn-ghost btn-sm" href={item.sources.github} target="_blank" rel="noopener">{t('download.source.github')}</a>
+              <a class="btn btn-primary btn-sm" data-download-link="primary">{t('download.source.primary')}</a>
+              <a class="btn btn-ghost btn-sm" data-download-link="secondary">{t('download.source.github')}</a>
             </div>
           </div>
         ))}
@@ -50,11 +60,11 @@ const winItems = DOWNLOADS.filter((d) => d.os === 'win')
           <span class="dl-os">{t('download.win.heading')}</span>
         </div>
         {winItems.map((item) => (
-          <div class="dl-row">
+          <div class="dl-row" data-download-row={item.id}>
             <div class="dl-label">{t(item.labelKey)}</div>
             <div class="dl-actions">
-              <a class="btn btn-primary btn-sm" href={item.sources.r2}>{t('download.source.primary')}</a>
-              <a class="btn btn-ghost btn-sm" href={item.sources.github} target="_blank" rel="noopener">{t('download.source.github')}</a>
+              <a class="btn btn-primary btn-sm" data-download-link="primary">{t('download.source.primary')}</a>
+              <a class="btn btn-ghost btn-sm" data-download-link="secondary">{t('download.source.github')}</a>
             </div>
           </div>
         ))}
@@ -71,6 +81,17 @@ const winItems = DOWNLOADS.filter((d) => d.os === 'win')
       text-align: center;
       color: var(--fg-muted);
       font-size: 0.95rem;
+    }
+    /* Elements that set their own display (the buttons, the grid) would otherwise stay visible under `hidden` */
+    .download [hidden] {
+      display: none !important;
+    }
+    /* In the list state there is no version line above the statistics line to tuck it under */
+    .section-sub[hidden] + .download-statistics {
+      margin-top: 0;
+    }
+    .dl-list {
+      text-align: center;
     }
     /* 下载按钮更紧凑:覆盖 global .btn 的 12px 22px */
     .dl-actions .btn-sm {
@@ -145,6 +166,13 @@ const winItems = DOWNLOADS.filter((d) => d.os === 'win')
     }
   </style>
 </section>
+
+<script>
+  // landing-page::REQ-002: reads which release to offer and shows it over the delivered list state
+  import { initDownload } from '../download-section'
+
+  void initDownload(document, (url, init) => window.fetch(url, init))
+</script>
 
 <script>
   import { parseDownloadSummary } from '../download-statistics'

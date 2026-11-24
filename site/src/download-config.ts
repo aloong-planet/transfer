@@ -1,16 +1,11 @@
 /**
- * 下载配置 —— 落地页下载区的唯一数据源。
+ * Download configuration: the hosts the download links point at, and the five files of a release.
  *
- * - `VERSION`:**手动维护**。CI 不会改它(build.yml 里的 VERSION 取自 tag,只用于 R2
- *   上传路径,与本文件无关)。**发版时必须手动同步这里**,否则落地页的下载链接仍指向
- *   上一版产物、全部 404。
- *   **顺序有讲究**:必须先确认 Release 产物已上传到 R2 且可下载,再改这里并部署。
- *   站点走 Pages 几十秒就上线,而 DMG 要签名 + 三架构各自公证(等 Apple 几十分钟),
- *   反过来做会留下一段真实的 404 窗口。接入 latest.json 后可改为运行时拉取,届时本行可删。
- * - `sources`:每个平台构建在「R2(主) / GitHub(兜底)」两处的下载 URL。
+ * The site keeps no version of its own. The version the download section shows is read when the page opens, from
+ * the latest-release pointer or from GitHub's releases (landing-page::REQ-002), so a release needs no edit here.
+ * Only the hosts, the path prefixes and the file names are fixed here: every link is built from them and a
+ * validated version, never from the text of an answer (landing-page failure E1).
  */
-
-export const VERSION = '1.2.3'
 
 // 两个下载来源的 base
 const R2_BASE = 'https://dl.aloongplanet.com/releases' // Cloudflare R2 自定义域(主)
@@ -24,25 +19,36 @@ export function getDownloadStatsUrl(isDev: boolean) {
 
 export const DOWNLOAD_STATS_URL = getDownloadStatsUrl(import.meta.env.DEV)
 
-/** 下载文件名（与 electron-builder 产物、GitHub Release 资产一致） */
-function macArm64(v: string) {
-  return `Transfer-${v}-mac-arm64.dmg`
-}
-function macX64(v: string) {
-  return `Transfer-${v}-mac-x64.dmg`
-}
-function macUniversal(v: string) {
-  return `Transfer-${v}-mac-universal.dmg`
-}
-function winSetup(v: string) {
-  return `Transfer-${v}-win-setup.exe`
-}
-function winPortable(v: string) {
-  return `Transfer-${v}-win-portable.exe`
+/** The latest-release pointer on the download host, written by the release workflow (build/gen-latest-json.cjs) */
+export const LATEST_POINTER_URL = 'https://dl.aloongplanet.com/latest.json'
+
+/** GitHub's public releases list for this repository: one request for the first hundred */
+export const RELEASES_API_URL = 'https://api.github.com/repos/aloong-planet/transfer/releases?per_page=100'
+
+/** What the download section leads to when no release can be read */
+export const RELEASES_LATEST_URL = `${GITHUB_REPO}/releases/latest`
+
+export interface Variant {
+  /** Identifies the variant's row in the download section */
+  id: string
+  os: 'mac' | 'win'
+  /** The i18n key of the variant's label */
+  labelKey: string
+  /** The file's name for a version, as the release build names it (electron-builder.yml `artifactName`) */
+  fileName: (version: string) => string
 }
 
+/** The five files of a release, in the order the download section lists them */
+export const VARIANTS: readonly Variant[] = [
+  { id: 'mac-arm64', os: 'mac', labelKey: 'download.mac.arm64', fileName: (version) => `Transfer-${version}-mac-arm64.dmg` },
+  { id: 'mac-x64', os: 'mac', labelKey: 'download.mac.x64', fileName: (version) => `Transfer-${version}-mac-x64.dmg` },
+  { id: 'mac-universal', os: 'mac', labelKey: 'download.mac.universal', fileName: (version) => `Transfer-${version}-mac-universal.dmg` },
+  { id: 'win-setup', os: 'win', labelKey: 'download.win.setup', fileName: (version) => `Transfer-${version}-win-setup.exe` },
+  { id: 'win-portable', os: 'win', labelKey: 'download.win.portable', fileName: (version) => `Transfer-${version}-win-portable.exe` },
+]
+
 /** 给定文件名，拼出两处来源的下载 URL */
-export function sources(filename: string, version = VERSION) {
+export function sources(filename: string, version: string) {
   return {
     // 主:R2 自定义域,按版本目录
     r2: `${R2_BASE}/v${version}/${filename}`,
@@ -50,45 +56,3 @@ export function sources(filename: string, version = VERSION) {
     github: `${GITHUB_REPO}/releases/download/v${version}/${filename}`,
   }
 }
-
-export interface DownloadItem {
-  os: 'mac' | 'win'
-  /** 变体标签的 i18n key，如 'download.mac.arm64' */
-  labelKey: string
-  filename: string
-  sources: ReturnType<typeof sources>
-}
-
-/** 三平台五变体下载清单 */
-export const DOWNLOADS: DownloadItem[] = [
-  {
-    os: 'mac',
-    labelKey: 'download.mac.arm64',
-    filename: macArm64(VERSION),
-    sources: sources(macArm64(VERSION)),
-  },
-  {
-    os: 'mac',
-    labelKey: 'download.mac.x64',
-    filename: macX64(VERSION),
-    sources: sources(macX64(VERSION)),
-  },
-  {
-    os: 'mac',
-    labelKey: 'download.mac.universal',
-    filename: macUniversal(VERSION),
-    sources: sources(macUniversal(VERSION)),
-  },
-  {
-    os: 'win',
-    labelKey: 'download.win.setup',
-    filename: winSetup(VERSION),
-    sources: sources(winSetup(VERSION)),
-  },
-  {
-    os: 'win',
-    labelKey: 'download.win.portable',
-    filename: winPortable(VERSION),
-    sources: sources(winPortable(VERSION)),
-  },
-]
