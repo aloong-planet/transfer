@@ -1,6 +1,6 @@
 # 接收文件夹
 
-> 关联: [features](../features/receive-dir.md) · ADR-0022
+> 关联: ADR-0022
 
 ## Problem Statement
 

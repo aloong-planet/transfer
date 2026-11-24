@@ -1,6 +1,6 @@
 # Electron security baseline
 
-> Related: no features entry for the baseline itself; the quarantine of received files (electron-security::REQ-001) is user-visible and described in [features/transfer-chat.md](../features/transfer-chat.md) · ADR-0024 (launch inputs) · ADR-0025 · [ops/electron-security.md](../ops/electron-security.md) (the ledger)
+> Related: the quarantine of received files (electron-security::REQ-001) is user-visible and also stated in [transfer-chat](transfer-chat.md) · ADR-0024 (launch inputs) · ADR-0025 · [ops/electron-security.md](../ops/electron-security.md) (the ledger)
 
 ## Problem Statement
 

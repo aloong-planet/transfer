@@ -17,7 +17,7 @@ Working papers (process records, research intermediates) were discarded at merge
 
 We choose **option 1**. Process records, research intermediates and the local tickets that `docs/agents/issue-tracker.md` still keeps are written to `docs/.workings/<slug>/`: still gitignored and never committed, but not deleted when the feature merges, so that unfinished work restarts from them.
 
-Keeping is not trusting: the content is never a basis for the current state, which is defined by `docs/specs/`, `docs/features/`, `docs/adr/`, `docs/CONTEXT.md` and `AGENTS.md`. Its value is only that restarting unfinished work does not start research from zero, and any line number or code claim cited from it is first checked against the code.
+Keeping is not trusting: the content is never a basis for the current state, which is defined by `docs/specs/`, `docs/adr/`, `docs/CONTEXT.md` and `AGENTS.md`. Its value is only that restarting unfinished work does not start research from zero, and any line number or code claim cited from it is first checked against the code.
 
 ## Consequences
 

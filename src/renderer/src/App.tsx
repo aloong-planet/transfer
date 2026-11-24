@@ -296,7 +296,7 @@ function Sidebar(props: {
   const themeLabel =
     themePref === 'system' ? t('theme.system') : themePref === 'light' ? t('theme.light') : t('theme.dark')
 
-  // ── 设备备注:右键菜单 + 行内编辑(见 docs/features/device-alias.md)──
+  // ── 设备备注:右键菜单 + 行内编辑(见 device-alias::REQ-001)──
   const [menuFp, setMenuFp] = useState<string | null>(null)
   const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [menuClearError, setMenuClearError] = useState(false) // 「清除备注」失败(Bug#2)
@@ -494,7 +494,7 @@ function Sidebar(props: {
   )
 }
 
-/** 自绘右键菜单:改/清除备注。定位在鼠标处,超出视口回弹;点外/Esc 关闭。见 docs/features/device-alias.md。 */
+/** 自绘右键菜单:改/清除备注。定位在鼠标处,超出视口回弹;点外/Esc 关闭。见 device-alias::REQ-001。 */
 function DeviceContextMenu(props: {
   pos: { x: number; y: number }
   hasCustomAlias: boolean

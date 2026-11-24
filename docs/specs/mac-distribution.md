@@ -1,6 +1,6 @@
 # macOS distribution (Developer ID / DMG)
 
-> Related: no features entry (distribution channels are not in the feature catalogue) · ADR-0010 · ADR-0023 · ADR-0024 · [ops/mac-signing.md](../ops/mac-signing.md)
+> Related: ADR-0010 · ADR-0023 · ADR-0024 · [ops/mac-signing.md](../ops/mac-signing.md)
 
 ## Problem Statement
 

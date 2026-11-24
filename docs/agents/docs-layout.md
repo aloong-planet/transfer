@@ -13,13 +13,10 @@ Before writing a document, decide which class it belongs to: each class rots at 
 | `docs/CONTEXT.md` | What each term means and which synonyms to avoid. Read it before changing anything | `/domain-modeling` |
 | `AGENTS.md`, Invariants section | The constraints on whoever changes code, one line each, worded as a constraint and naming where its reason lives | `/domain-modeling` |
 | `docs/adr/` | Why a decision was made and what was rejected. One decision per file, stating only the decision in force: when it changes, its entry is rewritten in place with the user's confirmation. The rules and the index are in its `README.md` | `/domain-modeling` |
-| `docs/specs/<slug>.md` | Which boundaries a feature has enumerated (user stories, failure modes and boundaries, test decisions) and what is explicitly out of scope. Rewritten in place; the trade-offs belong in ADRs and are cited by number. A persistent artifact, not deleted when the feature merges (ADR-0017) | `/to-spec` |
-| `docs/features/<slug>.md` | User-visible behaviour of the current version only. Rewritten in place | `/features-catalog` |
+| `docs/specs/<slug>.md` | What a feature does in the current version, which boundaries it has worked through, and what it explicitly does not do. Rewritten in place; the trade-offs belong in ADRs and are cited by number. A persistent artifact, not deleted when the feature merges (ADR-0017) | `/to-spec` |
 | `docs/prototypes/` | What the interface and state models look like. Kept permanently (ADR-0014); browse them all from the `index.html` gallery | `/prototype` |
 | `docs/postmortems/` | The causal chain of one incident. One per file, append-only, written in the same round a real bug is diagnosed, indexed in its `README.md` | `/implement` step 7 |
 | `docs/ops/` | This project's runbooks — how the current processes are operated (signing, notarization, Pages, R2, download statistics) with their actual values. Updated in place; every new runbook goes here (ADR-0015). A PR that changes a process must update its runbook | The PR that changes the process |
-
-`docs/specs/` and `docs/features/` **share slugs one-to-one**: `docs/features/transfer-chat.md` pairs with `docs/specs/transfer-chat.md`. Distribution-channel specs and the security baseline (`electron-security`) are the exception: they have a spec and no features entry.
 
 `docs/DESIGN.md` is a system design overview of archival value; its status notes may be stale. **The current state is defined by the code and the ADRs.**
 
