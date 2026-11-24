@@ -7,7 +7,6 @@
 > ⚠️ **这是一份存量逆向 spec**:模块先有实现、后补 spec(2026-08-21)。下面的边界穷举取自
 > 三个独立来源——现行实现、`docs/DESIGN.md` 早期的失败模式表、以及**测试用例名**(它们记录的是
 > 真正被驱动过的边界,而不是有人想到过的边界)。凡三者不一致处以实现为准,并在「已知缺口」标出。
-> 与 [features/transfer-chat.md](../features/transfer-chat.md) 的分工:那边写"现在能干什么",这里写"想全了哪些边界、什么明确不做"。
 
 ## Problem
 
@@ -30,7 +29,7 @@
 - 作为发送方,我选中一台设备,拖进去几个文件,能看到每个文件各自的进度,并在对方拒绝或出错时知道**具体是什么原因**,而不是笼统的"失败"。
 - 作为发送方,我发一段文字,对方立刻看到,不需要他点任何确认。
 - 作为接收方,我在聊天流里看到"对方要发 X 给你",我点接收或拒绝;我可以只接受其中几个。
-- 作为接收方,我打开自动接收后,小于阈值的文件不再打扰我。
+- 作为接收方,我打开自动接收后,不超过阈值的文件不再打扰我。
 - 作为任一方,我关掉 app 再打开,聊天记录还在。
 - 作为任一方,我传一个很大的文件,只要网络没断,它就应该传完——慢只是慢。
 
@@ -59,6 +58,40 @@ As either party, I right-click an image in the conversation — one I received o
 ### transfer-chat::REQ-003 Thumbnail tooltip (direct acceptance)
 
 The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Click to view · Right-click to copy or save.
+
+### transfer-chat::REQ-004 The stream follows the newest message
+
+- transfer-chat::REQ-004/AC-01: The view is at the bottom when the end of the message stream is within 24 px of the bottom edge of the view; a stream that fits the view is at the bottom.
+- transfer-chat::REQ-004/AC-02: A message sent from this device, text, file or image, scrolls the stream to the bottom at once, wherever the view was.
+- transfer-chat::REQ-004/AC-03: A message received while the view is at the bottom scrolls the stream to the bottom; one received while the view is more than 24 px above the bottom leaves the view where it is.
+- transfer-chat::REQ-004/AC-04: While the view is more than 24 px above the bottom, a round button with a down-pointing chevron and the tooltip 跳到最新 / Jump to latest floats at the bottom right of the stream, and clicking it scrolls to the bottom. At the bottom the button is not shown.
+- transfer-chat::REQ-004/AC-05: The button carries a dot after a message was received while the view was more than 24 px above the bottom. The dot goes when the view reaches the bottom, when the button is clicked, or when a sent message scrolls the stream.
+
+### transfer-chat::REQ-005 Connect timeout
+
+- transfer-chat::REQ-005/AC-01: Connecting to the peer, the TCP connection and the TLS handshake together, must be complete within 10 seconds. When it is not, the send fails with the label 连接超时 / Connection timed out (section D).
+- transfer-chat::REQ-005/AC-02: The 10 seconds start when the connection is started, which for files is after the digest has been calculated, and they end with the handshake: the upload that follows is bounded only by the idle timeouts (ADR-0020).
+
+### transfer-chat::REQ-006 Showing a finished file in its folder
+
+- transfer-chat::REQ-006/AC-01: A file message that has been received or delivered, and whose file is stored, has a text button 打开所在文件夹 / Show in Folder that shows the file, selected, in the system's file manager. A message whose file is an image (png, jpg, jpeg, gif, webp, bmp, heic or svg) has no such button in the chat, whether or not a thumbnail can be shown, and neither has a file that is pending, failed, rejected or expired.
+- transfer-chat::REQ-006/AC-02: Every received file listed on the 已接收文件 / Received Files page has the same button.
+
+### transfer-chat::REQ-007 The message input takes screenshots and pasted images
+
+- transfer-chat::REQ-007/AC-01: The message input bar has a screenshot button, an icon to the left of the attach button with the tooltip 截图 / Screenshot. It hides the main window and starts a capture (screenshot::REQ-001); the capture's Send exit goes to the chat that is open (screenshot::REQ-004/AC-03).
+- transfer-chat::REQ-007/AC-02: Pasting into the message input while the clipboard holds one or more images sends each of them at once to the chat that is open, with no preview and no confirmation, as a file named 图片_ (Chinese interface) or image_ (English interface), followed by a time stamp and a random suffix, ending in .png. Text on the same clipboard is not pasted. A clipboard with no image pastes as it always does.
+
+### transfer-chat::REQ-008 Asking and auto-accept
+
+- transfer-chat::REQ-008/AC-01: With auto-accept off, which is the default, every file of a request waits in the chat as a bubble with the buttons 接收 / Accept and 拒绝 / Decline.
+- transfer-chat::REQ-008/AC-02: With auto-accept on, a request is received without asking when each of its files is no larger than the size limit, which is 100 MB (100 × 1024 × 1024 bytes) until changed. One file over the limit makes the whole request wait for the user. Text messages are not subject to it (section E).
+- transfer-chat::REQ-008/AC-03: Settings has the checkbox 启用自动接收(文本消息始终自动接收) / Enable auto-accept (text messages always auto-accepted) and the number input 自动接收文件大小上限: / Auto-accept file size limit:, in MB, greyed out while the checkbox is off; a negative number counts as 0. They apply when the user presses 保存 / Save, and 取消 / Cancel discards them.
+- transfer-chat::REQ-008/AC-04: The settings are stored in `settings.json` as `autoAccept`, with `enabled` and `maxBytes` (in bytes).
+
+### transfer-chat::REQ-009 No cap on file size or count
+
+- transfer-chat::REQ-009/AC-01: No limit applies to the size of a file or to the number of files in a request. What bounds a transfer is the free disk space of the receiver, which is not checked beforehand (已知缺口), not the speed of the network.
 
 ## 失败模式与边界穷举
 
