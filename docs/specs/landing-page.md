@@ -6,7 +6,7 @@
 A visitor on Transfer's website has no way to reach the author's homepage, where the author's other apps and tools are listed. Visitors also open the website on narrow phones, where a page wider than the screen has to be scrolled sideways. Releases follow one another, and a visitor who wants to download Transfer has to be offered the current formal release each time, without anyone editing the website.
 
 ## Solution
-The header's left end reads "aloong planet / Transfer", and "aloong planet" opens the homepage. Every page fits the width of a phone's screen. The download section offers the current formal release, read in the visitor's browser when the page opens, so publishing a release needs no website change; when no release can be read, the section leads to GitHub's release list.
+The header's left end reads "aloong planet / Transfer", and "aloong planet" opens the homepage. Every page fits the width of a phone's screen. The download section offers the current formal release, read in the visitor's browser when the page opens, so publishing a release needs no website change.
 
 ## Functional Requirements
 
@@ -39,8 +39,8 @@ Applies to: every page of the website (the landing page and the privacy page), i
 
 **Deciding the download**
 
-- A1 The pointer cannot be read (blocked cross-origin, a network failure, no answer in time, a status other than 200, a body that is not JSON) or is not usable → the page reads GitHub (landing-page::REQ-002/AC-02). A usable pointer wins over GitHub, including when GitHub has a newer release. The page never guesses a version.
-- A2 GitHub cannot be read (rate limit, an error, no answer in time), has no published formal release, or its newest one lacks one of the five files or has one whose upload has not finished → the list state (landing-page::REQ-002/AC-03). An older release is not offered in its place.
+- A1 The pointer cannot be read or is not usable (see Latest-release pointer under Implementation Decisions) → the page reads GitHub (landing-page::REQ-002/AC-02). A usable pointer wins over GitHub, including when GitHub has a newer release. The page never guesses a version.
+- A2 GitHub gives no usable release (see GitHub read under Implementation Decisions) → the list state (landing-page::REQ-002/AC-03). An older release is not offered in its place.
 - A3 A release is being published: the pointer is updated only after the release's files are on the download host, so until then the page offers the previous release (landing-page::REQ-002/AC-01).
 - A4 A read finishes after the page is shown → the state replaces the list state in place. When the download section is above the part of the page the visitor is looking at (a section hidden under the header counts as above), the page scrolls by as much as the change moved the content below it, so what the visitor is looking at does not move; when the section is in view, it changes in place.
 - E1 The pointer and GitHub's answer are outside data. Only a validated version reaches the page, as text and in links whose hosts and paths the page fixes; no name, URL or release note from an answer is ever shown or linked.

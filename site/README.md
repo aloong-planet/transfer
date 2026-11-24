@@ -37,10 +37,8 @@ site/
   public/favicon.svg     # 站点图标(复用 app 图标)
 ```
 
-## 待办(阶段一之后)
+## 待办
 
-- **换真实截图**:`src/components/Hero.astro` 里的占位框,替换为放在 `public/screenshots/` 的应用截图。
-- **回填下载来源**:`src/download-config.ts` 顶部的 `R2_BASE` / `GITEE_REPO`(阶段三接好 R2、Gitee 后)。
 - **换域名**:`astro.config.mjs` 的 `site` 字段。
 
 ## 发版不用改站点

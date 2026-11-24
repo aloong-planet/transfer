@@ -66,7 +66,7 @@
 
 ## R2 CORS
 
-落地页与 R2 自定义域是不同 origin。进入 R2 → `transfer-releases` → **Settings → CORS Policy → Add CORS policy**,粘贴 `build/r2-download-stats-cors.json` 的内容并保存。规则允许两处落地页部署发起 `GET`:`https://transfer.aloongplanet.com`(Cloudflare Pages)与 `https://transfer.aloongplanet.com.cn`(国内镜像,见 [cn-mirror-deploy.md](cn-mirror-deploy.md))。**两个域名都要在白名单里**,漏掉哪个,哪边的统计行就静默消失,下载区也静默退到 GitHub 状态。同一份策略也让落地页读取最新版指针 `latest.json`,它的验证命令见 [cn-mirror-deploy.md](cn-mirror-deploy.md)。
+落地页与 R2 自定义域是不同 origin。进入 R2 → `transfer-releases` → **Settings → CORS Policy → Add CORS policy**,粘贴 `build/r2-download-stats-cors.json` 的内容并保存。规则允许两处落地页部署发起 `GET`:`https://transfer.aloongplanet.com`(Cloudflare Pages)与 `https://transfer.aloongplanet.com.cn`(国内镜像,见 [cn-mirror-deploy.md](cn-mirror-deploy.md))。**两个域名都要在白名单里**,漏掉哪个,哪边的统计行就静默消失,下载区也静默退到 GitHub 状态(GitHub 也读不到时退到发布列表)。同一份策略也让落地页读取最新版指针 `latest.json`,它的验证命令见 [cn-mirror-deploy.md](cn-mirror-deploy.md)。
 
 首次工作流成功后验证。**两个 origin 都要验,而且必须带阴性对照**——只验白名单内的 origin 分不清「白名单生效」与「桶对所有人开放」,后者同样会返回该响应头:
 
@@ -92,7 +92,7 @@ https://example.com                        (无该响应头)
 
 ## 官网行为与失败模式
 
-下载区在版本号下方读取统计 JSON,5 秒超时。只有 schema 正确、三个汇总值均为非负有限数且总数等于 macOS 与 Windows 之和时才显示统计行。
+下载区在标题下方读取统计 JSON,5 秒超时。只有 schema 正确、三个汇总值均为非负有限数且总数等于 macOS 与 Windows 之和时才显示统计行。
 
 - JSON 不存在、网络失败、CORS 未配置、超时或 HTTP 非 2xx:静默隐藏统计行。
 - JSON 损坏、schema 不支持或数值非法:静默隐藏统计行。
