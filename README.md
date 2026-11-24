@@ -53,7 +53,7 @@
 - **传输**:走 LocalSend v2 握手,基于 **HTTPS**(自签名证书 + 指纹 TOFU pinning)——`prepare-upload`(协商 + 确认)→ `upload`(裸二进制流式落盘,可并行)→ 完成校验 SHA-256。文本走 `prepare-upload` 里的 `preview` 字段,不走 `upload`。
 - **进程分工**:主进程负责所有网络/文件/系统能力;渲染进程只做 UI,经 `contextBridge` 受限 IPC 通信。
 
-功能全景见 [`docs/features/`](docs/features/);架构决策见 [`docs/adr/`](docs/adr/);详细设计见 [`docs/DESIGN.md`](docs/DESIGN.md)。
+各功能的行为与边界见 [`docs/specs/`](docs/specs/);架构决策见 [`docs/adr/`](docs/adr/);详细设计见 [`docs/DESIGN.md`](docs/DESIGN.md)。
 
 ## 技术栈
 

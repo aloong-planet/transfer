@@ -8,7 +8,7 @@
 > ⚠️ **存量逆向 spec**(2026-08-21):模块先有实现、后补 spec。边界取自三个互相独立的来源——
 > 现行实现、`docs/DESIGN.md` §7 的失败模式表、以及**测试用例名的全量提取**(发现层去重后 30 条);
 > 另有一部分来自 [lan-discovery-limits](../postmortems/lan-discovery-limits.md) 的实测结论。
-> 冲突处以实现为准。与 [features/discovery.md](../features/discovery.md) 的分工:那边写"现在能干什么",这里写"想全了哪些边界、什么明确不做"。
+> 冲突处以实现为准。
 
 ## Problem
 
@@ -33,6 +33,25 @@
 - 作为用户,对方关掉 app 后,我看到它变灰置底而不是立刻消失——万一只是暂时退出,我不想丢掉这条会话。
 - 作为用户,对方换了 Wi-Fi 或改了名字,我看到的还是同一台设备,备注和聊天记录都在。
 - 作为用户,如果因为网络环境根本发现不了,我希望 app 别假装在找,而是让我知道这类网络就是不行。
+
+## Functional Requirements
+
+### discovery::REQ-001 The announcement is LocalSend v2's
+
+- discovery::REQ-001/AC-01: An announcement is a JSON datagram sent to the multicast group 224.0.0.167 on UDP port 53317 and, on the same port, to the broadcast address of the subnet of each LAN interface in use, once when the app starts and every 5 seconds after.
+- discovery::REQ-001/AC-02: Its fields are `alias`, `version` ("2.0"), `deviceModel`, `deviceType` ("desktop"), `fingerprint`, `port` (the HTTP port actually in use), `protocol` ("https"), `download` (false) and `announce` (true or false).
+- discovery::REQ-001/AC-03: A datagram is read as an announcement when it is JSON with a string `alias` and a string `fingerprint`. The other fields are optional; a missing `port` reads as 53317 and a missing `protocol` as `https`. Every device that announces in this form is listed, whatever application it runs: nothing filters on version, device type or application.
+
+### discovery::REQ-002 The offline-retention setting
+
+- discovery::REQ-002/AC-01: Settings has a 离线设备保留: / Keep offline devices: selector, in the 设备发现 / Device Discovery section, for how long an offline device stays in the list. Its choices, in order, are 10 分钟 / 30 分钟 / 1 小时 / 6 小时 / 12 小时 / 1 天 / 从不 (10 minutes / 30 minutes / 1 hour / 6 hours / 12 hours / 1 day / Never), and 1 hour is the default.
+- discovery::REQ-002/AC-02: A choice applies at once, without Save, and 取消 / Cancel does not revert it.
+- discovery::REQ-002/AC-03: The choice is stored in `settings.json` as `offlineKeepMinutes`, in whole minutes, 0 meaning never; a missing or invalid stored value counts as 60.
+
+### discovery::REQ-003 Transfers are encrypted
+
+- discovery::REQ-003/AC-01: Everything a device sends to negotiate, carry out or cancel a transfer, text messages included, travels over TLS, so that a passive listener on the LAN reads none of it. Which of these requests check the peer's certificate is set out in section E.
+- discovery::REQ-003/AC-02: The announcements of discovery::REQ-001 are not encrypted: a device's alias, model, fingerprint and port are visible to anyone on the LAN.
 
 ## 失败模式与边界穷举
 

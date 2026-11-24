@@ -1,34 +1,35 @@
-# ADR-0014: 原型目录 docs/prototypes/ 作为持久资产保留
+# ADR-0014: The prototype directory docs/prototypes/ is kept as a persistent asset
 
-- 状态: 已接受(2026-07-27)
+- Status: Accepted (2026-11-25)
 
-## 背景与问题
+## Context
 
-ADR-0013 把文档分四类,原型未列入其中;沿用的 prototype skill(fork 自 mattpocock/skills)规定"原型是一次性代码,验证完整体上一次性分支,main 里的 `docs/prototypes/` 随之清空"。实际使用后发现:原型产出的状态机图 + 可驾驶面板,对"这个模块怎么运作"的表达比散文准确,且画廊(`docs/prototypes/index.html`)让全部原型可浏览、本身构成资产。清空它们意味着每次要理解同一个模型都得重造。
+ADR-0013 sorts documents into classes by how fast they rot, and prototypes are not among them. The prototype skill this project uses treats a prototype as throwaway code, deleted from `docs/prototypes/` when the branch merges. A prototype's state-machine diagram and drivable panel express how a module works more precisely than prose, and the gallery (`docs/prototypes/index.html`) makes them browsable, so clearing them means rebuilding the same model each time it must be understood.
 
-## 备选项
+## Options
 
-1. **原型永久保留**,`docs/prototypes/` 升为第五类持久文档,配防腐烂纪律
-2. 上游做法:验证完即弃,main 只留验证过的决策——否决:丢掉可驾驶的模型表达,同一模型反复重造
-3. 只留图、弃驾驶面板与逻辑模块——否决:面板的价值正是"能亲手推翻假设",静态图做不到;且 `legal()` 那类逻辑模块本就是可提升进真代码的资产
-4. 转成 features 目录的一部分——否决:features 描述**用户可见行为**,原型描述**内部模型**,受众与内容规则都不同
+1. **Keep prototypes permanently: `docs/prototypes/` becomes a persistent class of document, with a discipline against rot**
+2. Follow the upstream practice of discarding a prototype once it has answered its question, so that main keeps only the validated decisions — rejected: it loses the drivable model, and the same model is rebuilt again and again.
+3. Keep only the diagrams and drop the drivable panels and logic modules — rejected: the panel's value is that one can overturn an assumption by hand, which a static diagram cannot do, and a logic module such as `legal()` can be promoted into real code.
+4. Make prototypes part of the specs — rejected: specs describe user-visible behaviour and prototypes describe internal models, so their audiences and content rules differ.
 
-## 决策
+## Decision
 
-选定**方案 1**:`docs/prototypes/` 与代码/测试、ADR、CONTEXT.md、复盘、features 目录并列,为**持久资产**,不随 feature 合并清空。
+We choose **option 1**: `docs/prototypes/` stands beside the code and tests, the ADRs, `CONTEXT.md` and the postmortems as a persistent asset, and is not emptied when a feature merges.
 
-配套**防腐烂纪律**(原型的腐烂风险来自模型演化,不来自实现细节):
+Its discipline against rot rests on a prototype describing the model, not the implementation, so rot comes only from the model changing:
 
-- 模型变更时**同步改 `.mmd` 与 `logic.js` 并重跑 sync-mmd.mjs**;做不到就在原型页问题段标注「已失效:模型已演进,见 <出处>」——失效标注优于静默腐烂。
-- 原型描述的是**模型**(状态/迁移/准入条件),不写实现细节(文件路径、字段名、函数签名),与 CONTEXT.md 同规矩——不含易腐内容,腐烂面天然小。
-- 对应功能被移除时,连同原型目录与 manifest 条目一并删除。
+- When the model changes, the `.mmd` and `logic.js` are changed together and `sync-mmd.mjs` is rerun. Where that is not done, the prototype page's question section is marked "已失效:模型已演进,见 <出处>", because an obsolescence mark beats silent rot.
+- A prototype holds states, transitions and admission conditions, never file paths, field names or function signatures, the same rule as `CONTEXT.md`.
+- When the feature is removed, its prototype directory and manifest entry are deleted with it.
 
-## 后果
+## Consequences
 
-- 正面:模型有可驾驶的活文档;画廊提供跨模块的模型总览;`legal()` 一类逻辑模块可直接提升进真代码(已暴露 renderer 中准入条件重复的重构机会)。
-- 负面:多一类需要维护真实性的持久文档;模型演化时若漏同步,原型会变成误导性文档——靠上述失效标注纪律兜底,不靠"记得改"。
-- 中性:prototype skill 的"用后捕获"条款相应改写(保留原型,只把**决策**折进 spec/ADR)。
+- Positive: A model has a living document that can be driven, the gallery gives an overview of the models across modules, and a logic module such as `legal()` can be promoted into real code.
+- Negative: There is one more class of persistent documents whose accuracy must be maintained, and a prototype misleads when a model change is not synced. The obsolescence mark, not remembering, is what covers that.
+- Neutral: A prototype that has been used stays, and only its decisions are folded into specs and ADRs.
 
-## 来源
+## Sources
 
-prototype skill(`~/.claude/skills/prototype/`)的捕获条款;ADR-0013 的四分类。
+- The capture clause of the prototype skill (`~/.claude/skills/prototype/`).
+- ADR-0013's classification of documents.

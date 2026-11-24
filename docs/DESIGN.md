@@ -5,8 +5,8 @@
 
 > ⚠️ **这份文档是分层的设计史,不是现状描述。** 早期章节记的是 MVP 当时的设计(例如接收确认
 > 用系统弹框),后续章节记录它被什么取代(§9 记了改用原生 dialog、§11 记了最终改为聊天流内
-> 异步确认)。读到与产品行为不符处,**以代码、[ADR](./adr/) 与 [features](./features/) 为准**;
-> 需求全景与边界穷举见 [specs](./specs/)。
+> 异步确认)。读到与产品行为不符处,**以代码、[ADR](./adr/) 与 [specs](./specs/) 为准**;
+> specs 写各功能现行的行为、边界穷举与明确不做的。
 >
 > 唯一按现状维护的是 **§4 的协议与超时常量**——它与 `src/shared/protocol.ts` 保持一致,
 > 因为那些取值会被人直接抄去用,过期的数字比过期的叙事危险得多。
@@ -24,7 +24,7 @@
 | **传输加密** | **HTTPS**(自签名证书 + 指纹 TOFU pinning) | 见 [ADR-0004](./adr/0004-https-self-signed-tofu.md);~~原 MVP 用 HTTP 明文,已升级~~ |
 | **接收确认** | **弹框确认** | 收到 prepare-upload 时本机弹框,用户点了才收 |
 | 笔记存储 | 本地 Markdown 文件 | |
-| 截屏 | **快捷键(默认 F1,可设置里自定义)→ 区域框选 + 全套标注 + 发聊天/复制/存文件(已实现)** | 详见 [ADR-0008](./adr/0008-screenshot-scope.md) 与 [features/screenshot.md](./features/screenshot.md);实现踩坑见 [postmortems/](./postmortems/);层级检测/多屏跨屏/滚动长图为后续 P2 |
+| 截屏 | **快捷键(默认 F1,可设置里自定义)→ 区域框选 + 全套标注 + 发聊天/复制/存文件(已实现)** | 详见 [ADR-0008](./adr/0008-screenshot-scope.md) 与 [specs/screenshot.md](./specs/screenshot.md);实现踩坑见 [postmortems/](./postmortems/);层级检测/多屏跨屏/滚动长图为后续 P2 |
 | **MVP** | **文件传送优先** | 两台设备互相发现 + 传文件/文本 |
 
 ---
@@ -552,7 +552,7 @@ settings.ts            # 自动接收开关+阈值(持久化,复用 identity.jso
 
 ### 11.8 新消息提醒(未读角标 + Dock/任务栏)
 
-收到消息的提醒,分 app 内未读 + 系统级 Dock/任务栏两层。详见 [features/unread.md](./features/unread.md);实现踩坑见 [postmortems/unread-react-pitfalls.md](./postmortems/unread-react-pitfalls.md)。
+收到消息的提醒,分 app 内未读 + 系统级 Dock/任务栏两层。详见 [specs/unread.md](./specs/unread.md);实现踩坑见 [postmortems/unread-react-pitfalls.md](./postmortems/unread-react-pitfalls.md)。
 
 - **未读状态在 renderer**:`unread: Record<peerFp, number>`;每个 peer 一个未读数,侧栏 `DeviceRow` 显红底数字角标(>99→99+)。
 - **计未读门控**(纯函数 `shared/unread.ts` `shouldCountUnread`,有单测):`direction==='recv'` && 新消息(id 未见过) && **非**(窗口聚焦 && chat 视图 && 选中的就是该 peer)。即"正盯着该会话看"时不计。

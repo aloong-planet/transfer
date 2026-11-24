@@ -24,7 +24,7 @@ export const DEFAULT_SHORTCUT_CAPTURE = 'F1'
 export interface AppSettings {
   autoAccept: AutoAcceptSettings
   theme: ThemePref
-  /** 界面语言偏好:跟随系统 / 中文 / 英文。默认 system(见 docs/features/general.md)。 */
+  /** 界面语言偏好:跟随系统 / 中文 / 英文。默认 system(见 language::REQ-001)。 */
   language: LangPref
   /** 截图快捷键(Electron accelerator 字符串,如 'F1' / 'Command+Shift+A') */
   shortcutCapture: string

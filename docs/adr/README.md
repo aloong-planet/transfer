@@ -32,7 +32,7 @@ The files named without a link in the Sources of older entries (such as `https-m
 | [0011](0011-remove-gitee-mirror.md) | 移除 Gitee 镜像,下载源精简为 R2(主)+ GitHub(兜底) | 已接受 |
 | [0012](0012-notarization-gate-fail-closed.md) | 正式版 macOS 发布公证门禁 fail-closed;预发布只签名 | Superseded by [ADR-0023](0023-notarize-every-published-mac-build.md) |
 | [0013](0013-docs-lifecycle-by-rot-risk.md) | Documents are governed by how fast their content rots (adopting the harness workflow) | Accepted |
-| [0014](0014-prototypes-as-persistent-asset.md) | 原型目录 docs/prototypes/ 作为持久资产保留 | 已接受 |
+| [0014](0014-prototypes-as-persistent-asset.md) | The prototype directory docs/prototypes/ is kept as a persistent asset | Accepted |
 | [0015](0015-ops-runbooks-as-fifth-doc-class.md) | Operations runbooks are a document class of their own, updated in place | Accepted |
 | [0016](0016-mas-separate-bundle-id.md) | App Store 版用独立 bundle id `com.aloongplanet.transfer` | 已接受 |
 | [0017](0017-spec-is-persistent-not-scratch.md) | Specs are persistent artifacts, kept apart from tickets | Accepted |
@@ -40,7 +40,7 @@ The files named without a link in the Sources of older entries (such as `https-m
 | [0019](0019-workings-replace-scratch.md) | Process records live in `docs/.workings/`, kept on the machine and not committed | Accepted |
 | [0020](0020-upload-idle-timeout-not-total.md) | Transfer timeouts are idle timeouts and no longer cap the total duration | Accepted |
 | [0021](0021-schema-migration-by-declared-columns.md) | Schema migration uses declared columns as the single source of truth and adds missing columns, with no version number | Accepted |
-| [0022](0022-receive-dir-user-selectable.md) | 接收文件夹可由用户选定,失效时自动退回默认且不保留原路径 | 已接受 |
+| [0022](0022-receive-dir-user-selectable.md) | The receive folder is user-selectable and falls back to the default, forgetting the old path, when it fails | Accepted |
 | [0023](0023-notarize-every-published-mac-build.md) | Notarize every published macOS build; local packages are signed only; no certificate, no package | Accepted |
 | [0024](0024-packaged-build-refuses-launch-inputs.md) | A packaged build refuses every launch input outside an allow-list, and the fuses close Node's entries | Accepted |
 | [0025](0025-only-transfers-pages-and-quarantined-files.md) | Windows hold only Transfer's own pages, IPC answers only them, and received files are quarantined | Accepted |

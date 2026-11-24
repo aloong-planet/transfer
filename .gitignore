@@ -15,7 +15,7 @@ build/*.provisionprofile
 test-results/
 playwright-report/
 # 施工文档(tickets、施工过程记录):本机保留跨轮复用,但不入库(ADR-0019)。
-# 它腐烂最快且不得作为现状依据;要跨机器留存的内容须升级到 specs/features/adr/CONTEXT。
+# 它腐烂最快且不得作为现状依据;要跨机器留存的内容须升级到 specs/adr/CONTEXT。
 docs/.workings/
 
 # 国内镜像的部署目标(服务器地址不进公开仓库),见 build/deploy-site-cn.sh

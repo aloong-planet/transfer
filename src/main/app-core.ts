@@ -283,7 +283,7 @@ export class AppCore {
 
   /**
    * 设置远端设备备注 + 立即刷新列表。返回 {ok}(持久化失败为 false,供 renderer 反馈)。
-   * 见 docs/features/device-alias.md。不校验 fingerprint 是否在线:允许给离线/已删设备写(永久保留)。
+   * 见 device-alias::REQ-003。不校验 fingerprint 是否在线:允许给离线/已删设备写(永久保留)。
    */
   setRemoteAlias(fingerprint: string, alias: string): { ok: boolean } {
     const ok = this.opts.settings.setDeviceAlias(fingerprint, alias)
