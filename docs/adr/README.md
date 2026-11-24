@@ -19,28 +19,28 @@ The files named without a link in the Sources of older entries (such as `https-m
 
 | # | Decision | Status |
 |---|---|---|
-| [0001](0001-lan-direct-no-server.md) | 局域网直连,无服务器、无账号 | Accepted |
-| [0002](0002-fingerprint-as-device-identity.md) | 证书 SHA-256 fingerprint 作为设备唯一标识 | Accepted |
-| [0003](0003-chat-persistence-node-sqlite.md) | 聊天历史持久化用 node:sqlite(为此升级 Electron 35) | Accepted |
-| [0004](0004-https-self-signed-tofu.md) | 传输走 HTTPS 自签证书 + 指纹 TOFU pinning | Accepted |
-| [0005](0005-discovery-respond-via-http-register.md) | 发现回应改为 HTTP 定向 register,不扫网段 | Accepted |
-| [0006](0006-broadcast-fallback-dual-channel.md) | announce 双通道——多播之外同时发子网广播 | Accepted |
-| [0007](0007-app-scheme-replaces-file.md) | 生产环境用 app:// 自定义 scheme 加载渲染页(替代 file://) | Accepted |
-| [0008](0008-screenshot-scope.md) | 截图功能范围——三出口,对齐 Snipaste 标注,不做通用截图软件 | Accepted |
-| [0009](0009-overlay-persistent-not-recreated.md) | 截图 overlay 窗口常驻复用,不重建 | Accepted |
-| [0010](0010-mac-three-arch-plus-locale-prune.md) | macOS 三架构全打(universal + arm64 + x64)+ locale 裁剪 | Accepted |
-| [0011](0011-remove-gitee-mirror.md) | 移除 Gitee 镜像,下载源精简为 R2(主)+ GitHub(兜底) | Accepted |
+| [0001](0001-lan-direct-no-server.md) | 局域网直连,无服务器、无账号 | 已接受 |
+| [0002](0002-fingerprint-as-device-identity.md) | 证书 SHA-256 fingerprint 作为设备唯一标识 | 已接受 |
+| [0003](0003-chat-persistence-node-sqlite.md) | 聊天历史持久化用 node:sqlite(为此升级 Electron 35) | 已接受 |
+| [0004](0004-https-self-signed-tofu.md) | 传输走 HTTPS 自签证书 + 指纹 TOFU pinning | 已接受 |
+| [0005](0005-discovery-respond-via-http-register.md) | 发现回应改为 HTTP 定向 register,不扫网段 | 已接受 |
+| [0006](0006-broadcast-fallback-dual-channel.md) | announce 双通道——多播之外同时发子网广播 | 已接受 |
+| [0007](0007-app-scheme-replaces-file.md) | 生产环境用 app:// 自定义 scheme 加载渲染页(替代 file://) | 已接受 |
+| [0008](0008-screenshot-scope.md) | 截图功能范围——三出口,对齐 Snipaste 标注,不做通用截图软件 | 已接受 |
+| [0009](0009-overlay-persistent-not-recreated.md) | 截图 overlay 窗口常驻复用,不重建 | 已接受 |
+| [0010](0010-mac-three-arch-plus-locale-prune.md) | macOS 三架构全打(universal + arm64 + x64)+ locale 裁剪 | 已接受 |
+| [0011](0011-remove-gitee-mirror.md) | 移除 Gitee 镜像,下载源精简为 R2(主)+ GitHub(兜底) | 已接受 |
 | [0012](0012-notarization-gate-fail-closed.md) | 正式版 macOS 发布公证门禁 fail-closed;预发布只签名 | Superseded by [ADR-0023](0023-notarize-every-published-mac-build.md) |
 | [0013](0013-docs-lifecycle-by-rot-risk.md) | Documents are governed by how fast their content rots (adopting the harness workflow) | Accepted |
-| [0014](0014-prototypes-as-persistent-asset.md) | 原型目录 docs/prototypes/ 作为持久资产保留 | Accepted |
+| [0014](0014-prototypes-as-persistent-asset.md) | 原型目录 docs/prototypes/ 作为持久资产保留 | 已接受 |
 | [0015](0015-ops-runbooks-as-fifth-doc-class.md) | Operations runbooks are a document class of their own, updated in place | Accepted |
-| [0016](0016-mas-separate-bundle-id.md) | App Store 版用独立 bundle id `com.aloongplanet.transfer` | Accepted |
+| [0016](0016-mas-separate-bundle-id.md) | App Store 版用独立 bundle id `com.aloongplanet.transfer` | 已接受 |
 | [0017](0017-spec-is-persistent-not-scratch.md) | Specs are persistent artifacts, kept apart from tickets | Accepted |
-| [0018](0018-cn-mirror-landing-page-only.md) | 落地页进大陆节点,下载源留在 R2 不动 | Accepted |
+| [0018](0018-cn-mirror-landing-page-only.md) | 落地页进大陆节点,下载源留在 R2 不动 | 已接受 |
 | [0019](0019-workings-replace-scratch.md) | Process records live in `docs/.workings/`, kept on the machine and not committed | Accepted |
 | [0020](0020-upload-idle-timeout-not-total.md) | Transfer timeouts are idle timeouts and no longer cap the total duration | Accepted |
 | [0021](0021-schema-migration-by-declared-columns.md) | Schema migration uses declared columns as the single source of truth and adds missing columns, with no version number | Accepted |
-| [0022](0022-receive-dir-user-selectable.md) | 接收文件夹可由用户选定,失效时自动退回默认且不保留原路径 | Accepted |
+| [0022](0022-receive-dir-user-selectable.md) | 接收文件夹可由用户选定,失效时自动退回默认且不保留原路径 | 已接受 |
 | [0023](0023-notarize-every-published-mac-build.md) | Notarize every published macOS build; local packages are signed only; no certificate, no package | Accepted |
 | [0024](0024-packaged-build-refuses-launch-inputs.md) | A packaged build refuses every launch input outside an allow-list, and the fuses close Node's entries | Accepted |
 | [0025](0025-only-transfers-pages-and-quarantined-files.md) | Windows hold only Transfer's own pages, IPC answers only them, and received files are quarantined | Accepted |
