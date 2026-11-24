@@ -33,7 +33,7 @@ The files named without a link in the Sources of older entries (such as `https-m
 | [0012](0012-notarization-gate-fail-closed.md) | 正式版 macOS 发布公证门禁 fail-closed;预发布只签名 | Superseded by [ADR-0023](0023-notarize-every-published-mac-build.md) |
 | [0013](0013-docs-lifecycle-by-rot-risk.md) | Documents are governed by how fast their content rots (adopting the harness workflow) | Accepted |
 | [0014](0014-prototypes-as-persistent-asset.md) | 原型目录 docs/prototypes/ 作为持久资产保留 | Accepted |
-| [0015](0015-ops-runbooks-as-fifth-doc-class.md) | 运维手册作为第五类文档,就地更新 | Accepted |
+| [0015](0015-ops-runbooks-as-fifth-doc-class.md) | Operations runbooks are a document class of their own, updated in place | Accepted |
 | [0016](0016-mas-separate-bundle-id.md) | App Store 版用独立 bundle id `com.aloongplanet.transfer` | Accepted |
 | [0017](0017-spec-is-persistent-not-scratch.md) | Specs are persistent artifacts, kept apart from tickets | Accepted |
 | [0018](0018-cn-mirror-landing-page-only.md) | 落地页进大陆节点,下载源留在 R2 不动 | Accepted |

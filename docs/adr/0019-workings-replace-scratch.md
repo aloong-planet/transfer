@@ -23,7 +23,7 @@ Keeping is not trusting: the content is never a basis for the current state, whi
 
 - Positive: Work set aside keeps its research when restarted, and the decision "not now", with its reason and restart criterion, can be written down instead of evaporating in conversation.
 - Positive: Not being committed, the records leave PR diffs untouched and do not gain the visibility of the persistent classes.
-- Negative: The content exists only on this machine, so a new machine, a fresh clone or CI has none of it, and without version history a wrong edit cannot be traced. Whatever someone elsewhere must know is therefore promoted out of it, decisions to ADRs, terms to `docs/CONTEXT.md`, constraints on code to `AGENTS.md`, boundary enumerations to specs and visible behaviour to features, the test being whether anyone would be caught out if only this machine held the item.
+- Negative: The content exists only on this machine, so a new machine, a fresh clone or CI has none of it, and without version history a wrong edit cannot be traced. Whatever someone elsewhere must know is therefore promoted out of it to its home under ADR-0013, the test being whether anyone would be caught out if only this machine held the item.
 - Negative: The directory accumulates content that nobody cleans up. Keeping is the default, not an obligation: once a feature is fully done with nothing left over, its whole slug directory may be deleted.
 - Neutral: `.gitignore` lists `docs/.workings/`, and `.scratch/` is not used.
 
