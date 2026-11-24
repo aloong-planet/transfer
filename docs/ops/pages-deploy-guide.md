@@ -3,6 +3,8 @@
 > 目标:把 `site/`(Astro)部署到 Cloudflare Pages,绑定 `transfer.aloongplanet.com`,
 > 连 GitHub 仓库自动部署(以后 push 到指定分支自动重建)。
 
+> **Current state:** the Pages project `transfer-org`, its custom domain `transfer.aloongplanet.com` and the DNS record that points the domain at it already exist, and `aloong-planet/infra` defines them (the `transfer-org` entry in `stacks/apps/landing-pages.tf`). Do not follow the prerequisites and Steps 1–4 below in the dashboard. Step 2's values for the project name, production branch, build command, output and root directories and `NODE_VERSION` are the entry's. Change any of them, or the domain, in `aloong-planet/infra`: a change made in the dashboard shows up as drift in that repository's next plan and is reverted by its next apply.
+
 ## 前置
 
 - [ ] PR #6 已合并进 `master`(Pages 要构建 master 上的 `site/`;若先连 `feat/landing-page` 分支也行,但合并后要改回 master)。
@@ -66,14 +68,12 @@
 ## 常见坑
 
 - **构建失败 "package.json not found"** → Root directory 没设成 `site`。
-- **构建失败 pnpm 版本** → Pages 会读 `site/package.json` 的 `packageManager`?本项目 site 没写该字段,Pages 默认 pnpm 版本一般够用;若报错,加环境变量 `PNPM_VERSION=9`。
+- **构建失败 pnpm 版本** → Pages 会读 `site/package.json` 的 `packageManager`?本项目 site 没写该字段,Pages 默认 pnpm 版本一般够用;若报错,在 infra 的 `transfer-org` 条目的 `build_env` 里加环境变量 `PNPM_VERSION=9`。
 - **页面 404 / 样式丢失** → Build output directory 应为 `dist`(相对 site/),别写成绝对或 `site/dist`。
 - **下载按钮 404** → 检查 R2 桶里确有 `releases/v0.9.0/` 对应文件(已验证有)。
 
 ## Organization repository
 
-The source repository is `aloong-planet/transfer`. The active Git-integrated Pages project is `transfer-org` (`transfer-org.pages.dev`), with `transfer.aloongplanet.com` as its custom domain. It builds `master` using the settings above.
+The source repository is `aloong-planet/transfer`. The Git-integrated Pages project is `transfer-org` (`transfer-org.pages.dev`), with `transfer.aloongplanet.com` as its custom domain. It builds `master` using the settings above.
 
-The previous project, `transfer` (`transfer-aho.pages.dev`), retains its deployment history but no longer owns the custom domain. Its Git integration still refers to the former personal repository; do not use that project for future production deployments.
-
-When changing repository ownership again, first ensure the Cloudflare GitHub App can access the destination repository. Build and verify the replacement Pages project before moving the custom domain. Cloudflare does not allow the same custom domain on both projects: remove its old binding, add it to the replacement, and confirm the generated CNAME target. Then verify domain status, HTTPS, both language pages, installer links and the statistics request. Keep the previous deployment available until validation succeeds.
+When changing repository ownership again, make each change below in `aloong-planet/infra`, not in the dashboard: the project, its domain and its DNS record are Terraform's. First ensure the Cloudflare GitHub App can access the destination repository. Build and verify the replacement Pages project before moving the custom domain. Cloudflare does not allow the same custom domain on both projects: remove its old binding, add it to the replacement, and confirm the CNAME target. Then verify domain status, HTTPS, both language pages, installer links and the statistics request. Keep the previous deployment available until validation succeeds.
