@@ -11,6 +11,12 @@
 // Gap: the script in Download.astro that hands the browser's own fetch to initDownload runs only in
 // a browser, so these tests call initDownload with a stand-in network instead. Whether the built
 // page's script reaches it is checked on the preview deployment.
+//
+// Gap: landing-page failure A3 (the pointer is written only after the release's files are on the
+// download host) belongs to the release workflow, .github/workflows/build.yml, not to the site: its
+// upload step puts the installers on R2 first and latest.json last. It can be tested once a test can run
+// that step against a stand-in bucket and see that a failed installer upload leaves latest.json
+// unwritten; the site's suite has no such runner.
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
