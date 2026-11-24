@@ -32,7 +32,7 @@ A global shortcut starts a capture: the user selects a region of the screen, ann
 
 - screenshot::REQ-004/AC-01: 复制到剪贴板 / Copy to Clipboard puts the image on the system clipboard and closes the capture; nothing is written to disk.
 - screenshot::REQ-004/AC-02: 保存为文件 / Save as File opens a save dialog with the PNG 图片 / PNG Image filter and the default name 截图_yyyyMMdd_HHmmss.png in Chinese, screenshot_yyyyMMdd_HHmmss.png in English (the local date and time of the save). The image is written to the path chosen, and the capture closes whether the dialog is confirmed or cancelled.
-- screenshot::REQ-004/AC-03: 发到当前聊天 / Send to current chat closes the capture and sends the image, as a PNG file, to the person whose chat is open in the main window; it adds a message to that chat like any file sent there (transfer-chat). When no chat is open, the button is disabled with the tooltip 先在主窗选择一个聊天对象 / Pick a chat target in the main window first.
+- screenshot::REQ-004/AC-03: 发到当前聊天 / Send to current chat closes the capture and sends the image, as a PNG file, to the person whose chat is open in the main window; it adds a message to that chat like any file sent there. When no chat is open, the button is disabled with the tooltip 先在主窗选择一个聊天对象 / Pick a chat target in the main window first.
 - screenshot::REQ-004/AC-04: Every exit gives the image as the PNG of the selection in physical pixels, with the annotations in it, and none of them shows a confirmation.
 
 ### screenshot::REQ-005 Screen-recording permission on macOS

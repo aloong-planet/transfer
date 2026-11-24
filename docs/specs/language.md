@@ -21,7 +21,7 @@ The interface follows the system's language, or the user fixes it to Chinese or 
 
 ### language::REQ-003 What the language covers
 
-- language::REQ-003/AC-01: The language applies to the main window, to the toolbar and hints of the screenshot capture (screenshot), and to the dialogs the main process opens, such as the receive-folder dialog and the screen-recording guidance dialog (screenshot::REQ-005/AC-03).
+- language::REQ-003/AC-01: The language applies to the main window, to the toolbar and hints of the screenshot capture ([screenshot::REQ-003](screenshot.md), [screenshot::REQ-004](screenshot.md)), and to the dialogs the main process opens, such as the receive-folder dialog and the screen-recording guidance dialog ([screenshot::REQ-005/AC-03](screenshot.md)).
 
 ## Out of Scope
 
