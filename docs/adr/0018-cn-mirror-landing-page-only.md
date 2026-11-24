@@ -1,37 +1,32 @@
-# ADR-0018: 落地页进大陆节点,下载源留在 R2 不动
+# ADR-0018: The landing page goes to a mainland node, the download source stays on R2
 
-- 状态: 已接受(2026-08-04)
+- Status: Accepted (2026-08-04)
 
-## 背景与问题
+## Context
 
-ADR-0011 当年实测坐实:**不备案的 Cloudflare(Pages/R2)不接大陆节点**,大陆用户访问落地页与下载安装包都要绕境外。当时把「备案 + 大陆云节点」列为暂缓方案,理由是代价与收益不匹配,并写明「日后需要时新开 ADR」。
+Cloudflare Pages and R2 have no ICP filing and are not served from mainland nodes, so mainland users reach both the landing page and the installers by routing abroad (ADR-0011). `aloongplanet.com.cn` has an ICP filing and its own ECS with a reverse proxy and certificate, so one more landing-page deployment there costs almost nothing. How much should move: the landing page, the download source, or both?
 
-现在条件变了:`aloongplanet.com.cn` 已完成 ICP 备案,自有 ECS 已配好反向代理与证书(为个人主页搭建时一并就绪)。备案与机器的成本**已经付过了**,新增一个落地页部署的边际成本接近于零。
+## Options
 
-问题:这次要搬多少?落地页、下载源,还是两者都搬?
+1. **Move only the landing page to the mainland node and leave the download source alone: one code base built twice, differing only in the footer's ICP filing number, with the installers staying on Cloudflare R2**
+2. Move the landing page and the download source together (the installers onto Alibaba Cloud OSS and CDN) — rejected: R2 egress is free while OSS bills by traffic, an open exposure while the download volume is unknown, and moving both at once leaves no way to tell which half got faster.
+3. Move nothing and keep only `.com` — rejected: the filing and the ECS are already paid for, and leaving mainland users to route abroad wastes them.
+4. Automated deployment (GitHub Actions pushing to the ECS) — deferred: allowing Actions' egress IPs is physically infeasible (7,297 published ranges, about 27.9 million IPv4 addresses, against a security-group cap of one or two hundred rules), a self-hosted runner risks pushing the Harbor on the same machine out of memory (about 860 MB available), an OSS relay works but adds a moving part, and with 10 changes to the landing page in three weeks it is not worth it. **Restart when** the change frequency rises markedly, or the ECS memory is expanded and a self-hosted runner is worth re-evaluating.
 
-## 备选项
+## Decision
 
-1. **只把落地页搬进大陆节点,下载源不动** —— 同一份代码构建两次,差异只有页脚一条备案号;安装包继续放 Cloudflare R2。
-2. 落地页与下载源一起搬(安装包上阿里云 OSS + CDN)—— 否决:R2 的出口流量免费而 OSS 按流量计费,在下载量未知时这是敞口风险;且 R2 那条链路刚稳定下来,同时动两处会让"到底哪一半变快了"无法归因。
-3. 什么都不搬,维持只有 `.com` —— 否决:备案与 ECS 的代价已经付出,继续让大陆用户绕境外等于白白浪费。
-4. 自动化部署(GitHub Actions 推到 ECS)—— 暂缓:放行 Actions 出口 IP **物理上不可行**(官方公布 7297 个网段、IPv4 折合约 2790 万地址,而安全组规则上限是一两百条);ECS 上装 self-hosted runner 有把同机 Harbor 挤 OOM 的实际风险(可用内存约 860MB);OSS 中转可行但多一个活动部件。落地页三周只改过 10 次,不值得。**重启条件**:改动频率显著上升,或 ECS 内存扩容后重新评估 self-hosted runner。
+We choose **option 1**: we deploy the landing page to the filed mainland node and keep the download source as it is, Cloudflare R2 first with GitHub Releases as the fallback. Both deployments share one code base, with no branch or forked code, and differ only in the ICP filing number in the mainland footer; the mainland site is deployed by a manual script.
 
-## 决策
+## Consequences
 
-选定**方案 1**:我们把落地页部署到已备案的大陆节点,下载源保持 Cloudflare R2(主)+ GitHub Release(兜底)不变。两处部署共用同一份代码,唯一差异是国内那份页脚多一条 ICP 备案号,靠构建期环境变量注入,不靠分支或分叉代码。部署方式为手动脚本。
+- Positive: Mainland users open the landing page from a mainland node, so the first screen no longer routes abroad.
+- Positive: Both sites are built from one source, so one change to the copy updates both and they do not drift apart into two sites over time.
+- Negative: **Download speed does not change at all.** The installers stay on R2, which has no filing, so mainland downloads still route abroad, and "the domestic mirror is live" is easily misread as "downloads are fast too", the misreading this entry most needs to prevent (ADR-0011's option 3 is only half carried out).
+- Negative: One more deployment has to be maintained, and it is deployed by hand.
+- Negative: When R2's CORS allow-list lacks the mainland site's origin, the statistics line is hidden and the download section falls back to the GitHub state or the list state (`landing-page::REQ-002`).
+- Neutral: Two domains serve the same content, which raises a duplicate-content question for search engines; the landing page has neither a canonical link nor a sitemap, and none is added for this.
 
-## 后果
+## Sources
 
-- 正面:大陆用户打开落地页走境内节点,首屏不再绕境外。
-- 正面:两份产物同源,改一次文案两边都更新,不会随时间分叉成两个站。
-- **负面(本条最需要防的误解)**:**下载速度完全没有改变。** 安装包仍在未备案的 R2 上,大陆下载照旧绕境外。"国内镜像上线了"极易被读成"下载也快了"——它没有。ADR-0011 选项 3 只执行了一半。
-- 负面:多一处部署要维护,且是手动的;发版时多一步。
-- 负面:国内站的 origin 不在 R2 的 CORS 白名单里时,下载统计行会静默隐藏(既有失败模式,非本次引入)。
-- 中性:两个域名承载相同内容,存在 SEO 重复内容问题。当前落地页没有 canonical 也没有 sitemap,本轮不为此新增。
-
-## 来源
-
-- ADR-0011 第 13 行指定的后续路径(「日后需要时新开 ADR」)。
-- 2026-08-04 事实调研:GitHub Actions 出口 IP 段数取自 `api.github.com/meta`;`site/` 改动频率取自 `git log -- site/`(三周 10 次)。
-- 部署链路的可行性由个人主页 `aloongplanet.com.cn` 在同一台 ECS 上先行验证。
+- ADR-0011: the measurement that Cloudflare without a filing is not served from mainland nodes, and its option 3 (an ICP filing and a mainland cloud node), which this entry takes up.
+- The numbers in option 4: the count of egress ranges GitHub publishes for Actions and the change frequency of `site/` are from the survey of 2026-08-04; the ECS's available memory has no recorded date.
