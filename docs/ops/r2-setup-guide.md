@@ -83,16 +83,12 @@ R2 免费额度(个人项目基本 $0):**10 GB 存储 + egress(下载流量)免�
 
 ---
 
-## 第 7 步:告诉我两件事,我来收尾
+## 第 7 步:确认站点里的两个域名
 
-填完 secret 后,把这两个值发我(**不是密钥,是公开信息**):
+下载域和落地页域名都已经写在站点代码里,没有占位要替换:
 
-1. 你的**自定义下载域**(如 `dl.transfer.app`),或者 r2.dev 地址。
-2. 你的**落地页域名**(如 `transfer.app`)。
-
-我会:
-- 把 `site/src/download-config.ts` 里的占位 `dl.example.com` 换成你的真实下载域。
-- 把 `astro.config.mjs` 的 `site` 换成你的落地页域名。
+- `site/src/download-config.ts` 里的下载域是 `dl.aloongplanet.com`:安装包、`latest.json` 和下载统计的地址都用这个域。本地开发时统计请求的代理目标(`site/astro.config.mjs`)也是它。
+- `site/astro.config.mjs` 的 `site` 是 `https://transfer.aloongplanet.com`。
 
 ---
 
@@ -105,9 +101,11 @@ git tag v0.9.1-beta
 git push origin v0.9.1-beta
 ```
 
-CI 会:打包 → 发 GitHub Release → 推 R2。跑完我帮你读日志,确认:
-- R2 里有没有 `releases/v0.9.1-beta/*.dmg` 和 `latest.json`;
-- 下载链接能不能点开。
+预发布 tag(以 `-beta`、`-rc`、`-alpha`、`-dev` 结尾)的 CI 只会:打包 → 发 GitHub Release(标 Pre-release)。推 R2 那一步只在干净的正式版 tag 上运行(`.github/workflows/build.yml` 的 `sync` 作业),所以预发布 tag 不会往 R2 写任何东西,也不改 `latest.json`。跑完我帮你读日志,确认:
+- GitHub Release 标着 Pre-release,各平台安装包都在,下载链接能点开;
+- R2 里没有 `releases/v0.9.1-beta/`,`latest.json` 没变。
+
+R2 这一段只能用正式版 tag 验证,而它发出的是真正的正式版(GitHub Latest、R2 和 `latest.json` 都会更新):推 `vX.Y.Z` 后,确认 R2 里 `releases/vX.Y.Z/` 下有安装包,根上的 `latest.json` 里的版本是 `X.Y.Z`,下载链接能点开。
 
 有问题我来排。
 

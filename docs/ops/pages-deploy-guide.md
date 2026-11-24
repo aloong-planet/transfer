@@ -7,8 +7,10 @@
 
 ## 前置
 
-- [ ] PR #6 已合并进 `master`(Pages 要构建 master 上的 `site/`;若先连 `feat/landing-page` 分支也行,但合并后要改回 master)。
-- [ ] `aloongplanet.com` 已在同一 Cloudflare 账户(已确认)。
+上面的 Current state 说的项目、域名和 DNS 记录已经存在,由 infra 管理,下面两项前置都已满足,不用再做:
+
+- PR #6 已于 2026-07-20 合并进 `master`;Pages 构建的是 `master` 上的 `site/`(infra 里 `transfer-org` 条目的 `production_branch` 是 `master`)。
+- `aloongplanet.com` 区域与这个 Pages 项目在同一个 Cloudflare 账户:infra 的 `stacks/apps` 里,`cloudflare_account_id` 就是拥有该区域和 R2 桶的账户,`transfer-org` 的 Pages 项目和自定义域声明在这个账户下,DNS 记录声明在该区域里。
 
 ---
 
