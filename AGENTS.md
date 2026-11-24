@@ -26,7 +26,7 @@ Each class of document has exactly one home, chosen by how fast it rots; see `do
 - Copy never lists the interface languages as if the list were complete (`src/shared/i18n/dict.ts`).
 - A new startup action is judged by whether the user, or anyone on their LAN, can notice it while the user's own instance runs; multicast announce is the one that can, the HTTP port is not (`src/main/index.ts`).
 - In a quiet test instance, mouse events are built as `MouseEvent`s inside the page, never through Playwright's `dispatchEvent('contextmenu')` (docs/postmortems/playwright-contextmenu-no-coordinates.md).
-- A quiet test instance's window is never shown in order to take a screenshot: it renders while hidden, and `toBeVisible()` there tests layout visibility only (`src/main/index.ts`, docs/postmortems/cdp-verification-false-greens.md).
+- A quiet test instance's window is never shown in order to take a screenshot: it renders while hidden, and `toBeVisible()` there tests layout visibility only (the comment on `QUIET` in `src/main/index.ts`).
 - The repository carries project knowledge, not the operator's working instructions: `CLAUDE.md`, `.claude/` and `docs/.workings/` are not committed, so what a fresh clone must know goes into a knowledge document (ADR-0013, `docs/agents/docs-layout.md`).
 
 ## Agent skills
