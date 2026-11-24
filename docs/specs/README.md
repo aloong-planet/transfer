@@ -1,6 +1,6 @@
 # Specs
 
-Each spec is the current requirement picture of one feature, for people changing that part of the product: what the feature does in the current version, the boundaries it has worked through, and what it explicitly does not do. Trade-offs are decided in [adr/](../adr/), and a spec cites the ADR by number.
+Each spec is the current requirement picture of one feature, for people changing that part of the product: what the feature does in the current version, the boundaries it has worked through, and what it explicitly does not do.
 
 | Spec | In one line |
 |---|---|
@@ -9,7 +9,7 @@ Each spec is the current requirement picture of one feature, for people changing
 | [transfer-chat.md](transfer-chat.md) | 传输与聊天的需求全景:协商/传输/落盘/失败分类/文本/速度与耗时/表结构演进/持久化/图片菜单与复制九组边界穷举、明确不做的与已知缺口 |
 | [unread.md](unread.md) | The unread-message alerts: the Dock badge or taskbar flash, and the per-conversation count in the device list |
 | [screenshot.md](screenshot.md) | Capturing a region of the screen with a global shortcut, annotating it, and sending, copying or saving it; the macOS screen-recording permission |
-| [receive-dir.md](receive-dir.md) | 接收文件夹可由用户选定:选择/恢复默认/失效退回/告知/路径展示七组边界,含沙盒容器路径展示与 App Store 2.4.5(i) 的由来 |
+| [receive-dir.md](receive-dir.md) | 接收文件夹可由用户选定:选择/恢复默认/失效退回/告知/路径展示七组边界,含沙盒容器路径的展示与 App Store 2.4.5(i) |
 | [theme.md](theme.md) | The theme preference: follow the system, light or dark |
 | [language.md](language.md) | The interface-language preference: follow the system, Chinese or English |
 | [landing-page.md](landing-page.md) | The landing page's header link back to the aloong planet homepage (what it shows, its look in both languages and on narrow windows), how narrow a window every page fits without sideways scrolling, and which download the download section offers (read in the visitor's browser: the latest-release pointer, then GitHub's releases, then GitHub's release list) |
@@ -19,7 +19,7 @@ Each spec is the current requirement picture of one feature, for people changing
 
 ## Invariants
 
-- **一个功能模块一篇**,现行描述、就地改写;不记变更史(git 里有),功能移除即删文件。既有功能的增量开发是改写既有 spec,不新开文件。
+- **一个功能模块一篇**,现行描述、就地改写;不记变更史,功能移除即删文件。既有功能的增量开发是改写既有 spec,不新开文件。
 - A spec states its feature's user-visible behaviour as well as its enumerated boundaries; no other document describes that behaviour (ADR-0017).
-- **不写文件路径与代码片段**——那些腐烂得最快。写抽象层的决策。
-- 够 ADR 三门槛的决策落 ADR 后,spec 改为引用编号。
+- **不写代码内部的东西**:只在代码里用的类型、函数、变量、模块、文件路径、行号、CSS 类名与代码片段,以及线程与进程、缓存、数据结构、样式的实现机制,都不写;用户、外部系统或持久化数据看得到的名字——持久化的文件名、键名与字段名,对外接口,用户会设置的命令行参数与环境变量——照写,写成契约本身。
+- 够 ADR 三门槛的决策落 [ADR](../adr/) 后,spec 改为引用编号。
