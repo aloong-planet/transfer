@@ -74,6 +74,7 @@ const zh = {
   'download.win.portable': '免安装版 (Portable)',
   'download.source.primary': '下载',
   'download.source.github': 'GitHub',
+  'download.list.button': '前往 GitHub 下载',
   'download.stats.prefix': '当前已有',
   'download.stats.suffix': '次下载',
 
@@ -151,6 +152,7 @@ const en: Record<UIKey, string> = {
   'download.win.portable': 'Portable',
   'download.source.primary': 'Download',
   'download.source.github': 'GitHub',
+  'download.list.button': 'Download on GitHub',
   'download.stats.prefix': 'Downloads so far:',
   'download.stats.suffix': '',
 

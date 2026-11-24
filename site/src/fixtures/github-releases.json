@@ -1,0 +1,303 @@
+[
+  {
+    "tag_name": "v1.2.3",
+    "name": "v1.2.3-release",
+    "draft": false,
+    "prerelease": false,
+    "created_at": "2026-11-10T12:56:42Z",
+    "published_at": "2026-11-10T12:59:34Z",
+    "assets": [
+      {
+        "name": "Transfer-1.2.3-mac-arm64.dmg",
+        "state": "uploaded",
+        "size": 98370041,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.3/Transfer-1.2.3-mac-arm64.dmg"
+      },
+      {
+        "name": "Transfer-1.2.3-mac-universal.dmg",
+        "state": "uploaded",
+        "size": 187724521,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.3/Transfer-1.2.3-mac-universal.dmg"
+      },
+      {
+        "name": "Transfer-1.2.3-mac-x64.dmg",
+        "state": "uploaded",
+        "size": 105438771,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.3/Transfer-1.2.3-mac-x64.dmg"
+      },
+      {
+        "name": "Transfer-1.2.3-win-portable.exe",
+        "state": "uploaded",
+        "size": 93309706,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.3/Transfer-1.2.3-win-portable.exe"
+      },
+      {
+        "name": "Transfer-1.2.3-win-setup.exe",
+        "state": "uploaded",
+        "size": 93524711,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.3/Transfer-1.2.3-win-setup.exe"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.2.2",
+    "name": "v1.2.2-release",
+    "draft": false,
+    "prerelease": false,
+    "created_at": "2026-10-22T08:14:06Z",
+    "published_at": "2026-10-22T08:16:14Z",
+    "assets": [
+      {
+        "name": "Transfer-1.2.2-mac-arm64.dmg",
+        "state": "uploaded",
+        "size": 98363749,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.2/Transfer-1.2.2-mac-arm64.dmg"
+      },
+      {
+        "name": "Transfer-1.2.2-mac-universal.dmg",
+        "state": "uploaded",
+        "size": 187718264,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.2/Transfer-1.2.2-mac-universal.dmg"
+      },
+      {
+        "name": "Transfer-1.2.2-mac-x64.dmg",
+        "state": "uploaded",
+        "size": 105436241,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.2/Transfer-1.2.2-mac-x64.dmg"
+      },
+      {
+        "name": "Transfer-1.2.2-win-portable.exe",
+        "state": "uploaded",
+        "size": 93308055,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.2/Transfer-1.2.2-win-portable.exe"
+      },
+      {
+        "name": "Transfer-1.2.2-win-setup.exe",
+        "state": "uploaded",
+        "size": 93523136,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.2/Transfer-1.2.2-win-setup.exe"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.2.1",
+    "name": "v1.2.1-release",
+    "draft": false,
+    "prerelease": false,
+    "created_at": "2026-08-22T09:47:59Z",
+    "published_at": "2026-08-22T09:50:12Z",
+    "assets": [
+      {
+        "name": "Transfer-1.2.1-mac-arm64.dmg",
+        "state": "uploaded",
+        "size": 96643605,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.1/Transfer-1.2.1-mac-arm64.dmg"
+      },
+      {
+        "name": "Transfer-1.2.1-mac-universal.dmg",
+        "state": "uploaded",
+        "size": 185955154,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.1/Transfer-1.2.1-mac-universal.dmg"
+      },
+      {
+        "name": "Transfer-1.2.1-mac-x64.dmg",
+        "state": "uploaded",
+        "size": 103715130,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.1/Transfer-1.2.1-mac-x64.dmg"
+      },
+      {
+        "name": "Transfer-1.2.1-win-portable.exe",
+        "state": "uploaded",
+        "size": 85777283,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.1/Transfer-1.2.1-win-portable.exe"
+      },
+      {
+        "name": "Transfer-1.2.1-win-setup.exe",
+        "state": "uploaded",
+        "size": 85992197,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.1/Transfer-1.2.1-win-setup.exe"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.2.0",
+    "name": "v1.2.0-release",
+    "draft": false,
+    "prerelease": false,
+    "created_at": "2026-08-21T15:27:12Z",
+    "published_at": "2026-08-21T15:29:12Z",
+    "assets": [
+      {
+        "name": "Transfer-1.2.0-mac-arm64.dmg",
+        "state": "uploaded",
+        "size": 96645996,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.0/Transfer-1.2.0-mac-arm64.dmg"
+      },
+      {
+        "name": "Transfer-1.2.0-mac-universal.dmg",
+        "state": "uploaded",
+        "size": 185957386,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.0/Transfer-1.2.0-mac-universal.dmg"
+      },
+      {
+        "name": "Transfer-1.2.0-mac-x64.dmg",
+        "state": "uploaded",
+        "size": 103714183,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.0/Transfer-1.2.0-mac-x64.dmg"
+      },
+      {
+        "name": "Transfer-1.2.0-win-portable.exe",
+        "state": "uploaded",
+        "size": 85774117,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.0/Transfer-1.2.0-win-portable.exe"
+      },
+      {
+        "name": "Transfer-1.2.0-win-setup.exe",
+        "state": "uploaded",
+        "size": 85989024,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.0/Transfer-1.2.0-win-setup.exe"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.2.0-beta",
+    "name": "v1.2.0-beta",
+    "draft": false,
+    "prerelease": true,
+    "created_at": "2026-08-21T14:05:57Z",
+    "published_at": "2026-08-21T14:07:57Z",
+    "assets": [
+      {
+        "name": "Transfer-1.2.0-beta-mac-arm64.dmg",
+        "state": "uploaded",
+        "size": 96640509,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.0-beta/Transfer-1.2.0-beta-mac-arm64.dmg"
+      },
+      {
+        "name": "Transfer-1.2.0-beta-mac-universal.dmg",
+        "state": "uploaded",
+        "size": 185957559,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.0-beta/Transfer-1.2.0-beta-mac-universal.dmg"
+      },
+      {
+        "name": "Transfer-1.2.0-beta-mac-x64.dmg",
+        "state": "uploaded",
+        "size": 103742322,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.0-beta/Transfer-1.2.0-beta-mac-x64.dmg"
+      },
+      {
+        "name": "Transfer-1.2.0-beta-win-portable.exe",
+        "state": "uploaded",
+        "size": 85774219,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.0-beta/Transfer-1.2.0-beta-win-portable.exe"
+      },
+      {
+        "name": "Transfer-1.2.0-beta-win-setup.exe",
+        "state": "uploaded",
+        "size": 85989149,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v1.2.0-beta/Transfer-1.2.0-beta-win-setup.exe"
+      }
+    ]
+  },
+  {
+    "tag_name": "v0.7.1",
+    "name": "v0.7.1-release",
+    "draft": false,
+    "prerelease": false,
+    "created_at": "2026-07-16T11:06:19Z",
+    "published_at": "2026-07-16T11:08:22Z",
+    "assets": [
+      {
+        "name": "Transfer-0.7.1-arm64.dmg",
+        "state": "uploaded",
+        "size": 96593762,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v0.7.1/Transfer-0.7.1-arm64.dmg"
+      },
+      {
+        "name": "Transfer-0.7.1-portable.exe",
+        "state": "uploaded",
+        "size": 85759051,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v0.7.1/Transfer-0.7.1-portable.exe"
+      },
+      {
+        "name": "Transfer-0.7.1-setup.exe",
+        "state": "uploaded",
+        "size": 85973976,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v0.7.1/Transfer-0.7.1-setup.exe"
+      },
+      {
+        "name": "Transfer-0.7.1-universal.dmg",
+        "state": "uploaded",
+        "size": 185930067,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v0.7.1/Transfer-0.7.1-universal.dmg"
+      },
+      {
+        "name": "Transfer-0.7.1-x64.dmg",
+        "state": "uploaded",
+        "size": 103661441,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v0.7.1/Transfer-0.7.1-x64.dmg"
+      }
+    ]
+  },
+  {
+    "tag_name": "v0.5.5",
+    "name": "v0.5.5-release",
+    "draft": false,
+    "prerelease": false,
+    "created_at": "2026-07-15T12:03:35Z",
+    "published_at": "2026-07-15T12:46:16Z",
+    "assets": [
+      {
+        "name": "Transfer-0.5.5-portable.exe",
+        "state": "uploaded",
+        "size": 85345609,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v0.5.5/Transfer-0.5.5-portable.exe"
+      },
+      {
+        "name": "Transfer-0.5.5-setup.exe",
+        "state": "uploaded",
+        "size": 85560525,
+        "content_type": "application/x-msdos-program",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v0.5.5/Transfer-0.5.5-setup.exe"
+      },
+      {
+        "name": "Transfer-0.5.5.dmg",
+        "state": "uploaded",
+        "size": 106669784,
+        "content_type": "application/x-apple-diskimage",
+        "browser_download_url": "https://github.com/aloong-planet/transfer/releases/download/v0.5.5/Transfer-0.5.5.dmg"
+      }
+    ]
+  }
+]

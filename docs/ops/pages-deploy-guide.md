@@ -44,7 +44,7 @@
 
 1. 点 **Save and Deploy**。
 2. Pages 会拉代码、`pnpm install`、`pnpm build`,几分钟后给你一个 `https://transfer-org.pages.dev`。
-3. 打开这个临时地址,确认落地页正常、下载按钮能点(下载指向 `dl.aloongplanet.com`,R2 已验证可下)。
+3. 打开这个临时地址,确认落地页正常、下载按钮能点。临时地址不在 R2 的 CORS 白名单里,读不到 `latest.json`,下载区显示 GitHub 状态,按钮指向 GitHub;指向 `dl.aloongplanet.com` 的状态在正式域名上确认(见第 5 步)。
 
 ## 第 4 步:绑定自定义域 transfer.aloongplanet.com
 
@@ -57,7 +57,7 @@
 
 - 打开 `https://transfer.aloongplanet.com` —— 落地页出来
 - 切中英(点右上角 EN/中文)—— `/en/` 正常
-- 点各平台下载按钮 —— 跳到 `dl.aloongplanet.com/releases/v0.9.0/...`,能下
+- 点各平台下载按钮 —— 在正式域名上跳到 `dl.aloongplanet.com/releases/v<当前版本>/...`(版本号取自 `latest.json`),能下
 
 ---
 
@@ -70,7 +70,7 @@
 - **构建失败 "package.json not found"** → Root directory 没设成 `site`。
 - **构建失败 pnpm 版本** → Pages 会读 `site/package.json` 的 `packageManager`?本项目 site 没写该字段,Pages 默认 pnpm 版本一般够用;若报错,在 infra 的 `transfer-org` 条目的 `build_env` 里加环境变量 `PNPM_VERSION=9`。
 - **页面 404 / 样式丢失** → Build output directory 应为 `dist`(相对 site/),别写成绝对或 `site/dist`。
-- **下载按钮 404** → 检查 R2 桶里确有 `releases/v0.9.0/` 对应文件(已验证有)。
+- **下载按钮 404** → 检查 R2 桶里 `latest.json` 所指版本的 `releases/v<版本>/` 下确有对应文件。
 - **想把安装包放进 `site/` 一起部署** → 不行:Cloudflare Pages 单文件上限 25 MiB,安装包比它大得多。落地页在 Pages,安装包只放 R2(`dl.aloongplanet.com`),二者不合并。
 
 ## Organization repository

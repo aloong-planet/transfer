@@ -11,7 +11,9 @@
 
 > **下载源不在本手册范围内。** 安装包仍在未备案的 Cloudflare R2 上,国内镜像**不改变下载速度**,快的只是页面打开。
 
-## 日常:发一次版怎么部署
+## 日常:站点改动后怎么部署
+
+发布新版本**不需要**跑它:下载区在访客的浏览器里读 `latest.json`(读不到再读 GitHub Releases),版本号与下载链接随发布自动更新,两处部署都不用动,规则见 [landing-page spec](../specs/landing-page.md)。只有站点代码、文案或样式改了才部署。
 
 ```bash
 pnpm deploy:site:cn
@@ -64,25 +66,28 @@ TLS 证书由 NPM 的 Let's Encrypt 集成签发与自动续期,不需要人工�
 
 **公安联网备案号尚未申请**。ICP 通过后 30 天内需在 `beian.mps.gov.cn` 办理;号下来后与 ICP 号同样处理,在此之前**不显示占位号**——编造的备案号比不显示更糟。
 
-## 下载统计的 CORS
+## R2 的 CORS(统计行与最新版指针)
 
-统计 JSON 在 R2 上,与落地页不同源,两个域名都要在白名单里。策略文件是 `build/r2-download-stats-cors.json`,粘贴到 R2 → `transfer-releases` → Settings → CORS Policy。
+统计 JSON 和最新版指针 `latest.json` 都在 R2 上,与落地页不同源,两个域名都要在白名单里。策略是整个桶一份,覆盖这两个文件。策略文件是 `build/r2-download-stats-cors.json`,粘贴到 R2 → `transfer-releases` → Settings → CORS Policy。
 
 验证(阴性对照不能省,否则分不清"白名单生效"和"桶对所有人开放"):
 
 ```bash
 # 必须用 GET(-D - -o /dev/null)。-I 发的是 HEAD,而策略只允许 GET,
 # HEAD 拿不到该响应头 —— 三个 origin 会齐刷刷"失败",看起来像 CORS 坏了。
-for o in https://transfer.aloongplanet.com https://transfer.aloongplanet.com.cn https://example.com; do
-  printf '%-42s ' "$o"
-  curl -sS -D - -o /dev/null -H "Origin: $o" https://dl.aloongplanet.com/stats/downloads.json \
-    | grep -i access-control-allow-origin || echo '(无该响应头)'
+for f in stats/downloads.json latest.json; do
+  echo "== $f"
+  for o in https://transfer.aloongplanet.com https://transfer.aloongplanet.com.cn https://example.com; do
+    printf '%-42s ' "$o"
+    curl -sS -D - -o /dev/null -H "Origin: $o" "https://dl.aloongplanet.com/$f" \
+      | grep -i access-control-allow-origin || echo '(无该响应头)'
+  done
 done
 ```
 
-前两行应各自回显对应的 origin,**第三行必须是「无该响应头」**。
+每个文件的前两行应各自回显对应的 origin,**第三行必须是「无该响应头」**。
 
-白名单缺失时统计行**静默隐藏**,页面其余部分完全正常——所以它坏了不会有任何告警,只能靠上面的命令主动验。
+白名单缺失时,统计行**静默隐藏**,下载区读不到 `latest.json` 而**静默退到 GitHub 状态**(每行只剩一个指向 GitHub 的按钮;GitHub 也读不到时退到发布列表),页面其余部分完全正常——所以它坏了不会有任何告警,只能靠上面的命令主动验。Cloudflare Pages 的预览域名(`*.pages.dev`)不在白名单里,预览部署上读不到 `latest.json`,这是预期的,不要为此放宽白名单。
 
 ## 排查
 
@@ -92,6 +97,7 @@ done
 | `rsync: --chmod: invalid argument` | macOS 自带的是 openrsync,不认该参数。权限统一在服务器侧修,不要在客户端加 `--chmod` |
 | 目录路径返回 403 而非 404 | nginx 的 `try_files` 里有 `$uri/` 兜底,会匹配到真实目录再因无目录索引变 403(等于泄露目录存在)。正确写法是 `try_files $uri $uri/index.html =404` |
 | 统计行不显示 | 先按上面的命令验 CORS。其余失败模式(JSON 不存在、schema 不符)见 [download-statistics.md](download-statistics.md) |
+| 下载区每行只有一个按钮(没有 R2 的"下载") | 浏览器没能用上 `latest.json`,页面退到了 GitHub 状态:先按上面的命令验它的 CORS,再看它本身是否可用(判据见 [landing-page spec](../specs/landing-page.md) 的实现决策) |
 | 证书过期 | NPM 自动续期。真过期时进 NPM 后台该 Proxy Host 的 SSL 页重签 |
 
 ## 本机测试不可信

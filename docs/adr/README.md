@@ -36,7 +36,7 @@ The files named without a link in the Sources of older entries (such as `https-m
 | [0015](0015-ops-runbooks-as-fifth-doc-class.md) | Operations runbooks are a document class of their own, updated in place | Accepted |
 | [0016](0016-mas-separate-bundle-id.md) | App Store 版用独立 bundle id `com.aloongplanet.transfer` | 已接受 |
 | [0017](0017-spec-is-persistent-not-scratch.md) | Specs are persistent artifacts, kept apart from tickets | Accepted |
-| [0018](0018-cn-mirror-landing-page-only.md) | 落地页进大陆节点,下载源留在 R2 不动 | 已接受 |
+| [0018](0018-cn-mirror-landing-page-only.md) | The landing page goes to a mainland node, the download source stays on R2 | Accepted |
 | [0019](0019-workings-replace-scratch.md) | Process records live in `docs/.workings/`, kept on the machine and not committed | Accepted |
 | [0020](0020-upload-idle-timeout-not-total.md) | Transfer timeouts are idle timeouts and no longer cap the total duration | Accepted |
 | [0021](0021-schema-migration-by-declared-columns.md) | Schema migration uses declared columns as the single source of truth and adds missing columns, with no version number | Accepted |
