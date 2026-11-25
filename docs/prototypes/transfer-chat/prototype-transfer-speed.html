@@ -1,27 +1,7 @@
-<!doctype html><meta charset="utf-8">
+<!doctype html>
+<!-- Review notes: prototype-transfer-speed.md -->
+<meta charset="utf-8">
 <title>传输速度与总耗时 — 文件气泡</title>
-<!--
-  目标功能:文件气泡在传输中显示实时速度、完成后显示总耗时。
-  原型化的问题:这两个数字放哪、完成后那一行是消失还是换内容、以及几种边界下会不会挤炸。
-
-  已定方案(2026-08-22 用户裁定,以其标注图为准):
-    · **用时钉在文件大小行的右端** —— 传输中显示已走的时间、完成后停在总时长,
-      **位置不随状态变化**(这就是"保持在一行"的含义:不因传完而挪窝、不新增行)。
-    · **速度留在进度条下面那行的右端**,左端百分比;完成后进度条连同该行一起消失。
-    · 时长统一 **h/m/s**,**不随语言变**、不加空格,不足 1 时不写 h、不足 1 分不写 m(45s / 4m12s / 1h23m45s)。
-    · 不写"用时/Elapsed"前缀,直接给数字。
-    · **图片消息不显示用时** —— 它传完变缩略图,那一支没有文件行,不为它单独造一行。
-    · **失败也显示用时** —— 花掉的时间是事实。
-  配套决策:总耗时**存进库**(重启后历史消息仍有);计时**从点发送算起**(含发送前算摘要那段)。
-
-  几何抄自 App.tsx:气泡 max-width 74% / padding 8px 12px / radius 14(自己发的右下角 5);
-  文件行 flex gap 9,图标 30x30 radius 8;文件名 12.5px/560,大小 10.5px/opacity .65;
-  进度条高 5、radius 3、margin-top 8,轨道 --track(自己发的用 --own-wash);
-  那一行文字 9.5px、margin-top 3、opacity .85、tabular-nums(等宽数字,防跳动)。
-
-  演示基建(非设计的一部分,勿实现):底部悬浮的「演示·」控制条(语言切换、长文件名开关)。
-  真实语言由设置决定,app 内无此开关;气泡状态由消息真实状态决定,这里是并排铺开的 mock。
--->
 <style>
  .light{--bg:#f7f8f9;--card:#ffffff;--ink:#1a1c1f;--ink-2:#52565c;--muted:#868b93;--line:#e8eaed;
    --accent:#8a67ab;--accent-soft:#f0ebf6;--bubble-me:#f6f3f8;--bubble-you:#eef0f3;
@@ -151,7 +131,7 @@
   }
 
   /**
-   * 时长:统一 h/m/s,**不随语言变**(2026-08-22 用户裁定) —— 单位符号是国际通用记法,
+   * 时长:统一 h/m/s,**不随语言变** —— 单位符号是国际通用记法,
    * 中英共用一套省掉一组文案,也让宽度在两种语言下完全一致。不加空格。
    * 不足 1 时不写 h、不足 1 分不写 m;不足 1 秒向上取整成 1s —— 否则会出现"0s",看着像没传。
    */
@@ -202,7 +182,7 @@
       bubble({ own: false, name: n, size: '4.7 GB', took: dur(252), status: t.st.received }),
       // 7 完成 · 瞬间完成:向上取整到 1 秒,不出现"0秒"
       bubble({ own: true, name: n, size: '96 KB', took: dur(0.4), status: t.st.delivered }),
-      // 8 图片完成 · 缩略图分支没有大小行 → **不显示用时**(用户裁定),只有缩略图与状态行
+      // 8 图片完成 · 缩略图分支没有大小行 → **不显示用时**,只有缩略图与状态行
       bubble({ own: true, thumb: true, status: t.st.delivered }),
       // 9 失败 · 用时照旧显示(它花掉的时间是事实),进度条与速度行不出现
       bubble({ own: false, name: n, size: '482.3 MB', took: dur(74), err: t.enospc, icon: FILE_SVG, status: t.st.failed }),

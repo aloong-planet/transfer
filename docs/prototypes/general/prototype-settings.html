@@ -1,28 +1,16 @@
 <!doctype html>
-<!-- 原型:设置弹层。
-     2026-08-22 重做:上一版是早期方向探索(分区卡、开关、分段控件、120px 标签列),
-     与最终实现完全不是一套。本版**照实现现状复刻**——极简行式布局、标签带冒号且为内容宽度、
-     下拉框而非分段控件、图标按钮贴最右——然后在「存储」区上加「接收文件夹」的新元素。
-     颜色变量名与取值同 theme.css,实现时可直接对应。
-     防真空:弹层压在仿主窗外壳上评判(外壳只是语境占位,不复刻主窗细节;弹层有遮罩+模糊,细节看不见)。 -->
+<!-- Review notes: prototype-settings.md -->
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <title>原型 — 设置弹层(接收文件夹)</title>
 <style>
-  /* ── 变量:名称与取值同 src/renderer/src/theme.css ── */
+  /* ── Tokens ── */
   :root{
     --bg:#f7f8f9; --card:#ffffff; --ink:#1a1c1f; --ink-2:#52565c; --muted:#868b93;
     --line:#e8eaed; --line-strong:#d9dce0;
     --accent:#8a67ab; --accent-hover:#7c5a9c; --accent-soft:#f0ebf6;
     --shadow-md:0 4px 16px -6px rgba(20,22,26,.12);
-    /* 新增(theme.css 目前没有暖色警告语义,只有 --danger 红):目录失效是**需要注意**而非出错,
-       用警告琥珀色而不是危险红。取的是 amber-600/400 一档(色相 32°)——
-       orange-600(色相 25°)红味仍重,并排看更像报错(2026-08-23 三档并排选定)。
-       --warn 构成文字与边框 → 随全部主题维度变;--warn-soft 是坐在卡片上的底色 → 只随明暗变。
-       本项目当前只有明暗一个维度,故两者都是明暗各写一处。
-       实现时 theme.css 有**四处**变量块(:root、@media dark、[data-theme=light]、[data-theme=dark]),
-       四处都要写——原型只有 @media 一套。 */
     --warn:#d97706; --warn-soft:#fdf6ea;
   }
   @media (prefers-color-scheme: dark){
@@ -31,7 +19,6 @@
       --line:#2a2c30; --line-strong:#34373c;
       --accent:#a084c7; --accent-hover:#b199d3; --accent-soft:#2a2430;
       --shadow-md:0 6px 20px -8px rgba(0,0,0,.5);
-      /* 深色下提亮一档(amber-600→amber-400),与 --danger 在深色里 #dc2626→#f87171 的处理同源 */
       --warn:#fbbf24; --warn-soft:#2c2615;
     }
   }
@@ -74,20 +61,20 @@
   /* ── 存储行:照 S.storageRow / storageLabel / storagePath / storageIconBtn ── */
   .st-row{display:flex;align-items:center;gap:6px;margin:8px 0;font-size:12px}
   .st-lab{flex-shrink:0;color:var(--ink)}
-  /* direction:rtl 让省略号落在**左边**——路径太长时省掉前缀、保留末尾目录名(信息量在末尾)。
-     代价:开头的 "/" 属中性字符,会被双向算法重排到末尾,显示成 "Users/me/Downloads/"
-     (实现里现在就是这个样子)。修法是方向隔离:容器保持 rtl 管截断,路径文本包一层 <bdi>
-     自成 LTR 段落。用 unicode-bidi:plaintext 不行——它让整个元素按 LTR 处理,
-     省略号会跟着跑到右边,把末尾目录名截掉(实测过)。 */
+  /* direction:rtl puts the ellipsis on the left, so a long path drops its prefix and keeps the last
+     folder name. The leading "/" is a neutral character that the bidi algorithm moves to the end
+     ("Users/me/Downloads/"), so the path text is wrapped in a <bdi> that forms its own LTR run while
+     the container stays rtl for the truncation. unicode-bidi:plaintext does not work: it makes the
+     whole element LTR and the ellipsis jumps to the right, cutting the last folder name. */
   .st-path{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     color:var(--muted);direction:rtl;text-align:left}
   .st-btn{flex-shrink:0;border:none;background:none;cursor:pointer;color:var(--muted);
     width:22px;height:22px;border-radius:6px;padding:0;display:grid;place-items:center}
   .st-btn:hover{background:var(--line)}
 
-  /* ── 本次新增:操作行 + 两种提示块 ──
-     操作行与提示块都**不缩进**,左对齐到弹层内边距——与既有的 .hint 行一致
-     (标签宽度随语言变,固定 px 缩进在英文下就会错位)。 */
+  /* ── The actions row and the two notice blocks ──
+     None of them is indented: they align left to the dialog's padding, like the .hint row
+     (the label width changes with the language, so a fixed px indent would misalign in English). */
   .acts{display:flex;gap:14px;margin:-2px 0 4px}
   .lnk{border:0;background:none;padding:0;font-size:12px;font-family:inherit;
     color:var(--accent);cursor:pointer}

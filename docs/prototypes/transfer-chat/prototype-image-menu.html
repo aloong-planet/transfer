@@ -1,33 +1,9 @@
 <!doctype html>
+<!-- Review notes: prototype-image-menu.md -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Image context menu — copy image</title>
-<!--
-  Target feature: copy a chat image (sent or received) to the clipboard from its right-click menu,
-  so it can be pasted into another app.
-
-  Questions this page answers:
-    1. The menu with the new item: Copy Image / Save Image / Open with System App, copy first.
-    2. The thumbnail tooltip now names copying: "Click to view · Right-click to copy or save".
-    3. A phone photo whose file carries an EXIF rotation shows upright in its thumbnail (it showed
-       sideways before), and is copied upright: both match the full-size view.
-    4. The menu stays inside the window: near the right or bottom edge it opens to the left of or
-       above the pointer instead of being cut off.
-
-  Settled structure (no option round): position, wording and scope of the new item were confirmed
-  by the user (2026-10-22); the menu otherwise keeps the app's existing structure.
-  Drawn for the first time from the app (no prototype had them yet): the image right-click menu
-  (geometry and colours of the app's chat view), the thumbnail sizing (at most 180×240, radius 8).
-  Taken from the transfer-speed prototype: bubble geometry (max-width 74%, padding 8px 12px,
-  radius 14 with the 5px tail corner) and the bubble meta line.
-
-  Copying gives no feedback: the menu closes and nothing else happens (confirmed by the user).
-  The menu opens on load over the received photo, as if it had been right-clicked; right-click
-  either image to move it, and right-click near the window's right or bottom edge to see question 4.
-
-  No demo harness on this page. Follows the gallery's language and mode settings.
--->
 <script src="../manifest.js"></script>
 <script src="../app-identity.js"></script>
 <script src="../dimensions.js"></script>
