@@ -167,6 +167,9 @@
       } catch (e) {
         const pre = document.createElement('pre'); pre.textContent = d.src; box.appendChild(pre);
       }
+      // The sheet is in place: mark the state node of a message that was started before it appeared. The drive
+      // panel below defines the hook; with the library absent the loop has moved on before this point.
+      if (window.markCurrentState) window.markCurrentState();
     }
   })();
 
@@ -320,11 +323,9 @@
     document.getElementById('stress').addEventListener('change', applyReachability);
 
     render();
-    // 图异步渲染完后补一次高亮
-    var tries = 0;
-    var t = setInterval(function(){
-      if (document.querySelector('.dg svg') || ++tries > 40) { clearInterval(t); highlight(state.status); }
-    }, 100);
+    // Called by the diagram script above after each sheet is drawn, to mark the current state node; no node is
+    // marked while the drive is empty (state is null)
+    window.markCurrentState = function(){ highlight(state === null ? null : state.status); };
   })();
 </script>
 </body>
