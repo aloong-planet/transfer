@@ -554,7 +554,7 @@ settings.ts            # 自动接收开关+阈值(持久化,复用 identity.jso
 
 收到消息的提醒,分 app 内未读 + 系统级 Dock/任务栏两层。详见 [specs/unread.md](./specs/unread.md);实现踩坑见 [postmortems/unread-react-pitfalls.md](./postmortems/unread-react-pitfalls.md)。
 
-- **未读状态在 renderer**:`unread: Record<peerFp, number>`;每个 peer 一个未读数,侧栏 `DeviceRow` 显红底数字角标(>99→99+)。
+- **未读状态在 renderer**:`unread: Map<peerFp, number>`;每个 peer 一个未读数,侧栏 `DeviceRow` 显红底数字角标(>99→99+)。
 - **计未读门控**(纯函数 `shared/unread.ts` `shouldCountUnread`,有单测):`direction==='recv'` && 新消息(id 未见过) && **非**(窗口聚焦 && chat 视图 && 选中的就是该 peer)。即"正盯着该会话看"时不计。
   - ⚠️ 累加放在 `setMessages` updater **之外**,用 `seenIdsRef` 幂等判"新消息"——否则 StrictMode 双调 updater 会让未读翻倍(实测"发 1 条显示 2",已修)。
 - **窗口聚焦态**:main `mainWindow.on('focus'/'blur')` → `EVT.windowFocus` 推给 renderer;renderer 用 **ref**(非 state)存 focused/peer/view,规避消息订阅 effect(空依赖数组)的闭包陷阱。
