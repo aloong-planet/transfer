@@ -559,7 +559,7 @@ settings.ts            # 自动接收开关+阈值(持久化,复用 identity.jso
   - ⚠️ 累加放在 `setMessages` updater **之外**,用 `seenIdsRef` 幂等判"新消息"——否则 StrictMode 双调 updater 会让未读翻倍(实测"发 1 条显示 2",已修)。
 - **窗口聚焦态**:main `mainWindow.on('focus'/'blur')` → `EVT.windowFocus` 推给 renderer;renderer 用 **ref**(非 state)存 focused/peer/view,规避消息订阅 effect(空依赖数组)的闭包陷阱。
 - **清零**:`useEffect([peer,view])` 里 chat 视图 + 选中 peer → 清该 peer 未读。
-- **Dock/任务栏(跨平台差异)**:renderer 未读变化 → `CMD.setUnread(总数)` → main `app.setBadgeCount`(**仅 mac** Dock 数字角标;Windows 无效);main 侧 `onMessageUpserted` 里 recv+窗口未聚焦 → `mainWindow.flashFrame(true)`(**Windows** 任务栏闪),focus 时 `flashFrame(false)` 停。
+- **Dock/任务栏(跨平台差异)**:renderer 未读变化 → `CMD.setUnread(总数)` → main `app.setBadgeCount`(**仅 mac** Dock 数字角标;Windows 无效);同一份总数在 main 侧经 `TaskbarFlasher`:**总数上升**且窗口未聚焦 → `mainWindow.flashFrame(true)`(**Windows** 任务栏闪),focus 时 `flashFrame(false)` 停。闪烁跟计数走同一道门——总数只在 `shouldCountUnread` 放行时才涨,main 不判"是否新消息",已显示消息的状态更新不会让总数涨,故不闪。
   - ⚠️ **mac `setBadgeCount` 需通知权限才生效**(electron.d.ts:1575);本 app 未请求 → 角标可能不显示,待实测(app 内角标不受此限)。
 
 ---
