@@ -16,6 +16,7 @@ import {
 import { SHOT_CMD, EVT, type ShotSource, type ShortcutState } from '@shared/ipc'
 import { handle } from './web-guards'
 import { computeRatios } from '@shared/screenshot-geometry'
+import { withLang } from '@shared/i18n/lang-query'
 import { APP_HOST } from './app-protocol'
 import { t, getMainLang } from './i18n'
 
@@ -457,12 +458,10 @@ export class ScreenshotService {
   private loadOverlay(win: BrowserWindow): void {
     // overlay 是全屏视觉焦点:把当前有效语言经 URL query 带过去,首帧即正确(无中文闪现)。
     // 常驻 overlay 只在创建时加载一次;之后的语言变化走 EVT.languageChanged 广播热切换。
-    const q = `?lang=${getMainLang()}`
-    if (this.deps.rendererUrl) {
-      void win.loadURL(`${this.deps.rendererUrl}/overlay.html${q}`)
-    } else {
-      void win.loadURL(`app://${APP_HOST}/overlay.html${q}`)
-    }
+    const url = this.deps.rendererUrl
+      ? `${this.deps.rendererUrl}/overlay.html`
+      : `app://${APP_HOST}/overlay.html`
+    void win.loadURL(withLang(url, getMainLang()))
   }
 
   /** setBounds 必在 show 之前(§4.5:避免旧屏闪现);show 后 focus 拿键盘焦点。 */

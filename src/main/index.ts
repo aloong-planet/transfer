@@ -28,6 +28,7 @@ import {
   type AutoAcceptSettings,
   type IdentityInfo,
   type ThemePref,
+  type Lang,
   type LangPref,
   type LangResult,
   type ReceiveDirInfo,
@@ -36,6 +37,7 @@ import {
   type ShortcutState
 } from '@shared/ipc'
 import { isValidAccelerator } from '@shared/accelerator'
+import { withLang } from '@shared/i18n/lang-query'
 import { handle, installWebGuards } from './web-guards'
 import { loadOrCreateIdentity, saveAlias } from './device-identity'
 import { AppCore } from './app-core'
@@ -45,7 +47,7 @@ import { MessageStore } from './db/messages'
 import { SettingsStore } from './settings'
 import { ScreenshotService, persistAndSend } from './screenshot-service'
 import { APP_HOST, registerAppProtocol } from './app-protocol'
-import { t, setMainLang, resolveSystemEffective } from './i18n'
+import { t, setMainLang, getMainLang, resolveSystemEffective } from './i18n'
 import { orientBitmap, readJpegOrientation, thumbnailFit } from './image-orientation'
 import {
   resolveReceiveDir,
@@ -297,17 +299,14 @@ function receiveDirInfo(): ReceiveDirInfo {
 const PRELOAD = join(__dirname, '../preload/index.cjs')
 
 /**
- * 按窗口加载 renderer 入口(§4.1)。
- * dev:主窗用裸 ELECTRON_RENDERER_URL(保持根路由不变),overlay 拼 /overlay.html。
- * prod:走 app://bundle/<entry>.html(自定义 scheme,标准安全 origin;见 docs/adr/0007)。
+ * 加载主窗的 renderer 入口(§4.1;overlay 由 ScreenshotService 自己加载)。
+ * dev:裸 ELECTRON_RENDERER_URL(保持根路由不变)。
+ * prod:走 app://bundle/index.html(自定义 scheme,标准安全 origin;见 docs/adr/0007)。
+ * The language in force goes into the URL, so the page draws its first frame in it instead of asking for it afterwards.
  */
-function loadRenderer(win: BrowserWindow, entry: 'index' | 'overlay'): void {
-  const devUrl = process.env['ELECTRON_RENDERER_URL']
-  if (devUrl) {
-    win.loadURL(entry === 'index' ? devUrl : `${devUrl}/${entry}.html`)
-  } else {
-    win.loadURL(`app://${APP_HOST}/${entry}.html`)
-  }
+function loadRenderer(win: BrowserWindow, lang: Lang): void {
+  const url = process.env['ELECTRON_RENDERER_URL'] || `app://${APP_HOST}/index.html`
+  win.loadURL(withLang(url, lang))
 }
 
 function createWindow(): void {
@@ -351,7 +350,7 @@ function createWindow(): void {
     send(EVT.windowFocus, true)
   })
   mainWindow.on('blur', () => send(EVT.windowFocus, false))
-  loadRenderer(mainWindow, 'index')
+  loadRenderer(mainWindow, getMainLang())
 }
 
 function registerIpc(): void {
@@ -595,16 +594,18 @@ app.whenReady().then(async () => {
   // rendererRoot = out/renderer(__dirname = out/main),与原 loadFile 路径一致。
   registerAppProtocol(join(__dirname, '../renderer'))
 
-  // 先注册 IPC + 建窗:让 renderer 尽早开始加载/绘制外壳,与下面的后端初始化并行,避免白屏。
-  // IPC handler 全走 core?./store?. 短路,渲染层早期调用(getIdentity/listDevices)在 store/core
-  // 就绪前返回空,就绪后正常;首屏骨架不依赖数据即可显示。
   registerIpc()
-  createWindow()
 
   const userData = app.getPath('userData')
-  // settings + 语言先建:证书失败的 showErrorBox 也需正确语言(它在 identity try 之前触发)。
+  // settings + 语言先建,且在建窗之前:窗口加载时把生效的语言带进 URL,首帧即正确(createWindow 读 getMainLang);
+  // 证书失败的 showErrorBox 也需正确语言(它在 identity try 之前触发)。
   settings = new SettingsStore(userData)
   setMainLang(resolveSystemEffective(settings.getLanguage()))
+
+  // 建窗:让 renderer 尽早开始加载/绘制外壳,与下面的后端初始化并行,避免白屏。
+  // IPC handler 全走 core?./store?. 短路,渲染层早期调用(getIdentity/listDevices)在 store/core
+  // 就绪前返回空,就绪后正常;首屏骨架不依赖数据即可显示。
+  createWindow()
 
   // 证书/身份(首启生成 EC 自签名证书,几十 ms)。证书是 HTTPS 硬前提,失败即无法起服务:
   // 明确报错并退出,不静默(此处在 startCore 的 catch 之前,自身需兜住 rejection,M1)。
