@@ -21,8 +21,9 @@ repository's HEAD as the source of the assets and the command does not check tha
 SVG, because the site serves it as its favicon.
 
 The command asks `gh` who is logged in and makes its commit as that account, under the account's GitHub noreply address
-(`<id>+<login>@users.noreply.github.com`); the computer's own git identity and the git variables of the environment are not
-used, since the commit stays public. It clones the website repository into a temporary directory, writes the two files
+(`<id>+<login>@users.noreply.github.com`); the computer's own git identity is not used, and the environment's
+`GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME` and `GIT_COMMITTER_EMAIL` are overridden with it, since the
+commit stays public. It clones the website repository into a temporary directory, writes the two files
 under `apps/transfer/public/`, and checks that those are the only paths changed or staged; then it commits on the branch
 `assets/transfer-<date>-<commit>` (`-2`, `-3` and so on after it when the website repository already has that name), pushes
 it and opens the pull request with `gh`. When both files are already what the website has, it says so and opens nothing.
@@ -43,5 +44,5 @@ too, or the live website keeps the old one.
 ## An evidence run
 
 `--title <text>` replaces the pull request's title and `--note <text>` adds a line at the top of its body. They are for a
-run whose pull request is not meant to be merged, such as the one that shows the command works end to end: it says so in
-both. The person who runs it closes the pull request and deletes its branch; the command does neither.
+run whose pull request is not meant to be merged, such as the one that shows the command works end to end: the person who
+runs it says so in both, closes the pull request and deletes its branch; the command does neither.

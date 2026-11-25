@@ -16,7 +16,7 @@ Before writing a document, decide which class it belongs to: each class rots at 
 | `docs/specs/<slug>.md` | What a feature does in the current version, which boundaries it has worked through, and what it explicitly does not do. Rewritten in place; the trade-offs belong in ADRs and are cited by number. A persistent artifact, not deleted when the feature merges (ADR-0017) | `/to-spec` |
 | `docs/prototypes/` | What the interface and state models look like. Kept permanently (ADR-0014); browse them all from the `index.html` gallery | `/prototype` |
 | `docs/postmortems/` | The causal chain of one incident. One per file, append-only, written in the same round a real bug is diagnosed, indexed in its `README.md` | `/implement` step 7 |
-| `docs/ops/` | This project's runbooks — how the current processes are operated (signing, notarization, Pages, R2, download statistics) with their actual values. Updated in place; every new runbook goes here (ADR-0015). A PR that changes a process must update its runbook | The PR that changes the process |
+| `docs/ops/` | This project's runbooks — how the current processes are operated (for example signing, notarization, Pages, R2, download statistics) with their actual values. Updated in place; every new runbook goes here (ADR-0015). A PR that changes a process must update its runbook | The PR that changes the process |
 
 `docs/DESIGN.md` is a system design overview of archival value; its status notes may be stale. **The current state is defined by the code and the ADRs.**
 
