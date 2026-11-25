@@ -26,6 +26,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import type { TransferApi } from '../src/preload'
 import { EVT } from '../src/shared/ipc'
 import type { RemoteDevice } from '../src/shared/types'
 
@@ -45,9 +46,18 @@ function aliasesOnDisk(): Record<string, string> {
   }
 }
 
+/** The device's row in the list */
+const rowOf = (name: string): ReturnType<Page['locator']> => page.locator('.tf-row').filter({ hasText: name })
+
 /**
- * Stands in for discovery: one online device without an alias. Sent until its row shows, because a single
- * update sent during start-up was seen to be lost (image-copy.spec.ts, 2026-10-22).
+ * Stands in for discovery: one online device without an alias. Sent until its row shows and stays, because
+ * the injected device is not in the main process's registry, which leaves two ways for the row to be lost:
+ * - a single update sent during start-up was seen to be lost (image-copy.spec.ts, 2026-10-22);
+ * - when the app starts it asks the main process for the device list and applies the answer whenever it
+ *   arrives. The main process answers from its own empty registry, so an answer that arrives after the update
+ *   replaces the list with an empty one. Reproduced by delaying that answer; in CI run 45530983491 the row
+ *   was seen and the list was then empty. So the page asks for the list once more when the row shows, which
+ *   is after the app's own request, and the row has to be there again afterwards; if not, it is sent again.
  */
 async function showDevice(fingerprint: string, name: string): Promise<void> {
   const device: RemoteDevice = {
@@ -58,7 +68,7 @@ async function showDevice(fingerprint: string, name: string): Promise<void> {
     lastSeen: Date.now(),
     status: 'online'
   }
-  const row = page.getByText(name, { exact: true }).first()
+  const row = rowOf(name)
   await expect(async () => {
     await app.evaluate(
       ({ BrowserWindow }, [channel, d]) => {
@@ -68,11 +78,10 @@ async function showDevice(fingerprint: string, name: string): Promise<void> {
       [EVT.devicesUpdated, device] as const
     )
     await expect(row).toBeVisible({ timeout: 500 })
+    await page.evaluate(() => (window as unknown as { transfer: TransferApi }).transfer.listDevices())
+    await expect(row).toBeVisible({ timeout: 500 })
   }).toPass({ timeout: 15_000 })
 }
-
-/** The device's row in the list */
-const rowOf = (name: string): ReturnType<Page['locator']> => page.locator('.tf-row').filter({ hasText: name })
 
 /** Right-clicks the device's row where a pointer would be, then chooses 修改备注 and returns the input */
 async function openEditor(name: string): Promise<ReturnType<Page['locator']>> {
