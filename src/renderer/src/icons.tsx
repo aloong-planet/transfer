@@ -306,7 +306,11 @@ export function FileAudioIcon(props: { size?: number }): JSX.Element {
   )
 }
 
-/** Lucide file-text —— 文件类型:文档与 PDF —— Lucide 无 PDF 专用字形(1776 个已穷举),A 案统一家族下二者共用 */
+/**
+ * Lucide file-text: the file type icon of documents and PDF. PDF has no glyph of its own (transfer-chat::REQ-011/AC-02):
+ * Lucide has none, the `file-*` family has no second suitable shape, and a shape from another family would break the
+ * family's unity.
+ */
 export function FileTextIcon(props: { size?: number }): JSX.Element {
   return (
     <Icon size={props.size}>
