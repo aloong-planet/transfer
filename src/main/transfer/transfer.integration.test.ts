@@ -77,6 +77,30 @@ async function httpsPostJson(
   })
 }
 
+/** POSTs raw bytes over https (self-signed accepted) and returns the status. Tests use it to reach the server directly. */
+async function httpsPostBytes(url: string, body: Buffer): Promise<number> {
+  const https = await import('node:https')
+  const u = new URL(url)
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        host: u.hostname,
+        port: u.port,
+        path: u.pathname + u.search,
+        method: 'POST',
+        rejectUnauthorized: false,
+        headers: { 'content-type': 'application/octet-stream', 'content-length': String(body.length) }
+      },
+      (res) => {
+        res.on('data', () => {})
+        res.on('end', () => resolve(res.statusCode ?? 0))
+      }
+    )
+    req.on('error', reject)
+    req.end(body)
+  })
+}
+
 /** 发起 https POST 但返回可主动 abort 的句柄(模拟发送方中途断开)。接受自签名。 */
 async function httpsPostAbortable(
   url: string,
@@ -498,6 +522,25 @@ describe('文件收发(集成)', () => {
       const accepted = await httpsPostJson(url, request(longest))
       expect(accepted.status).toBe(status)
       expect(reached).toEqual([[path, longest]])
+    }
+  )
+
+  test.each(['constructor', 'toString'])(
+    'a file offered under the id %s gets a token from POST /prepare-upload, and POST /upload with it stores the file',
+    async (id) => {
+      const base = `https://${HOST}:${target.port}/api/localsend/v2`
+      const content = randomBytes(300)
+      const prepared = await httpsPostJson(`${base}/prepare-upload`, {
+        info: selfInfo('S', 'FP'),
+        files: { [id]: { id, fileName: 'odd-id.bin', size: content.length, fileType: 'application/octet-stream' } }
+      })
+      expect(prepared.status).toBe(200)
+      const { sessionId, files } = (await prepared.json()) as { sessionId: string; files: Record<string, string> }
+      const tokens = Object.entries(files)
+      expect(tokens.map(([fileId]) => fileId)).toEqual([id])
+      const query = new URLSearchParams({ sessionId, fileId: id, token: tokens[0][1] })
+      expect(await httpsPostBytes(`${base}/upload?${query}`, content)).toBe(200)
+      expect(readFileSync(join(recvDir, 'odd-id.bin')).equals(content)).toBe(true)
     }
   )
 

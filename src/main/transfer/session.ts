@@ -23,8 +23,8 @@ interface Session {
   sessionId: string
   remoteIp: string
   fingerprint: string
-  /** 请求的全部文件 */
-  requested: Record<string, FileMeta>
+  /** 请求的全部文件(fileId -> meta) */
+  requested: Map<string, FileMeta>
   /** 接受集合:fileId -> token(仅 active 阶段有) */
   accepted: Map<string, string>
   /**
@@ -104,7 +104,7 @@ export class SessionManager {
       sessionId: generateSessionId(),
       remoteIp: req.remoteIp,
       fingerprint: req.fingerprint,
-      requested: req.files,
+      requested: new Map(Object.entries(req.files)),
       accepted: new Map(),
       pending: new Set(),
       lastActivity: this.now()
@@ -133,9 +133,9 @@ export class SessionManager {
       return { kind: 'rejected' }
     }
 
-    const ids = acceptedFileIds ?? Object.keys(s.requested)
+    const ids = acceptedFileIds ?? [...s.requested.keys()]
     // 只接受确实存在于请求里的 fileId
-    const valid = ids.filter((id) => id in s.requested)
+    const valid = ids.filter((id) => s.requested.has(id))
 
     // 接受但无文件要传(文本消息:正文已在 preview,不走 upload;或接受了 0 个文件)
     if (valid.length === 0) {
@@ -143,13 +143,12 @@ export class SessionManager {
       return { kind: 'accepted-empty' }
     }
 
-    const files: Record<string, string> = {}
     for (const id of valid) {
-      const token = generateToken()
-      s.accepted.set(id, token)
+      s.accepted.set(id, generateToken())
       s.pending.add(id)
-      files[id] = token
     }
+    // Object.fromEntries keeps every accepted id as an own entry
+    const files = Object.fromEntries(s.accepted)
     s.phase = 'active'
     s.lastActivity = this.now()
     return { kind: 'accepted', sessionId: s.sessionId, files }
@@ -178,7 +177,7 @@ export class SessionManager {
     s.lastActivity = this.now()
 
     const alreadyReceived = !s.pending.has(fileId)
-    return { kind: 'accept', fileMeta: s.requested[fileId], alreadyReceived, peerFp: s.fingerprint }
+    return { kind: 'accept', fileMeta: s.requested.get(fileId)!, alreadyReceived, peerFp: s.fingerprint }
   }
 
   /**
