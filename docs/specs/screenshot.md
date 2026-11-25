@@ -16,6 +16,7 @@ A global shortcut starts a capture: the user selects a region of the screen, ann
 - screenshot::REQ-001/AC-02: Settings has a 快捷键 / Shortcut section with a 截图 / Screenshot button showing the current combination. Choosing it, then pressing a combination, sets that combination as the shortcut at once, with no Save; Esc, or the button losing focus, ends the choosing without a change.
 - screenshot::REQ-001/AC-03: A combination is accepted when it is F1 to F24, with or without modifiers, or any other supported key together with at least one of Command, Control, Alt and Shift. The supported keys are A to Z, 0 to 9, the four arrow keys, Space, Enter, Tab, Backspace, Delete, Home, End, PageUp, PageDown, Insert and the keys for ` - = [ ] \ ; ' , . /. A plain key is refused with 普通键需配合 Cmd/Ctrl/Alt/Shift / Regular keys need Cmd/Ctrl/Alt/Shift, and an unsupported key with 不支持该按键,请换一个 / This key is not supported, try another.
 - screenshot::REQ-001/AC-04: When the system refuses the new combination because another application holds it, the previous shortcut stays in force and is kept, and Settings says 该快捷键可能被其他程序占用,请换一个 / This shortcut may be taken by another app, try another.
+- screenshot::REQ-001/AC-05: When the system refuses the saved combination at startup because another application holds it, the Shortcut section of Settings says what screenshot::REQ-001/AC-04 says, from the moment Settings opens until a combination that registers is set. While the section shows another message, that message is shown instead.
 
 ### screenshot::REQ-002 Selecting a region with a magnifier
 
@@ -46,7 +47,7 @@ A global shortcut starts a capture: the user selects a region of the screen, ann
 
 | Boundary | Expected behaviour |
 |---|---|
-| The saved shortcut cannot be registered at startup | The shortcut does not work and nothing tells the user; the reason is written to the log only. screenshot::REQ-001/AC-04 applies only to a change made in Settings |
+| The saved shortcut cannot be registered at startup | The shortcut does not work. The saved combination is kept, the registration is not tried again until a combination is set, and nothing is shown at startup. screenshot::REQ-001/AC-05 applies |
 
 ## Out of Scope
 

@@ -8,6 +8,7 @@ import {
   app,
   BrowserWindow,
   dialog,
+  globalShortcut,
   shell,
   clipboard,
   nativeImage,
@@ -31,13 +32,15 @@ import {
   type LangResult,
   type ReceiveDirInfo,
   type PickReceiveDirResult,
-  type SetShortcutResult
+  type SetShortcutResult,
+  type ShortcutState
 } from '@shared/ipc'
 import { isValidAccelerator } from '@shared/accelerator'
 import { handle, installWebGuards } from './web-guards'
 import { loadOrCreateIdentity, saveAlias } from './device-identity'
 import { AppCore } from './app-core'
 import { canShowUnfinishedTextFile, writeTextFile } from './transfer/text-file'
+import { TaskbarFlasher } from './taskbar-flasher'
 import { MessageStore } from './db/messages'
 import { SettingsStore } from './settings'
 import { ScreenshotService, persistAndSend } from './screenshot-service'
@@ -160,6 +163,13 @@ let store: MessageStore | null = null
 let settings: SettingsStore | null = null
 let mainWindow: BrowserWindow | null = null
 let screenshot: ScreenshotService | null = null
+
+// Fed by the renderer's unread total (CMD.setUnread); the focus handler in createWindow stops the flash.
+const taskbarFlasher = new TaskbarFlasher({
+  platform: process.platform,
+  windowFocused: () => mainWindow?.isFocused() ?? false,
+  flashTaskbar: () => mainWindow?.flashFrame(true)
+})
 
 function send(channel: string, payload: unknown): void {
   mainWindow?.webContents.send(channel, payload)
@@ -535,8 +545,8 @@ function registerIpc(): void {
     for (const w of BrowserWindow.getAllWindows()) w.webContents.send(EVT.languageChanged, effective)
     return { pref, effective }
   })
-  // 截图快捷键:取当前值。
-  handle(CMD.getShortcut, (): string => settings!.getShortcutCapture())
+  // Screenshot shortcut: the saved combination, and whether the system refused to register it at startup.
+  handle(CMD.getShortcut, (): ShortcutState => screenshot!.shortcutState())
   // 设新键:先粗校验格式 → 试注册(rebind,失败自动回滚旧键)→ 成功才持久化。
   handle(CMD.setShortcut, (_e, accel: string): SetShortcutResult => {
     if (!isValidAccelerator(accel)) return { ok: false, reason: 'invalid' }
@@ -549,10 +559,12 @@ function registerIpc(): void {
   handle(CMD.setOfflineKeep, (_e, minutes: number): number =>
     core?.setOfflineKeepMinutes(minutes) ?? settings!.getOfflineKeepMinutes()
   )
-  // 同步总未读数(renderer 算好后传来)→ mac Dock 数字角标(0 隐藏)。
-  // Windows setBadgeCount 无效(返 false),无害;Windows 提醒靠 flashFrame。
+  // The renderer's total unread count: the macOS Dock badge (0 hides it) and, on Windows, the taskbar flash.
+  // setBadgeCount does nothing on Windows (returns false), which is harmless.
   handle(CMD.setUnread, (_e, total: number) => {
-    app.setBadgeCount(Math.max(0, Math.floor(total)))
+    const count = Math.max(0, Math.floor(total))
+    app.setBadgeCount(count)
+    taskbarFlasher.onUnreadTotal(count)
   })
 
   // 截图:主窗同步当前聊天对象(决定"发聊天"可用性,§4.3 blocker#1)
@@ -626,20 +638,7 @@ app.whenReady().then(async () => {
     writeTextFile: (text) => writeTextFile(sentTextsDir(), t('main.file.textPrefix'), text),
     events: {
       onDevicesUpdated: (devices) => send(EVT.devicesUpdated, devices),
-      onMessageUpserted: (msg) => {
-        send(EVT.messageUpserted, msg)
-        // 收到的消息且窗口未聚焦 → 闪烁任务栏。**仅 Windows**:mac 上 flashFrame 会让 Dock
-        // 图标持续跳动(bounce),与"mac 只用数字角标、不跳"的决策冲突,故 mac 不调。
-        // mac 数字角标由 renderer 的 setUnread 驱动(它才知道"是否正在看该会话")。
-        if (
-          process.platform === 'win32' &&
-          msg.direction === 'recv' &&
-          mainWindow &&
-          !mainWindow.isFocused()
-        ) {
-          mainWindow.flashFrame(true)
-        }
-      },
+      onMessageUpserted: (msg) => send(EVT.messageUpserted, msg),
       onProgress: (p) => send(EVT.progress, p)
     }
   })
@@ -653,6 +652,7 @@ app.whenReady().then(async () => {
     preload: PRELOAD,
     sentImagesDir: join(userData, 'sent-images'),
     getShortcut: () => settings!.getShortcutCapture(),
+    shortcuts: globalShortcut,
     // 聊天区截图按钮触发时,截图前隐藏主窗、截完恢复(F1 路径不用,主窗本就可能不在前台)
     getMainWindow: () => mainWindow,
     // 复用现有聊天发送链路(§3.4:必须走 core.chat.sendFiles 才入库/推 UI/串行化)

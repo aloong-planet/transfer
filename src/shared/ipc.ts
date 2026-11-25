@@ -86,7 +86,7 @@ export const CMD = {
   /** 界面语言:读回 {pref,effective};写 pref 后回传新 {pref,effective}(effective 由 main 解析 system) */
   getLanguage: 'settings:getLanguage',
   setLanguage: 'settings:setLanguage',
-  /** 截图快捷键:取当前值 / 设新值(设时试注册,冲突返 ok:false) */
+  /** Screenshot shortcut: read its state (ShortcutState) / set a new one (the registration is tried; a refusal returns ok:false) */
   getShortcut: 'settings:getShortcut',
   setShortcut: 'settings:setShortcut',
   /** 离线设备保留时长(分钟,0=从不):取当前值 / 设新值(即时打通 registry,返归一化后的分钟) */
@@ -100,6 +100,13 @@ export const CMD = {
 export type SetShortcutResult =
   | { ok: true; accel: string }
   | { ok: false; reason: 'conflict' | 'invalid' }
+
+/** The answer to getShortcut: `accel` is the saved combination; `conflict` is set when the system refused to register it
+ *  at startup (another application holds it), which Settings tells the user. */
+export interface ShortcutState {
+  accel: string
+  conflict: boolean
+}
 
 export type ThemePref = 'system' | 'light' | 'dark'
 

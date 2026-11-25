@@ -19,7 +19,8 @@ import {
   type Lang,
   type ReceiveDirInfo,
   type PickReceiveDirResult,
-  type SetShortcutResult
+  type SetShortcutResult,
+  type ShortcutState
 } from '@shared/ipc'
 import type { RemoteDevice } from '@shared/types'
 
@@ -70,7 +71,7 @@ const api = {
   getLanguage: (): Promise<LangResult> => ipcRenderer.invoke(CMD.getLanguage),
   setLanguage: (pref: LangPref): Promise<LangResult> => ipcRenderer.invoke(CMD.setLanguage, pref),
   /** 截图快捷键:取当前 / 设新(设时 main 试注册,冲突返 ok:false) */
-  getShortcut: (): Promise<string> => ipcRenderer.invoke(CMD.getShortcut),
+  getShortcut: (): Promise<ShortcutState> => ipcRenderer.invoke(CMD.getShortcut),
   setShortcut: (accel: string): Promise<SetShortcutResult> =>
     ipcRenderer.invoke(CMD.setShortcut, accel),
   getOfflineKeep: (): Promise<number> => ipcRenderer.invoke(CMD.getOfflineKeep),

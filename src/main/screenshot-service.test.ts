@@ -11,10 +11,12 @@ import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
+  ScreenshotService,
   shouldStartSession,
   shouldRestoreMain,
   needsScreenPermission,
   persistAndSend,
+  type ShortcutRegistry,
   type ShotState
 } from './screenshot-service'
 
@@ -135,5 +137,70 @@ describe('persistAndSend — 截图原图持久化', () => {
     expect(existsSync(dir)).toBe(false)
     await persistAndSend(dir, 'c.png', PNG, async () => {})
     expect(existsSync(join(dir, 'c.png'))).toBe(true)
+  })
+})
+
+// The system's shortcut registration is replaced by a fake that refuses the combinations another application
+// holds (screenshot::REQ-001/AC-05). A real refusal cannot be produced here: it needs another application holding the
+// combination, and a test instance never registers the global shortcut (see QUIET in src/main/index.ts).
+describe('the saved shortcut at startup (screenshot::REQ-001/AC-05)', () => {
+  /** `heldByOthers`: the combinations another application holds; the set may be changed while a test runs */
+  function setup(heldByOthers: string[]): {
+    service: ScreenshotService
+    others: Set<string>
+    registry: ShortcutRegistry
+  } {
+    const others = new Set(heldByOthers)
+    const ours = new Set<string>()
+    const registry: ShortcutRegistry = {
+      register: (accel) => {
+        if (others.has(accel)) return false
+        ours.add(accel)
+        return true
+      },
+      unregister: (accel) => void ours.delete(accel),
+      unregisterAll: () => ours.clear(),
+      isRegistered: (accel) => ours.has(accel)
+    }
+    const service = new ScreenshotService({
+      preload: '',
+      getShortcut: () => 'F1',
+      sentImagesDir: '',
+      sendFiles: async () => {},
+      getMainWindow: () => null,
+      shortcuts: registry
+    })
+    return { service, others, registry }
+  }
+
+  it.each([
+    { held: ['F1'], conflict: true },
+    { held: [], conflict: false }
+  ])('startup registration with F1 held by others = $held reports conflict: $conflict', ({ held, conflict }) => {
+    const { service } = setup(held)
+    service.registerShortcut()
+    expect(service.shortcutState()).toEqual({ accel: 'F1', conflict })
+  })
+
+  it('setting a combination that registers ends the conflict', () => {
+    const { service } = setup(['F1'])
+    service.registerShortcut()
+    expect(service.rebindShortcut('Control+Shift+K')).toBe(true)
+    expect(service.shortcutState().conflict).toBe(false)
+  })
+
+  it('a refused change leaves the conflict in place: the saved combination is still not registered', () => {
+    const { service } = setup(['F1', 'Control+Shift+K'])
+    service.registerShortcut()
+    expect(service.rebindShortcut('Control+Shift+K')).toBe(false)
+    expect(service.shortcutState().conflict).toBe(true)
+  })
+
+  it('a refused change after a successful startup keeps the previous shortcut and reports no conflict (screenshot::REQ-001/AC-04)', () => {
+    const { service, registry } = setup(['Control+Shift+K'])
+    service.registerShortcut()
+    expect(service.rebindShortcut('Control+Shift+K')).toBe(false)
+    expect(registry.isRegistered('F1')).toBe(true)
+    expect(service.shortcutState().conflict).toBe(false)
   })
 })
