@@ -22,7 +22,7 @@ _Avoid_: "证书校验"——我们不走 CA 链。
 
 **自动接收**: 针对**文件**的可配置开关 + 大小阈值,默认关(全部文件需确认);开启后 `size ≤ 阈值` 自动收。**文本消息不受此开关限制,始终自动接收**。
 
-**备注(远端设备别名)**: 用户给发现到的设备起的自定义名,按 fingerprint 存 `settings.json` 的 `deviceAliases`,**永久保留**(离线/真删不清)。合并在 **main 侧** `applyAliases` 做,renderer 无感。
+**备注(远端设备别名)**: 用户给发现到的设备起的自定义名,按 fingerprint 存 `settings.json` 的 `deviceAliases`,**永久保留**(离线/真删不清)。合并在 **main 侧**做,设备列表与已接收文件列表各合并一次,renderer 无感。
 _Avoid_: 与"本机名"混淆——`device:setAlias` 改**本机名**(identity.json),`device:setRemoteAlias` 才是改远端备注,两者无关。
 
 **alias / defaultAlias / hasCustomAlias**: `alias` = 合并后的**显示名**(备注优先);`defaultAlias` = 对端广播的原始默认名;`hasCustomAlias` = main 显式下发的布尔。
