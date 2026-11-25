@@ -1,11 +1,11 @@
 // 主进程 i18n:持有“当前有效语言”内存态,供主进程文案(dialog/文件名前缀)读取。
 // 与两个渲染 window 共享同一份字典 DICT。
 
-import { app } from 'electron'
 import { DICT } from '@shared/i18n/dict'
 import { createT } from '@shared/i18n/t'
 import type { Lang } from '@shared/i18n/t'
 import { resolveEffective, type LangPref } from '@shared/i18n/resolve'
+import { systemLanguages } from './system-locale'
 
 // 当前有效语言;默认 zh(启动时 initMainLang 会按 settings 覆盖)。
 let currentLang: Lang = 'zh'
@@ -24,9 +24,9 @@ export function getMainLang(): Lang {
 }
 
 /**
- * 把偏好解析成有效语言 —— system 时调 app.getPreferredSystemLanguages()。
+ * 把偏好解析成有效语言 —— system 时读系统语言列表(systemLanguages,即 app.getPreferredSystemLanguages(),测试可替换)。
  * 必须在 app ready 之后调用(Electron 要求)。
  */
 export function resolveSystemEffective(pref: LangPref): Lang {
-  return resolveEffective(pref, app.getPreferredSystemLanguages())
+  return resolveEffective(pref, systemLanguages())
 }

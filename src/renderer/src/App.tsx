@@ -11,6 +11,7 @@ import { OFFLINE_KEEP_PRESETS } from '@shared/offline-keep'
 import { isTerminal, isTransferring, canRespond } from '@shared/message'
 import type { ErrorReason } from '@shared/message'
 import { failedLabelKey } from '@shared/i18n/failed-label'
+import { regionFormatFromSearch, regionFormats, type RegionFormats } from '@shared/i18n/region-format'
 import type {
   IdentityInfo,
   UiMessage,
@@ -819,7 +820,8 @@ function Downloads(): JSX.Element {
               </div>
               <div style={S.dlMeta}>
                 {f.fileSize != null ? fmtSize(f.fileSize) : ''} ·{' '}
-                {t('downloads.from', { alias: f.peerAlias ?? '' })} · {fmtDateTime(f.createdAt)}
+                {t('downloads.from', { alias: f.peerAlias ?? '' })} ·{' '}
+                <span data-testid="received-file-time">{fmtDateTime(f.createdAt)}</span>
               </div>
             </div>
             <button
@@ -848,7 +850,7 @@ function Bubble({ msg, prog }: { msg: UiMessage; prog?: ProgressMap[string] }): 
           <FileBubble msg={msg} prog={prog} own={own} />
         )}
         <div style={S.meta}>
-          {statusLabel(t, msg)} · {fmtTime(msg.createdAt)}
+          {statusLabel(t, msg)} · <span data-testid="message-time">{fmtTime(msg.createdAt)}</span>
         </div>
       </div>
     </div>
@@ -1447,13 +1449,18 @@ function statusLabel(t: TFn<TKey>, m: UiMessage): string {
     }
   }
 }
+// language::REQ-004: both write in the system's region format, which the window's URL carries. The formatters are built on
+// first use and kept: the locale is fixed for the life of the page.
+let regionFormatsOfPage: RegionFormats | undefined
+function pageFormats(): RegionFormats {
+  regionFormatsOfPage ??= regionFormats(regionFormatFromSearch(window.location.search))
+  return regionFormatsOfPage
+}
 function fmtTime(ts: number): string {
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return pageFormats().time(ts)
 }
 function fmtDateTime(ts: number): string {
-  const d = new Date(ts)
-  const p = (n: number): string => String(n).padStart(2, '0')
-  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+  return pageFormats().dateTime(ts)
 }
 function fmtSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
