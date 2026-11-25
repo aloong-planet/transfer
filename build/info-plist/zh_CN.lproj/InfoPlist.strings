@@ -1,0 +1,2 @@
+/* Generated from src/shared/i18n/dict.ts by scripts/gen-info-plist-strings.mjs (pnpm gen:info-plist). Do not edit. */
+"NSLocalNetworkUsageDescription" = "Transfer 需要访问本地网络来发现同一局域网内的设备并直接传输文件。";

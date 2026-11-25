@@ -25,6 +25,7 @@ Each class of document has exactly one home, chosen by how fast it rots; see `do
 - An icon comes from Lucide, then Tabler where Lucide has no equivalent, then Material Symbols through `FilledIcon` only, and `src/renderer/src/icons.tsx` names each icon's source (that file's header comment).
 - The screenshot toolbar's text tool keeps the literal `A`, the one character icon; it is a decision, not an omission, so it is not replaced by an SVG (`src/renderer/src/overlay.tsx`).
 - Copy never lists the interface languages as if the list were complete (`src/shared/i18n/dict.ts`).
+- A user-visible text in an Info.plist is a dictionary entry named in `INFO_PLIST_KEYS`, shipped as generated `InfoPlist.strings`; `extendInfo` in `electron-builder.yml` holds its English base value and otherwise only keys that show no text (`src/shared/i18n/info-plist.ts`).
 - A new startup action is judged by whether the user, or anyone on their LAN, can notice it while the user's own instance runs; multicast announce is the one that can, the HTTP port is not (`src/main/index.ts`).
 - In a quiet test instance, mouse events are built as `MouseEvent`s inside the page, never through Playwright's `dispatchEvent('contextmenu')` (docs/postmortems/playwright-contextmenu-no-coordinates.md).
 - A quiet test instance's window is never shown in order to take a screenshot: it renders while hidden, and `toBeVisible()` there tests layout visibility only (the comment on `QUIET` in `src/main/index.ts`).

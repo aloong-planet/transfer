@@ -76,6 +76,15 @@ mac:
   # 版本门槛:electron-builder <26 在 mac 上此选项静默失效(#9774);本项目用 26.x(见 package.json),已含修复。
   # locale 码按磁盘 .lproj 名写(下划线,如 zh_CN 非 zh-CN),否则匹配不上被误删。三个架构对称裁剪,不破坏 universal 合并。
   electronLanguages: [en, en_GB, zh_CN]
+  # The Info.plist text macOS shows in its own prompts, per language: build/info-plist/<folder>.lproj/InfoPlist.strings,
+  # generated from the dictionary by `pnpm gen:info-plist` (src/shared/i18n/info-plist.ts says which folders and why).
+  # Copied into Contents/Resources after electronLanguages has pruned Chromium's folders (those are empty, so nothing
+  # collides) and before signing. The Mac App Store builds ship it too: they are packed with these mac options merged
+  # with mas's and masDev's, and the merge concatenates lists, so a list under mas or masDev adds to this one and
+  # never replaces it.
+  extraResources:
+    - from: build/info-plist
+      to: .
   icon: build/icon.icns       # 应用图标(紫底 + 白色纸飞机,主色 #8a67ab)
   # Hardened runtime + entitlements (applied when signing; required by Electron/V8 under the hardened runtime).
   # Every macOS package is signed with Developer ID: packaging fails when there is no certificate
@@ -98,7 +107,11 @@ mac:
   extendInfo:
     # macOS 15+ 本地网络隐私:访问局域网前系统据此向用户说明用途。
     # **两条发布线都要**:本地网络权限与分发方式无关,而局域网发现是本 app 的核心功能。
-    NSLocalNetworkUsageDescription: Transfer 需要访问本地网络来发现同一局域网内的设备并直接传输文件。
+    # This is the BASE value, in English: what a system language with no InfoPlist.strings folder falls back to.
+    # Where a folder matches the system's language, macOS shows its text instead (extraResources above; language::REQ-003/AC-04).
+    # All the texts live in the dictionary (src/shared/i18n/dict.ts, key infoPlist.localNetworkUsage); electron-builder
+    # cannot generate this copy, so src/shared/i18n/info-plist.test.ts fails when it differs from the dictionary's English.
+    NSLocalNetworkUsageDescription: Transfer needs access to the local network to discover devices on the same network and transfer files to them directly.
     # 沙盒只放行以 Team ID 打头的 Mach 服务名,Electron 靠这个键给 rendezvous server 命名。
     # mas 目标下 electron-builder 会自动写同名键;显式声明是为了不依赖那个自动行为。
     ElectronTeamID: RHQ28XS7D9
@@ -140,6 +153,7 @@ mas:
   # 加固运行时是 Developer ID 公证那条线的要求,MAS 走沙盒,不启用。
   hardenedRuntime: false
   # ⚠️ 这里**没有** extendInfo —— 它写在上面的 mac 块里,写在这儿不生效。原因见那里的注释。
+  # Likewise no extraResources here: the list in mac's block applies to this line too (a list here would be added to it).
 
 masDev:
   # 继承 mas,只换成开发用 profile(本机测沙盒行为,不上传)
