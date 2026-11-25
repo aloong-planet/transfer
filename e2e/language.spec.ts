@@ -17,11 +17,12 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { DICT } from '../src/shared/i18n/dict'
 import type { Lang } from '../src/shared/i18n/t'
 import type { LangPref } from '../src/shared/i18n/resolve'
 import type { TransferApi } from '../src/preload'
+import { launchQuiet } from './helpers/quiet-launch'
 
 interface Launched {
   app: ElectronApplication
@@ -33,12 +34,7 @@ interface Launched {
 async function launch(language?: LangPref): Promise<Launched> {
   const userData = mkdtempSync(join(tmpdir(), 'transfer-language-e2e-'))
   if (language) writeFileSync(join(userData, 'settings.json'), JSON.stringify({ language }))
-  const app = await electron.launch({
-    args: ['-r', resolve('e2e/hold-language.cjs'), '.', `--user-data-dir=${userData}`],
-    env: { ...process.env, NODE_ENV: 'production', TRANSFER_E2E_QUIET: '1', TRANSFER_USERDATA: userData }
-  })
-  const page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  const { app, page } = await launchQuiet(userData, { electronArgs: ['-r', resolve('e2e/hold-language.cjs')] })
   return { app, page, userData }
 }
 
