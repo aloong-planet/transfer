@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
 import { shouldStickToBottom, shouldAutoScrollOnNewMessage } from './scroll-stick'
 import { placeMenu } from './menu-placement'
+import { isUnchangedCommit } from './alias-edit'
 import type { RemoteDevice } from '@shared/types'
 import { isImageFile } from '@shared/ipc'
 import { pickImageItemIndices } from '@shared/clipboard-image'
@@ -302,6 +303,7 @@ function Sidebar(props: {
   const [menuClearError, setMenuClearError] = useState(false) // 「清除备注」失败(Bug#2)
   const [editingFp, setEditingFp] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
+  const [openedWith, setOpenedWith] = useState('') // the name the row showed when the input opened
   const [saveError, setSaveError] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -322,15 +324,24 @@ function Sidebar(props: {
     if (editingFp && editingFp !== fp) void commitEdit(editingFp, draft)
     setEditingFp(fp)
     setDraft(currentAlias)
+    setOpenedWith(currentAlias)
     setSaveError(false)
     closeMenu()
   }
+  const closeEditOf = (fp: string): void => {
+    // 只在"仍在编辑刚提交的这台"时才关编辑态:防切换设备后,旧提交的 await 迟到清掉新编辑(race)
+    setEditingFp((cur) => (cur === fp ? null : cur))
+    setSaveError(false)
+  }
   const commitEdit = async (fp: string, value: string): Promise<void> => {
+    // device-alias::REQ-001/AC-02: unchanged text stores nothing, or the name shown now would be frozen as an alias
+    if (isUnchangedCommit(value, openedWith)) {
+      closeEditOf(fp)
+      return
+    }
     const { ok } = await window.transfer.setRemoteAlias(fp, value) // main 侧 trim+空判删
     if (ok) {
-      // 只在"仍在编辑刚提交的这台"时才关编辑态:防切换设备后,旧提交的 await 迟到清掉新编辑(race)
-      setEditingFp((cur) => (cur === fp ? null : cur))
-      setSaveError(false)
+      closeEditOf(fp)
     } else {
       setSaveError(true) // 失败:编辑态不关,标红
     }
