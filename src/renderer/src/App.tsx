@@ -334,7 +334,7 @@ function Sidebar(props: {
     setSaveError(false)
   }
   const commitEdit = async (fp: string, value: string): Promise<void> => {
-    // The unchanged commit: device-alias::REQ-001/AC-02
+    // The unchanged commit: device-alias::REQ-001/AC-04
     if (isUnchangedCommit(value, openedWith)) {
       closeEditOf(fp)
       return

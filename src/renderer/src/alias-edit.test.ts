@@ -1,8 +1,9 @@
 import { describe, test, expect } from 'vitest'
 import { isUnchangedCommit } from './alias-edit'
 
-// Every expected value below is worked out by hand from device-alias::REQ-001/AC-02. The untouched input
-// (the same text, no spaces) is driven through the whole app in e2e/device-alias.spec.ts.
+// Every expected value below, except the last, is worked out by hand from device-alias::REQ-001/AC-04. The
+// last is an empty input, which the main process takes as clearing the alias. The untouched input (the same
+// text, no spaces) is driven through the whole app in e2e/device-alias.spec.ts.
 describe('isUnchangedCommit', () => {
   test.each([
     ['the same text with spaces around it', '  Alice-PC ', 'Alice-PC'],

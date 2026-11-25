@@ -1,4 +1,5 @@
-// e2e: committing the alias input of a device (device-alias::REQ-001/AC-02).
+// e2e: committing the alias input of a device. The first two cases are device-alias::REQ-001/AC-04 (by Enter,
+// by clicking elsewhere); the third is device-alias::REQ-001/AC-02.
 //
 // How a device gets into the list: quiet instances run no discovery (they would announce on the LAN), so
 // the test sends the renderer a device-list update, the channel discovery uses in the product (the same
