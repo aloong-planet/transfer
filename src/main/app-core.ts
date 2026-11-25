@@ -283,6 +283,23 @@ export class AppCore {
     })
   }
 
+  /**
+   * The Received Files page's list: each file's sender is named by the alias held for the fingerprint stored
+   * with the message, and otherwise by the name stored with it (device-alias::REQ-002/AC-02).
+   * The alias comes from settings, not from the registry, so a device that is offline or has left the device
+   * list keeps its alias here (device-alias::REQ-003/AC-02). Only the returned objects change: the stored
+   * name stays in the store, and clearing the alias shows it again.
+   */
+  listReceivedFiles(args?: { limit?: number; before?: number }): Message[] {
+    const aliases = this.opts.settings.getDeviceAliases()
+    return this.opts.store.listReceivedFiles(args).map((m) => {
+      // A message's peerFp is the one the peer sent, so a value such as "constructor" must not resolve to
+      // a member that `aliases` inherits: only a stored string is an alias
+      const alias = aliases[m.peerFp]
+      return typeof alias === 'string' ? { ...m, peerAlias: alias } : m
+    })
+  }
+
   /** 合并备注后推一次 devices:updated(统一出口,三处发现层变化都走它)。 */
   private emitDevices(): void {
     this.opts.events.onDevicesUpdated(this.applyAliases(this.registry.list()))

@@ -789,13 +789,21 @@ function Downloads(): JSX.Element {
   const { t } = useI18n()
   const [files, setFiles] = useState<UiMessage[]>([])
   useEffect(() => {
-    window.transfer.listReceivedFiles().then(setFiles)
+    const reload = (): void => {
+      window.transfer.listReceivedFiles().then(setFiles)
+    }
+    reload()
     // 仅当"接收文件落盘完成"(recv+file+done)才重拉,避免任意 upsert 刷爆 IPC/查询(3-B)
-    return window.transfer.onMessageUpserted((m) => {
-      if (m.direction === 'recv' && m.type === 'file' && m.status === 'done') {
-        window.transfer.listReceivedFiles().then(setFiles)
-      }
+    const offMessage = window.transfer.onMessageUpserted((m) => {
+      if (m.direction === 'recv' && m.type === 'file' && m.status === 'done') reload()
     })
+    // The list names each sender by its alias (device-alias::REQ-002/AC-02) and saving or clearing an alias
+    // pushes the device list, so the page reloads on that push to follow the change without being reopened
+    const offDevices = window.transfer.onDevicesUpdated(reload)
+    return () => {
+      offMessage()
+      offDevices()
+    }
   }, [])
   return (
     <div style={S.chat}>
