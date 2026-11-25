@@ -33,6 +33,10 @@ jobs:
           node-version: 22
           cache: 'pnpm'
 
+      # The prototype pages under docs/prototypes/ run in no build and no test reads them; run this check locally from any directory with: node scripts/check-prototype-contract.mjs
+      - name: Check prototype contract
+        run: node scripts/check-prototype-contract.mjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
