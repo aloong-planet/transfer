@@ -19,9 +19,11 @@
   h4{font-size:12px;color:var(--ink-2);margin:18px 0 8px}
   .dg{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto}
   .dg pre{font-size:12px;white-space:pre-wrap}
-  /* The canvas stays a light sheet in either mode: each diagram's palette is fixed light by the %%{init}%%
-     directive in its own source, which wins over any theme this page passes to mermaid */
-  .dg.pan{height:56vh;padding:0;overflow:hidden;position:relative;cursor:grab;touch-action:none;user-select:none;background:#fdfdfd}
+  /* The sheet follows the mode. Each diagram's source carries its own light palette in an %%{init}%% directive,
+     which wins over any theme this page passes to mermaid, so in dark the page draws the diagram without it */
+  .dg.pan{height:56vh;padding:0;overflow:hidden;position:relative;cursor:grab;touch-action:none;user-select:none}
+  html[data-demo-mode="light"] .dg.pan{background:#fdfdfd}
+  html[data-demo-mode="dark"] .dg.pan{background:var(--card)}
   .dg.pan.dragging{cursor:grabbing}
   .dg.pan svg{display:block;transform-origin:0 0;will-change:transform;overflow:visible}
   /* htmlLabels:false 下,mermaid 给每个边标签垫一块 rect.background,fill 被其样式表套成 primaryColor(#ECECFF 淡紫);
@@ -141,34 +143,56 @@
 <script>
   const host = document.getElementById('dgs');
   const packs = Object.values(window.MERMAID_SOURCES || {}).flat();
-  (async () => {
+
+  // 内置 dark 主题近乎灰度,default 是浅底设计——用 base+themeVariables 接项目色板
+  // Light: what a source without its own directive gets. The sources' own %%{init}%% (the light palette) wins.
+  const LIGHT = { startOnLoad: false, securityLevel: 'strict', theme: 'base',
+    themeVariables: {
+      primaryColor: '#f0ebf6', primaryTextColor: '#37352f', primaryBorderColor: '#8a67ab',
+      lineColor: '#787774', textColor: '#37352f', edgeLabelBackground: '#ffffff',
+      noteBkgColor: '#f7f8f9', noteTextColor: '#37352f', background: '#ffffff',
+      secondaryColor: '#ffffff', tertiaryColor: '#f7f8f9'
+    } };
+  // Dark: the sources' directive is dropped, so this is the whole palette. Same roles as the light one
+  // (violet state nodes, yellow note, grey lines and text); the note takes the drive panel's dark "pending" badge.
+  const DARK = { startOnLoad: false, securityLevel: 'strict', theme: 'base',
+    htmlLabels: false, state: { htmlLabels: false }, flowchart: { htmlLabels: false },
+    themeVariables: {
+      primaryColor: '#2e2840', primaryBorderColor: '#6b5a8e', primaryTextColor: '#f1f1f4',
+      lineColor: '#9aa0a8', textColor: '#e3e4e8', edgeLabelBackground: 'transparent',
+      noteBkgColor: '#3a3316', noteBorderColor: '#7a6a1e', noteTextColor: '#f0dd8a',
+      tertiaryColor: '#2a2c30', background: '#1f2124'
+    } };
+  const INIT_DIRECTIVE = /%%\{init:[\s\S]*?\}\}%%\s*/;
+
+  let drawn = 0, uid = 0;   // the latest draw that started; the ids mermaid.render gives its scratch elements
+  async function draw(mode) {
+    const gen = ++drawn;
     if (!packs.length) { host.innerHTML = '<div class="hint">无图源:目录内没有 .mmd 或未跑 sync-mmd.mjs。</div>'; return; }
-    let i = 0;
+    // Everything is rendered first and then swapped in at once, so the page keeps its height (and the reader their
+    // scroll position) while a redraw is under way
+    const sheets = [];
     for (const d of packs) {
       const h = document.createElement('h4'); h.textContent = d.title;
       const box = document.createElement('div'); box.className = 'dg';
-      host.appendChild(h); host.appendChild(box);
-      if (!window.mermaid) {
-        const pre = document.createElement('pre'); pre.textContent = d.src; box.appendChild(pre);
-        continue; // 缺 vendor 库:降级显示图源文本
+      let svg = null;
+      if (window.mermaid) {   // 缺 vendor 库:降级显示图源文本
+        try {
+          mermaid.initialize(mode === 'dark' ? DARK : LIGHT);
+          svg = (await mermaid.render('mmd-' + uid++, mode === 'dark' ? d.src.replace(INIT_DIRECTIVE, '') : d.src)).svg;
+        } catch (e) { /* the source is shown as text */ }
+        if (gen !== drawn) return;   // the mode changed again while this one rendered; that draw replaces this one
       }
-      try {
-        // 内置 dark 主题近乎灰度,default 是浅底设计——用 base+themeVariables 接项目色板
-        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'base',
-          themeVariables: {
-            primaryColor: '#f0ebf6', primaryTextColor: '#37352f', primaryBorderColor: '#8a67ab',
-            lineColor: '#787774', textColor: '#37352f', edgeLabelBackground: '#ffffff',
-            noteBkgColor: '#f7f8f9', noteTextColor: '#37352f', background: '#ffffff',
-            secondaryColor: '#ffffff', tertiaryColor: '#f7f8f9'
-          } });
-        const { svg } = await mermaid.render('mmd-' + i++, d.src);
-        box.innerHTML = svg;
-        enablePanZoom(box);
-      } catch (e) {
-        const pre = document.createElement('pre'); pre.textContent = d.src; box.appendChild(pre);
-      }
+      sheets.push({ h, box, d, svg });
     }
-  })();
+    host.replaceChildren(...sheets.flatMap((s) => [s.h, s.box]));
+    for (const s of sheets) {
+      if (s.svg) { s.box.innerHTML = s.svg; enablePanZoom(s.box); }
+      else { const pre = document.createElement('pre'); pre.textContent = s.d.src; s.box.appendChild(pre); }
+    }
+    if (window.markCurrentState) window.markCurrentState();   // the drive panel's current state node, on the new sheets
+  }
+  DemoDimensions.on('mode', draw);   // now, and again whenever the gallery's settings change the mode
 
   // 画布交互:拖动=平移;捏合或 ⌘/Ctrl+滚轮=平滑缩放(以指针为锚点);普通滚轮放行给页面滚动;双击或 ⌂=重置适配
   function enablePanZoom(box){
@@ -320,11 +344,8 @@
     document.getElementById('stress').addEventListener('change', applyReachability);
 
     render();
-    // 图异步渲染完后补一次高亮
-    var tries = 0;
-    var t = setInterval(function(){
-      if (document.querySelector('.dg svg') || ++tries > 40) { clearInterval(t); highlight(state.status); }
-    }, 100);
+    // 图异步渲染完后(以及模式切换重绘后)补一次高亮:图在 draw() 里换入,换入后调用这里
+    window.markCurrentState = function(){ highlight(state === null ? null : state.status); };
   })();
 </script>
 </body>
