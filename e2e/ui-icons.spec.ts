@@ -10,7 +10,8 @@
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { test, expect, _electron as electron, type ElectronApplication } from '@playwright/test'
+import { test, expect, type ElectronApplication } from '@playwright/test'
+import { launchQuiet } from './helpers/quiet-launch'
 
 interface Launched {
   app: ElectronApplication
@@ -21,21 +22,14 @@ interface Launched {
 async function launch(): Promise<Launched> {
   const userData = mkdtempSync(join(tmpdir(), 'transfer-e2e-'))
   const errors: string[] = []
-  const app = await electron.launch({
-    args: ['.', `--user-data-dir=${userData}`],
-    env: {
-      ...process.env,
-      NODE_ENV: 'production',
-      // 静音三件事见 src/main/index.ts 的 QUIET 定义
-      TRANSFER_E2E_QUIET: '1',
-      // userData 双保险:--user-data-dir 由 Chromium 认,TRANSFER_USERDATA 由主进程认。
-      // 只给前者时主进程若走 setPath 分支仍会落到真实目录,污染用户数据。
-      TRANSFER_USERDATA: userData
-    }
-  })
-  app.process().stderr?.on('data', (b: Buffer) => {
-    const t = b.toString()
-    if (/Error occurred in handler|UnhandledPromiseRejection|TypeError/.test(t)) errors.push(t.trim())
+  // The listener is attached as soon as the launch has started the process, before it waits for the window: the output
+  // the app prints while it starts up is read too
+  const { app } = await launchQuiet(userData, {
+    onLaunch: (app) =>
+      app.process().stderr?.on('data', (b: Buffer) => {
+        const t = b.toString()
+        if (/Error occurred in handler|UnhandledPromiseRejection|TypeError/.test(t)) errors.push(t.trim())
+      })
   })
   return { app, userData, errors }
 }
@@ -59,9 +53,8 @@ async function close(l: Launched): Promise<void> {
 test('测试实例不打扰用户:窗口不显示、不占用全局快捷键', async () => {
   const l = await launch()
   try {
-    // 必须先等窗口就绪:launch 返回时 createWindow 可能还没跑,
-    // 此时 getAllWindows() 为空,下面的 not.toContain(true) 会对空数组恒真。
-    await l.app.firstWindow()
+    // 窗口必须已就绪:否则 getAllWindows() 为空,下面的 not.toContain(true) 会对空数组恒真。
+    // launch 返回时 launchQuiet 已等过 firstWindow(),下面的长度断言防的是这条保证哪天失效。
 
     const visible = await l.app.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows().map((w) => w.isVisible())
