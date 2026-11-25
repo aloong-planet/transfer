@@ -528,7 +528,7 @@ function registerIpc(): void {
     for (const w of BrowserWindow.getAllWindows()) w.webContents.send(EVT.languageChanged, effective)
     return { pref, effective }
   })
-  // 截图快捷键:取当前值。
+  // Screenshot shortcut: the saved combination, and whether the system refused to register it at startup.
   handle(CMD.getShortcut, (): ShortcutState => screenshot!.shortcutState())
   // 设新键:先粗校验格式 → 试注册(rebind,失败自动回滚旧键)→ 成功才持久化。
   handle(CMD.setShortcut, (_e, accel: string): SetShortcutResult => {

@@ -4,12 +4,12 @@
 // the moment it opens, in both interface languages, until a combination that registers is set. The decision of when the
 // refusal is recorded is tested at the service (src/main/screenshot-service.test.ts).
 //
-// Why the state is supplied here and not produced: a test instance never registers the global shortcut at startup (QUIET
-// in src/main/index.ts: a registered one would take the shortcut away from the user's own running instance), so a refusal
-// at startup cannot happen in this suite, and neither can a real conflict with another application. The only other way to
-// produce one is a new launch input, which ADR-0024 keeps out of the packaged build. So the main process's answer to
-// `settings:getShortcut` is replaced, and the renderer is what is under test. Known gap: the real handler's answer
-// with the conflict set is not exercised end to end; its answer without one is (the second case).
+// Why the state is supplied here and not produced: a test instance never registers the global shortcut at startup (see
+// QUIET in src/main/index.ts), so a refusal at startup cannot happen in this suite, and neither can a real conflict with
+// another application. The only other way to produce one is a new launch input, which ADR-0024 keeps out of the packaged
+// build. So the main process's answer to `settings:getShortcut` is replaced, and the renderer is what is under test.
+// Known gap: the real handler's answer with the conflict set is not exercised end to end; its answer without one is
+// (the second case).
 //
 // A quiet instance per case: its own userData, no window shown, no global shortcut, no network (see ui-icons.spec.ts).
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'

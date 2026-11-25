@@ -142,8 +142,7 @@ describe('persistAndSend — 截图原图持久化', () => {
 
 // The system's shortcut registration is replaced by a fake that refuses the combinations another application
 // holds (screenshot::REQ-001/AC-05). A real refusal cannot be produced here: it needs another application holding the
-// combination, and a test instance that registered one would take the shortcut away from the user's own instance
-// (see QUIET in src/main/index.ts).
+// combination, and a test instance never registers the global shortcut (see QUIET in src/main/index.ts).
 describe('the saved shortcut at startup (screenshot::REQ-001/AC-05)', () => {
   /** `heldByOthers`: the combinations another application holds; the set may be changed while a test runs */
   function setup(heldByOthers: string[]): {

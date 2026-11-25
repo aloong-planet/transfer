@@ -72,7 +72,8 @@ export interface ScreenshotDeps {
   preload: string
   /** 读当前截图快捷键(Electron accelerator);注入解耦 SettingsStore。 */
   getShortcut: () => string
-  /** 系统的全局快捷键注册(生产传 Electron 的 globalShortcut);注入是为了测试里能造出"被其他程序占用" */
+  /** The system's global-shortcut registration (production passes Electron's globalShortcut); injected so a test can
+   *  have a combination refused as if another application held it. */
   shortcuts: ShortcutRegistry
   /** 截图"发到聊天"的原图持久目录(userData/sent-images)。
    *  发送端消息 filePath 指向此处的持久副本 —— 发完不删,缩略图/看大图/另存为才可用。 */
@@ -150,8 +151,9 @@ export class ScreenshotService {
       this.currentAccel = accel
       this.startupConflict = false
     } else {
-      // 被其他 app 占用会静默失败,只能靠返回值检测(§3.2)。启动时不弹窗、不重试、不改已存的键,
-      // 只记下来,由设置页告知用户(screenshot::REQ-001/AC-05)。
+      // A combination another application holds is refused silently; the return value is the only signal (§3.2).
+      // At startup nothing is shown, nothing is retried and the saved combination is left as it is: the refusal is
+      // only recorded, for Settings to tell the user (screenshot::REQ-001/AC-05).
       this.startupConflict = true
       console.warn(`[screenshot] 快捷键 ${accel} 注册失败(可能被占用)`)
     }
