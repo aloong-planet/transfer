@@ -13,9 +13,9 @@
 | [mac-signing.md](mac-signing.md) | 证书导出、GitHub Secrets 语义、两条打包入口命令与构建内的 .app 公证钩子、CI 四档; launch inputs: the packaging check, what a local packaging does, hand checks on a real package |
 | [dmg-notarization-pipeline.md](dmg-notarization-pipeline.md) | 逐 DMG 公证与验证命令序列、失败判读、tag 形态与发布门禁 |
 | [mas-submission.md](mas-submission.md) | Mac App Store 线:与 DMG 线的差异对照、凭据、打包与六项产物验收、上传工具现状、沙盒行为该在哪验 |
-| [pages-deploy-guide.md](pages-deploy-guide.md) | Cloudflare Pages 配置(Root directory=`site`、输出目录、Node 版本)与常见坑 |
+| [pages-deploy-guide.md](pages-deploy-guide.md) | Cloudflare Pages 项目 `transfer-org`:由 aloong-planet-home 的 Deploy workflow 部署,项目与域名由 infra 管理,验证与常见坑 |
 | [cn-mirror-deploy.md](cn-mirror-deploy.md) | 国内镜像 `transfer.aloongplanet.com.cn`:部署命令、服务器形态、备案号注入、CORS 验证与排查 |
 | [r2-setup-guide.md](r2-setup-guide.md) | R2 开通、Token 最小权限、四个 secret 的语义 |
 | [download-statistics.md](download-statistics.md) | 下载统计口径定义、状态文件 schema、Cloudflare Analytics Token 与 R2 CORS 配置 |
 | [electron-security.md](electron-security.md) | The Electron security checklist, item by item: Transfer's status, what holds it, and when to update it |
-| [site-assets.md](site-assets.md) | The website's screenshot and icon: the command that sends them to the website repository as a pull request, what it checks, and the copies that exist until the deployment switches |
+| [site-assets.md](site-assets.md) | The website's screenshot and icon: the command that sends them to the website repository as a pull request, and what it checks |

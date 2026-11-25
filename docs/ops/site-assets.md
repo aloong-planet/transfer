@@ -1,10 +1,10 @@
 # Website assets
 
-Transfer's website has its source in the aloong-planet-home repository (`apps/transfer/`); until its deployment is
-switched there (aloong-planet/aloong-planet-home#27) the live site is still built from `site/` in this repository (see
-"Until the website is deployed from aloong-planet-home" below). It takes two things from the app: the screenshot of the landing page's hero (`screenshots/main.png`)
+Transfer's website is built and deployed from the aloong-planet-home repository (`apps/transfer/`) by that repository's
+Deploy workflow; this repository has no site code. The site takes two things from the app: the screenshot of the landing page's hero (`screenshots/main.png`)
 and the icon, which the site serves as its favicon (`favicon.svg`). In aloong-planet-home they change only through a pull
 request that this repository's command opens (aloong-planet-home `app-sites::REQ-004/AC-01`); nobody edits them there by hand.
+A new screenshot or icon reaches the live site once that pull request has merged and its deploy has finished.
 
 ## Sending new assets
 
@@ -33,13 +33,6 @@ A failed run keeps its clone and names it. The command never merges the pull req
 
 It is the app's main window as the landing page's hero shows it, with the macOS window bar in the picture, taken by hand and
 never by the command.
-
-## Until the website is deployed from aloong-planet-home
-
-The live website is then still built from `site/` in this repository, which holds its own copies of both files
-(`site/public/screenshots/main.png`, `site/public/favicon.svg`). The command writes the copies in aloong-planet-home only,
-so a change of the screenshot or of `build/icon.svg` made before the deployment switches has to be made in `site/public`
-too, or the live website keeps the old one.
 
 ## An evidence run
 

@@ -43,7 +43,7 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      # The root vitest covers src/**; the site's tests run in their own step below.
+      # The root vitest covers src/**.
       # pnpm test also runs, before vitest, the macOS packaging script's own tests (node --test build/mac-packaging.test.cjs)
       # and the website assets command's (node --test scripts/site-assets.test.mjs).
       - name: Test
@@ -52,29 +52,6 @@ jobs:
       # 构建期错误(模块解析、插件配置)typecheck 看不见,单独跑一次。
       - name: Build (electron-vite)
         run: pnpm build
-
-      # site 有独立的 package.json / lockfile / node_modules,不在根 workspace 里。
-      - name: Install site dependencies
-        run: pnpm install --frozen-lockfile
-        working-directory: site
-
-      # The root typecheck does not cover site/; the site's `pnpm check` type-checks its .astro and .ts
-      # files against site/tsconfig.json, so a key missing from the site dictionary fails here.
-      # It runs `astro sync` and then @astrojs/check's own `astro-check` binary, not `astro check`:
-      # Astro 4's `astro check` exits 0 when @astrojs/check cannot be loaded (fixed upstream after
-      # 4.x in withastro/astro#18589), whereas a missing `astro-check` fails this step.
-      - name: Typecheck site (@astrojs/check)
-        run: pnpm check
-        working-directory: site
-
-      # The site's vitest runs on its Astro config (site/vitest.config.ts), so its tests can render .astro pages.
-      - name: Test site
-        run: pnpm test
-        working-directory: site
-
-      - name: Build site (Astro)
-        run: pnpm build
-        working-directory: site
 
   # e2e 驱动真实 Electron。与 checks 并行(不设 needs):两者互不依赖,并行的墙钟时间
   # 短于串行,而 checks 秒级反馈的价值不受影响。

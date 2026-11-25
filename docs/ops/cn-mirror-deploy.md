@@ -1,10 +1,10 @@
 # 国内镜像部署手册(transfer.aloongplanet.com.cn)
 
-落地页有两处部署,同一份代码:
+落地页有两处部署,同一份代码。代码在 [aloong-planet-home](https://github.com/aloong-planet/aloong-planet-home) 的 `apps/transfer`,不在本仓库:
 
 | 域名 | 承载 | 部署方式 |
 |---|---|---|
-| `transfer.aloongplanet.com` | Cloudflare Pages | 合并到 master 后**自动**构建部署,见 [pages-deploy-guide.md](pages-deploy-guide.md) |
+| `transfer.aloongplanet.com` | Cloudflare Pages | aloong-planet-home 的 Deploy workflow 在它的 main 合并后**自动**构建并上传(Cloudflare 的 Git 构建已关,见 [aloong-planet/infra#33](https://github.com/aloong-planet/infra/pull/33)),见 [pages-deploy-guide.md](pages-deploy-guide.md) |
 | `transfer.aloongplanet.com.cn` | 阿里云 ECS | **手动**跑一条命令,即本手册 |
 
 两份产物的唯一差异是页脚的 ICP 备案号(法规要求,只有国内那份有)。决策与取舍见 ADR-0018。
@@ -13,13 +13,24 @@
 
 ## 日常:站点改动后怎么部署
 
-发布新版本**不需要**跑它:下载区在访客的浏览器里读 `latest.json`(读不到再读 GitHub Releases),版本号与下载链接随发布自动更新,两处部署都不用动,规则见 [landing-page spec](../specs/landing-page.md)。只有站点代码、文案或样式改了才部署。
+发布新版本**不需要**跑它:下载区在访客的浏览器里读 `latest.json`(读不到再读 GitHub Releases),版本号与下载链接随发布自动更新,两处部署都不用动,规则见 [transfer-site spec](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/specs/transfer-site.md)(在 aloong-planet-home)。只有站点代码、文案或样式改了才部署。
+
+站点的改动在 aloong-planet-home 里做、合并。镜像不会跟着更新:等 `.com` 上线了那一版,再跑下面这条命令。
+
+**先确认 `.com` 已经上线了同一版。** 镜像构建的是命令运行那一刻 main 的顶端,不看那个修订的 CI 或部署成不成功;而 `.com` 要等那个修订的 CI 通过,再由 Deploy workflow 的 `deploy-transfer` 一项上传,且上传时它必须仍是 main 的顶端(见 [deployment.md](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/ops/deployment.md))。CI 还没跑完或是红的,镜像会先于 `.com` 上线一个 `.com` 没有的修订,两处就分叉了。跑之前执行这两条(只读):
+
+```bash
+gh api repos/aloong-planet/aloong-planet-home/commits/main --jq .sha
+gh run list --repo aloong-planet/aloong-planet-home --workflow Deploy --branch main --limit 1 --json headSha,conclusion
+```
+
+两条给出的修订相同、且第二条的 `conclusion` 是 `success`,才往下跑。修订不同:那个修订的 CI 还没跑完或没通过,等它或先修好。修订相同但 `conclusion` 不是 `success`:点进那次运行看 `deploy-transfer` 一项,它成功了才往下跑;没成功,先按 deployment.md 重跑那次运行。
 
 ```bash
 pnpm deploy:site:cn
 ```
 
-一条命令完成构建(注入备案号)→ 同步 → 服务器侧修权限 → 自检。看到下面三行才算成功:
+一条命令完成克隆 → 构建(注入备案号)→ 同步 → 服务器侧修权限 → 自检。构建的是 aloong-planet-home **此刻的 main**(临时目录里一份全新的浅克隆,不是任何本地检出),开头会打印它构建的修订,应与上面核对过的那一版相同。前提:本机有 git、pnpm,以及 aloong-planet-home 的 README 要求的 Node 版本,并且连得上 github.com。看到下面三行才算成功:
 
 ```
     后端 HTTP 200
@@ -54,11 +65,11 @@ TLS 证书由 NPM 的 Let's Encrypt 集成签发与自动续期,不需要人工�
 
 由构建期环境变量 `PUBLIC_ICP_BEIAN` 注入,值写在 `build/deploy-site-cn.sh` 里——**脚本自己保证注入,不依赖使用者记得 export**,靠人记得的合规约束等于没有约束。
 
-三种输入三种归宿(实现在 `site/src/beian.ts`):
+三种输入三种归宿(实现在 aloong-planet-home 的 `apps/transfer/src/beian.ts`):
 
 | 输入 | 结果 |
 |---|---|
-| 未设置 / 空串 / 纯空白 | 不渲染。Cloudflare Pages 侧就是这种情况 |
+| 未设置 / 空串 / 纯空白 | 不渲染。`.com` 那份(aloong-planet-home 的 Deploy workflow 构建)就是这种情况 |
 | 合法 | 渲染在页脚 |
 | 设置了但格式非法 | **构建失败**。可选不等于随便写,写错的备案号是违规展示 |
 
@@ -97,7 +108,7 @@ done
 | `rsync: --chmod: invalid argument` | macOS 自带的是 openrsync,不认该参数。权限统一在服务器侧修,不要在客户端加 `--chmod` |
 | 目录路径返回 403 而非 404 | nginx 的 `try_files` 里有 `$uri/` 兜底,会匹配到真实目录再因无目录索引变 403(等于泄露目录存在)。正确写法是 `try_files $uri $uri/index.html =404` |
 | 统计行不显示 | 先按上面的命令验 CORS。其余失败模式(JSON 不存在、schema 不符)见 [download-statistics.md](download-statistics.md) |
-| 下载区每行只有一个按钮(没有 R2 的"下载") | 浏览器没能用上 `latest.json`,页面退到了 GitHub 状态:先按上面的命令验它的 CORS,再看它本身是否可用(判据见 [landing-page spec](../specs/landing-page.md) 的实现决策) |
+| 下载区每行只有一个按钮(没有 R2 的"下载") | 浏览器没能用上 `latest.json`,页面退到了 GitHub 状态:先按上面的命令验它的 CORS,再看它本身是否可用(判据见 [transfer-site spec](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/specs/transfer-site.md) 的实现决策) |
 | 证书过期 | NPM 自动续期。真过期时进 NPM 后台该 Proxy Host 的 SSL 页重签 |
 
 ## 本机测试不可信

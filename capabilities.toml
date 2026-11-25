@@ -3,13 +3,8 @@ working-language = "en"
 
 [i18n]
 enabled = true
-source = ["src/shared/i18n", "site/src/i18n"]
-enforced-by = [
-  "pnpm typecheck",
-  "pnpm test",
-  "pnpm --dir site check",
-  "pnpm --dir site test src/i18n/ui.test.ts",
-]
+source = ["src/shared/i18n"]
+enforced-by = ["pnpm typecheck", "pnpm test"]
 
 [enumeration-wording-gate]
 enabled = false
@@ -30,7 +25,7 @@ enabled = false
 
 [theming]
 enabled = true
-source = ["src/renderer/src/theme.css", "site/src/styles/global.css"]
+source = ["src/renderer/src/theme.css"]
 enforced-by = []
 
 [macos-distribution]
