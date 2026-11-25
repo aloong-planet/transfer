@@ -37,6 +37,7 @@ describe('AppCore resolvePeer 在线/离线', () => {
       receiveDir: () => recvDir,
       store,
       settings,
+      writeTextFile: () => Promise.reject(new Error('unused in this suite')),
       events: { onDevicesUpdated: () => {}, onMessageUpserted: () => {}, onProgress: () => {} }
     })
     return { core, store }

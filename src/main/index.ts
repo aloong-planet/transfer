@@ -39,6 +39,7 @@ import { isValidAccelerator } from '@shared/accelerator'
 import { handle, installWebGuards } from './web-guards'
 import { loadOrCreateIdentity, saveAlias } from './device-identity'
 import { AppCore } from './app-core'
+import { canShowUnfinishedTextFile, writeTextFile } from './transfer/text-file'
 import { TaskbarFlasher } from './taskbar-flasher'
 import { MessageStore } from './db/messages'
 import { SettingsStore } from './settings'
@@ -86,6 +87,8 @@ const QUIET = Boolean(process.env['TRANSFER_E2E_QUIET'])
 const userDataOverride = process.env['TRANSFER_USERDATA']
 if (userDataOverride) app.setPath('userData', userDataOverride)
 const portOverride = process.env['TRANSFER_PORT'] ? Number(process.env['TRANSFER_PORT']) : undefined
+/** Where a text over the send limit is kept as a .txt, next to sent-images: written there, and looked up there */
+const sentTextsDir = (): string => join(app.getPath('userData'), 'sent-texts')
 
 // 自定义 app:// scheme 注册为 privileged —— **必须在 app ready 之前**(此处模块顶层)调用,否则无效。
 // standard:true 让渲染页拿到真正的非 opaque origin(app://bundle),Web Storage 走快路径,
@@ -409,6 +412,12 @@ function registerIpc(): void {
     const msg = store?.get(messageId)
     if (msg?.filePath) shell.showItemInFolder(msg.filePath)
   })
+  // A long text that did not arrive is only a .txt in the app's folder: the conversation asks here
+  // whether it may offer the same button for it (the ordinary rule gives it to delivered files only).
+  handle(CMD.canShowUnfinishedTextFile, (_e, messageId: string): boolean => {
+    const msg = store?.get(messageId)
+    return msg ? canShowUnfinishedTextFile(msg, sentTextsDir()) : false
+  })
   // 图片缩略图:nativeImage 生成小图 dataURL(仅 PNG/JPEG 可靠;GIF/WEBP/非图片返回 null → UI 回退图标)
   handle(CMD.getThumbnail, async (_e, messageId: string): Promise<string | null> => {
     const msg = store?.get(messageId)
@@ -623,6 +632,10 @@ app.whenReady().then(async () => {
     httpPort: portOverride,
     store,
     settings,
+    // A text over the send limit is written to a .txt file: kept in the app's data folder
+    // after it is sent, like a pasted image (sent-images). The prefix is read at send time,
+    // so it follows the interface language at that moment.
+    writeTextFile: (text) => writeTextFile(sentTextsDir(), t('main.file.textPrefix'), text),
     events: {
       onDevicesUpdated: (devices) => send(EVT.devicesUpdated, devices),
       onMessageUpserted: (msg) => send(EVT.messageUpserted, msg),
