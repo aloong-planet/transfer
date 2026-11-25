@@ -1110,6 +1110,8 @@ function ImageThumb({ msg }: { msg: UiMessage }): JSX.Element {
  * 截图快捷键录制:显示当前键;点输入框进"按下快捷键…"态,捕获组合键。
  * 捕获到合法 accelerator 即调 setShortcut 立即生效(成功即显示,失败红字提示,无需额外保存)。
  * Esc / 失焦退出录制,不改键。
+ * 启动时系统拒绝了已存的键(被其他程序占用)的,一打开就显示与改键被拒相同的提示,直到设上一个能注册的键;
+ * 区里有自己的提示(录制引导、改键失败等)时,它让位给那条提示(screenshot::REQ-001/AC-05)。
  */
 function ShortcutRecorder(): JSX.Element {
   const { t } = useI18n()
@@ -1117,9 +1119,13 @@ function ShortcutRecorder(): JSX.Element {
   const [recording, setRecording] = useState(false)
   const [hint, setHint] = useState<string | null>(null) // 提示(录制引导 / 冲突 / 非法)
   const [hintErr, setHintErr] = useState(false) // hint 是否红字(错误)
+  const [conflict, setConflict] = useState(false) // 启动时系统拒绝注册已存的键
 
   useEffect(() => {
-    window.transfer.getShortcut().then(setAccel)
+    window.transfer.getShortcut().then((s) => {
+      setAccel(s.accel)
+      setConflict(s.conflict)
+    })
   }, [])
 
   const onKeyDown = (e: React.KeyboardEvent): void => {
@@ -1159,6 +1165,7 @@ function ShortcutRecorder(): JSX.Element {
     window.transfer.setShortcut(next).then((r) => {
       if (r.ok) {
         setAccel(r.accel)
+        setConflict(false)
         setHint(null)
       } else {
         setHintErr(true)
@@ -1166,6 +1173,10 @@ function ShortcutRecorder(): JSX.Element {
       }
     })
   }
+
+  const showConflict = hint === null && conflict
+  const shownHint = showConflict ? t('shortcut.errConflict') : hint
+  const shownHintErr = showConflict || hintErr
 
   return (
     <div style={S.settingRow}>
@@ -1190,9 +1201,9 @@ function ShortcutRecorder(): JSX.Element {
       >
         {recording ? t('shortcut.recordGuide') : (accel ?? '…')}
       </button>
-      {hint && (
-        <span style={{ ...S.shortcutHint, color: hintErr ? 'var(--danger)' : 'var(--muted)' }}>
-          {hint}
+      {shownHint && (
+        <span style={{ ...S.shortcutHint, color: shownHintErr ? 'var(--danger)' : 'var(--muted)' }}>
+          {shownHint}
         </span>
       )}
     </div>

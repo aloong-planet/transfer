@@ -3,7 +3,6 @@ import { writeFile, unlink, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   BrowserWindow,
-  globalShortcut,
   screen,
   desktopCapturer,
   systemPreferences,
@@ -11,9 +10,10 @@ import {
   dialog,
   clipboard,
   nativeImage,
-  type Display
+  type Display,
+  type GlobalShortcut
 } from 'electron'
-import { SHOT_CMD, EVT, type ShotSource } from '@shared/ipc'
+import { SHOT_CMD, EVT, type ShotSource, type ShortcutState } from '@shared/ipc'
 import { handle } from './web-guards'
 import { computeRatios } from '@shared/screenshot-geometry'
 import { APP_HOST } from './app-protocol'
@@ -62,6 +62,9 @@ export function needsScreenPermission(platform: string, status: string): boolean
   return status !== 'granted'
 }
 
+/** The system's shortcut registration, injected so a refusal by another application can be produced in a test. */
+export type ShortcutRegistry = Pick<GlobalShortcut, 'register' | 'unregister' | 'unregisterAll' | 'isRegistered'>
+
 export interface ScreenshotDeps {
   /** dev 时的 renderer origin(ELECTRON_RENDERER_URL),prod 为 undefined */
   rendererUrl?: string
@@ -69,6 +72,8 @@ export interface ScreenshotDeps {
   preload: string
   /** 读当前截图快捷键(Electron accelerator);注入解耦 SettingsStore。 */
   getShortcut: () => string
+  /** 系统的全局快捷键注册(生产传 Electron 的 globalShortcut);注入是为了测试里能造出"被其他程序占用" */
+  shortcuts: ShortcutRegistry
   /** 截图"发到聊天"的原图持久目录(userData/sent-images)。
    *  发送端消息 filePath 指向此处的持久副本 —— 发完不删,缩略图/看大图/另存为才可用。 */
   sentImagesDir: string
@@ -99,6 +104,9 @@ export class ScreenshotService {
   private dimWindows: BrowserWindow[] = []
   /** 当前已注册的截图快捷键(accelerator);rebind/stop 精确注销用,null=未注册 */
   private currentAccel: string | null = null
+  /** The system refused the saved combination at startup and no combination has registered since;
+   *  Settings reads it through shortcutState (screenshot::REQ-001/AC-05). */
+  private startupConflict = false
   /** 本次会话是否为"截图按钮触发"而隐藏了主窗(仅此时 endSession 才 showInactive 恢复) */
   private mainHidden = false
 
@@ -119,7 +127,7 @@ export class ScreenshotService {
 
   /** app 退出前调用:注销快捷键 + 销毁遮罩窗/压暗窗。 */
   stop(): void {
-    globalShortcut.unregisterAll()
+    this.deps.shortcuts.unregisterAll()
     this.currentAccel = null
     for (const w of this.dimWindows) if (!w.isDestroyed()) w.destroy()
     this.dimWindows = []
@@ -133,17 +141,25 @@ export class ScreenshotService {
   }
 
   // ── 截图快捷键(§4.5:注册绑 app 不绑窗;键来自设置,默认 F1) ──
-  private registerShortcut(): void {
+  registerShortcut(): void {
     const accel = this.deps.getShortcut()
     // 幂等:重复 start / macOS activate 重入不叠加
-    if (this.currentAccel === accel && globalShortcut.isRegistered(accel)) return
-    const ok = globalShortcut.register(accel, () => this.onShortcut())
+    if (this.currentAccel === accel && this.deps.shortcuts.isRegistered(accel)) return
+    const ok = this.deps.shortcuts.register(accel, () => this.onShortcut())
     if (ok) {
       this.currentAccel = accel
+      this.startupConflict = false
     } else {
-      // 被其他 app 占用会静默失败,只能靠返回值检测(§3.2)。启动时用户无从改,只 warn。
+      // 被其他 app 占用会静默失败,只能靠返回值检测(§3.2)。启动时不弹窗、不重试、不改已存的键,
+      // 只记下来,由设置页告知用户(screenshot::REQ-001/AC-05)。
+      this.startupConflict = true
       console.warn(`[screenshot] 快捷键 ${accel} 注册失败(可能被占用)`)
     }
+  }
+
+  /** What the Settings page reads: the saved combination, and whether startup could not register it. */
+  shortcutState(): ShortcutState {
+    return { accel: this.deps.getShortcut(), conflict: this.startupConflict }
   }
 
   /**
@@ -154,14 +170,15 @@ export class ScreenshotService {
   rebindShortcut(accel: string): boolean {
     const old = this.currentAccel
     // 先注销旧键(若有),让新键(哪怕等于旧键)能干净注册
-    if (old) globalShortcut.unregister(old)
-    if (globalShortcut.register(accel, () => this.onShortcut())) {
+    if (old) this.deps.shortcuts.unregister(old)
+    if (this.deps.shortcuts.register(accel, () => this.onShortcut())) {
       this.currentAccel = accel
+      this.startupConflict = false
       return true
     }
     // 新键失败:回滚旧键(尽力而为),currentAccel 保持旧值
     this.currentAccel = null
-    if (old && globalShortcut.register(old, () => this.onShortcut())) {
+    if (old && this.deps.shortcuts.register(old, () => this.onShortcut())) {
       this.currentAccel = old
     }
     return false
