@@ -116,6 +116,7 @@ describe('regionFormats', () => {
 
   test.each([
     ['the German region in English: 24-hour, day before month', 'en-DE', '21:30', '25/11, 21:30'],
+    ['the German region in German, which a system in Chinese with that region falls back to (language::REQ-004/AC-04): 24-hour, dots after day and month', 'de-DE', '21:30', '25.11., 21:30'],
     ['the US region: 12-hour, month before day', 'en-US', '09:30 PM', '11/25, 09:30 PM']
   ] as const)('writes %s', (_name, locale, time, dateTime) => {
     const formats = regionFormats(locale)
