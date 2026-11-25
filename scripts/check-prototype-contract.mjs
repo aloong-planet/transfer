@@ -47,12 +47,19 @@ const OWN_TOKENS = {
 
 class CannotCheck extends Error {}
 
+// A path as the output shows it: from the repository root when inside it, so the output does not depend on where the
+// repository is checked out.
+function show(abs) {
+  const rel = path.relative(REPO_ROOT, abs)
+  return (rel.startsWith('..') ? abs : rel).split(path.sep).join('/')
+}
+
 // Every file the checks read goes through here, so an unreadable one is "could not check", never a pass or a crash.
 function readText(file) {
   try {
     return readFileSync(file, 'utf8')
   } catch (err) {
-    throw new CannotCheck(`cannot read ${file}: ${err.message}`)
+    throw new CannotCheck(`cannot read ${show(file)}: ${err.code ?? err.message}`)
   }
 }
 
@@ -135,23 +142,18 @@ function check(root) {
   try {
     rootStat = statSync(root)
   } catch {
-    throw new CannotCheck(`${root} does not exist`)
+    throw new CannotCheck(`${show(root)} does not exist`)
   }
-  if (!rootStat.isDirectory()) throw new CannotCheck(`${root} is not a folder`)
+  if (!rootStat.isDirectory()) throw new CannotCheck(`${show(root)} is not a folder`)
 
   const files = listFiles(root)
   const pages = files.filter((f) => f.endsWith('.html') && f !== 'index.html' && !f.startsWith('vendor/'))
-  if (pages.length === 0) throw new CannotCheck(`no page found under ${root}`)
+  if (pages.length === 0) throw new CannotCheck(`no page found under ${show(root)}`)
   const manifest = readManifest(root)
   const shared = readSharedTokens(root, files)
 
   const violations = []
-  const label = (rel) => {
-    const abs = path.join(root, rel)
-    const fromRepo = path.relative(REPO_ROOT, abs)
-    return (fromRepo.startsWith('..') ? abs : fromRepo).split(path.sep).join('/')
-  }
-  const report = (rel, line, rule, message) => violations.push({ file: label(rel), line, rule, message })
+  const report = (rel, line, rule, message) => violations.push({ file: show(path.join(root, rel)), line, rule, message })
 
   // Entries by normalised path; an entry without a usable path is itself reported.
   const manifestLine = (needle) => lineOf(manifest.text, Math.max(0, manifest.text.indexOf(needle)))
@@ -238,7 +240,7 @@ function check(root) {
       if (comments.length !== 1) {
         report(page, line, 4, `expected one header comment (<!-- ${want} -->) between the doctype and the root element, found ${comments.length}`)
       } else if (comments[0][1].trim() !== want || comments[0][1].includes('\n')) {
-        report(page, line, 4, `the header comment must be the single line <!-- ${want} -->`)
+        report(page, line, 4, `the header comment must be the single line <!-- ${want} -->, found <!--${comments[0][1].replace(/\s+/g, ' ')}-->`)
       }
       if (!files.includes(`${dir === '.' ? '' : `${dir}/`}${stem}.md`)) report(page, line, 4, `${stem}.md does not exist beside the page`)
     }
