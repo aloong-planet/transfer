@@ -19,7 +19,7 @@ We keep one capture overlay window (option 1). Its page is loaded once, so state
 ## Consequences
 
 - Positive: A capture after the first creates no window, so it carries no window-creation cost.
-- Negative: Every state the overlay needs has to take both routes, and a state that misses one leaves the overlay showing the old value after a setting changes.
+- Negative: Every changing state the overlay has to follow must take both routes, and a state that misses one leaves the overlay showing the old value after a setting changes.
 - Neutral: The window is created by the first capture of a run and lives until the app quits, so only that first capture pays for creating it.
 
 ## Sources
