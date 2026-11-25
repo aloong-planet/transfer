@@ -42,6 +42,11 @@ function fileReq(fp: string, files: Record<string, Partial<FileMeta>>): PrepareU
   return { info: peer(fp), files: full }
 }
 
+// For suites whose texts stay within the send limit: writing a text file there is a bug.
+const writeTextFileUnused = async (): Promise<string> => {
+  throw new Error('writeTextFile must not be called for a text within the limit')
+}
+
 describe('ChatService', () => {
   let store: MessageStore
   let settings: SettingsStore
@@ -55,6 +60,8 @@ describe('ChatService', () => {
   let dirs: string[]
   let sentPaths: string[]
   let senderCalls: number
+  let sendLog: string[]
+  let writeText: (text: string) => Promise<string>
 
   beforeEach(() => {
     store = new MessageStore(':memory:')
@@ -69,6 +76,8 @@ describe('ChatService', () => {
     onlinePeers = new Set(['P'])
     sentPaths = []
     senderCalls = 0
+    sendLog = []
+    writeText = writeTextFileUnused
 
     chat = new ChatService({
       store,
@@ -77,6 +86,7 @@ describe('ChatService', () => {
         sendFiles: async (_t, files) => {
           senderCalls++
           sentPaths = files.map((f) => f.path)
+          sendLog.push(`files:${sentPaths.join(',')}`)
           // 复刻真实行为(已实测):createReadStream 对目录**打开成功**,首次读取时才发
           // stream error(EISDIR: illegal operation on a directory, read)。修复前目录会
           // 走到这里,错误经 classifyError 兜底成 'network' —— 正是用户看到的"网络错误"。
@@ -84,8 +94,12 @@ describe('ChatService', () => {
           if (dir) return { kind: 'error', message: `EISDIR: illegal operation on a directory, read '${dir}'` }
           return sendFilesResult
         },
-        sendText: async () => sendTextResult
+        sendText: async (_t, text) => {
+          sendLog.push(`text:${text}`)
+          return sendTextResult
+        }
       },
+      writeTextFile: (text) => writeText(text),
       resolvePeer: (fp) =>
         onlinePeers.has(fp)
           ? { target: { address: '1.1.1.1', port: 1, protocol: 'https', fingerprint: 'fp' } as SendTarget, alias: `Dev-${fp}` }
@@ -239,6 +253,55 @@ describe('ChatService', () => {
     const m = await chat.sendText('P', 'hi')
     expect(m.direction).toBe('sent')
     expect(m.status).toBe('done')
+  })
+
+  // A text over 32 KiB is written to a .txt file and sent as that file. The write happens
+  // inside the peer's send queue: otherwise a short text sent right after the long one
+  // would reach the peer first, while the long one is still being written.
+  test('sendText over 32 KiB goes out as a file, ahead of a text sent to the same peer afterwards', async () => {
+    const long = 'a'.repeat(32769)
+    const written: string[] = []
+    let finishWrite: (() => void) | undefined
+    writeText = async (text) => {
+      written.push(text)
+      await new Promise<void>((r) => (finishWrite = r))
+      return '/data/text_1.txt'
+    }
+    const first = chat.sendText('P', long)
+    const second = chat.sendText('P', 'short')
+    // Give the second text every chance to overtake the still-pending write.
+    await new Promise((r) => setImmediate(r))
+    finishWrite?.()
+    const [fileMsg, textMsg] = await Promise.all([first, second])
+
+    expect(written).toEqual([long])
+    expect(sendLog).toEqual(['files:/data/text_1.txt', 'text:short'])
+    expect(fileMsg).toMatchObject({
+      type: 'file',
+      direction: 'sent',
+      fileName: 'text_1.txt',
+      filePath: '/data/text_1.txt',
+      content: null,
+      status: 'done'
+    })
+    expect(textMsg.status).toBe('done')
+  })
+
+  // The long text cannot be written: the peer is never contacted, and the failure is a
+  // message in the conversation (like every other send failure), not a thrown error.
+  test.each([
+    { code: 'ENOSPC', reason: 'enospc' },
+    { code: 'EACCES', reason: null }
+  ])('sendText over 32 KiB whose file cannot be written ($code) → failed text message, reason $reason, peer not contacted', async ({ code, reason }) => {
+    writeText = async () => {
+      throw Object.assign(new Error('write failed'), { code })
+    }
+    const long = 'a'.repeat(32769)
+    const m = await chat.sendText('P', long)
+
+    expect(m).toMatchObject({ type: 'text', direction: 'sent', status: 'failed', errorReason: reason })
+    expect(m.content).toBe(long)
+    expect(sendLog).toEqual([])
   })
 
   test('sendText 离线 → failed(offline)', async () => {
@@ -422,6 +485,7 @@ describe('ChatService', () => {
         },
         sendFiles: async () => sendFilesResult
       },
+      writeTextFile: writeTextFileUnused,
       resolvePeer: () => ({ target: {} as SendTarget, alias: 'P' }),
       isReceiveDirWritable: () => true,
       isDirectory: () => false,
@@ -479,6 +543,7 @@ describe('ChatService 进度', () => {
         },
         sendText: async () => ({ kind: 'done' })
       },
+      writeTextFile: writeTextFileUnused,
       resolvePeer: () => ({ target: { address: '1.1.1.1', port: 1, protocol: 'https', fingerprint: 'fp' } as SendTarget, alias: 'P' }),
       isReceiveDirWritable: () => true,
       isDirectory: () => false,

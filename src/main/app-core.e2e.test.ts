@@ -1,10 +1,11 @@
 import { test, expect, describe, afterEach } from 'vitest'
-import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import selfsigned from 'selfsigned'
 import { AppCore } from './app-core'
+import { writeTextFile } from './transfer/text-file'
 import { MessageStore } from './db/messages'
 import type { Message } from '@shared/message'
 import { SettingsStore } from './settings'
@@ -62,6 +63,8 @@ interface Inst {
   core: AppCore
   store: MessageStore
   recvDir: string
+  /** Folder of the .txt files long texts are written to (**not created yet**: writing the file has to create it) */
+  sentTextsDir: string
   /** 本机证书指纹(= 对端发现/发送时用的 key) */
   fp: string
   devices: () => RemoteDevice[]
@@ -87,7 +90,9 @@ describe('AppCore 端到端(聊天)', () => {
     const identity = await makeIdentity(alias)
     const recvDir = mkdtempSync(join(tmpdir(), `core-${alias}-`))
     const settingsDir = mkdtempSync(join(tmpdir(), `set-${alias}-`))
-    dirs.push(recvDir, settingsDir)
+    const sentTextsRoot = mkdtempSync(join(tmpdir(), `txt-${alias}-`))
+    const sentTextsDir = join(sentTextsRoot, 'sent-texts')
+    dirs.push(recvDir, settingsDir, sentTextsRoot)
     const store = new MessageStore(':memory:')
     const settings = new SettingsStore(settingsDir)
     if (autoAccept) settings.setAutoAccept({ enabled: true, maxBytes: 1024 * 1024 * 1024 })
@@ -103,6 +108,7 @@ describe('AppCore 端到端(聊天)', () => {
       httpPort,
       store,
       settings,
+      writeTextFile: (text) => writeTextFile(sentTextsDir, 'text', text),
       events: {
         onDevicesUpdated: (d) => (latest = d),
         onMessageUpserted: (m) => {
@@ -118,6 +124,7 @@ describe('AppCore 端到端(聊天)', () => {
       core,
       store,
       recvDir,
+      sentTextsDir,
       fp: identity.fingerprint,
       devices: () => latest,
       messages: () => store.list({ limit: 100 }),
@@ -199,6 +206,91 @@ describe('AppCore 端到端(聊天)', () => {
     // A 侧:sent 文本 done
     const aText = a.messages().find((m) => m.direction === 'sent' && m.type === 'text')
     expect(aText?.status).toBe('done')
+  }, 30_000)
+
+  // ── A text over 32 KiB goes out as a .txt file (the limit counts UTF-8 bytes; exactly 32 KiB is still a text) ──
+  test('a text of exactly 32 KiB is still a text message: B gets a text, no file', async () => {
+    const a = await mkCore('A4', 56322, false)
+    const b = await mkCore('B4', 56323, true)
+    await a.core.start()
+    await b.core.start()
+    await waitFor(() => (a.devices().find((d) => d.info.fingerprint === b.fp) ? true : undefined))
+
+    const text = 'a'.repeat(32 * 1024)
+    const sent = await a.core.chat.sendText(b.fp, text)
+
+    expect(sent).toMatchObject({ type: 'text', status: 'done' })
+    const bText = await waitFor(() =>
+      b.messages().find((m) => m.direction === 'recv' && m.type === 'text')
+    )
+    expect(bText.content).toBe(text)
+    expect(readdirSync(b.recvDir)).toEqual([])
+  }, 30_000)
+
+  // 32 KiB + 1 byte of ASCII, and a multibyte text whose character count is far below 32768
+  // but whose byte count is over (12000 × '€' = 36000 bytes): both go out as a file. B has
+  // auto-accept on (transfer-chat::REQ-008/AC-02; the file is far below the size limit) and
+  // gets an ordinary file message whose bytes equal the text.
+  test.each([
+    { name: '32 KiB + 1 byte, ASCII', text: 'a'.repeat(32 * 1024 + 1), ports: [56324, 56325] },
+    { name: '12000 × € = 36000 bytes, multibyte', text: '€'.repeat(12000), ports: [56326, 56327] }
+  ])('a text over 32 KiB ($name) goes out as a .txt file that B auto-accepts, byte for byte', async ({ text, ports }) => {
+    const a = await mkCore(`A5-${ports[0]}`, ports[0], false)
+    const b = await mkCore(`B5-${ports[1]}`, ports[1], true)
+    await a.core.start()
+    await b.core.start()
+    await waitFor(() => (a.devices().find((d) => d.info.fingerprint === b.fp) ? true : undefined))
+
+    const bytes = Buffer.from(text, 'utf8')
+    const sent = await a.core.chat.sendText(b.fp, text)
+
+    // Sender: the conversation shows one sent file message, named like a pasted image (transfer-chat::REQ-007/AC-02)
+    expect(sent).toMatchObject({
+      type: 'file',
+      direction: 'sent',
+      status: 'done',
+      content: null,
+      fileSize: bytes.length
+    })
+    expect(sent.fileName).toMatch(/^text_\d+_[0-9a-f]{8}\.txt$/)
+    expect(a.statusSeq(sent.id)).toEqual(['pending', 'done'])
+    // The file is still there after the send (the file message's filePath must stay valid),
+    // in a folder that did not exist before
+    expect(dirname(sent.filePath!)).toBe(a.sentTextsDir)
+    expect(readFileSync(sent.filePath!).equals(bytes)).toBe(true)
+
+    // Receiver: an ordinary file message, not a text message; the bytes on disk equal the text
+    const bMsgs = b.messages()
+    expect(bMsgs.filter((m) => m.type === 'text')).toEqual([])
+    const bFile = bMsgs.find((m) => m.direction === 'recv' && m.type === 'file')
+    expect(bFile).toMatchObject({ status: 'done', fileName: sent.fileName })
+    expect(readdirSync(b.recvDir)).toEqual([sent.fileName])
+    expect(readFileSync(join(b.recvDir, sent.fileName!)).equals(bytes)).toBe(true)
+  }, 30_000)
+
+  // With auto-accept off, the long text's file waits in B's conversation for Accept, like any
+  // file (transfer-chat::REQ-008/AC-01); the sender stays pending until B answers.
+  test('a text over 32 KiB waits in B\'s conversation while auto-accept is off, and arrives once B accepts', async () => {
+    const a = await mkCore('A6', 56328, false)
+    const b = await mkCore('B6', 56329, false)
+    await a.core.start()
+    await b.core.start()
+    await waitFor(() => (a.devices().find((d) => d.info.fingerprint === b.fp) ? true : undefined))
+
+    const text = 'b'.repeat(32 * 1024 + 1)
+    const sending = a.core.chat.sendText(b.fp, text)
+
+    const asked = await waitFor(() =>
+      b.messages().find((m) => m.direction === 'recv' && m.type === 'file' && m.status === 'pending')
+    )
+    expect(a.messages().find((m) => m.direction === 'sent')?.status).toBe('pending')
+    expect(readdirSync(b.recvDir)).toEqual([])
+
+    b.core.chat.respond(asked.transferId!, true)
+    const sent = await sending
+
+    expect(sent.status).toBe('done')
+    expect(readFileSync(join(b.recvDir, sent.fileName!), 'utf8')).toBe(text)
   }, 30_000)
 
   test('离线对端:发送失败标 failed(offline)', async () => {

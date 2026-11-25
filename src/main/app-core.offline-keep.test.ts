@@ -49,6 +49,7 @@ describe('AppCore 离线保留时长接线', () => {
       receiveDir: () => recvDir,
       store,
       settings,
+      writeTextFile: () => Promise.reject(new Error('unused in this suite')),
       events: {
         onDevicesUpdated: (d) => updates.push(d),
         onMessageUpserted: () => {},

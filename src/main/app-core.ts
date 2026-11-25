@@ -40,6 +40,12 @@ export interface AppCoreOpts {
   store: MessageStore
   /** 设置(自动接收) */
   settings: SettingsStore
+  /**
+   * Writes a text over the send limit to a .txt file and returns its path (see
+   * ChatService.writeTextFile). **Required**: optional would turn a forgotten wiring into
+   * long texts that silently cannot be sent.
+   */
+  writeTextFile: (text: string) => Promise<string>
   /** HTTP 服务端口(对方连接用)。默认 DEFAULT_PORT。同机多实例须不同(DESIGN §7/M5) */
   httpPort?: number
   /** UDP 多播监听端口。固定 DEFAULT_PORT 才能互相发现;仅测试可覆盖(DESIGN §7/M5) */
@@ -86,6 +92,7 @@ export class AppCore {
           sendFiles(target, this.selfInfo(), files, onProgress),
         sendText: (target, text) => sendText(target, this.selfInfo(), text)
       },
+      writeTextFile: opts.writeTextFile,
       resolvePeer: (fp) => this.resolvePeer(fp),
       isReceiveDirWritable: () => this.isReceiveDirWritable(),
       fileSize: (path) => {

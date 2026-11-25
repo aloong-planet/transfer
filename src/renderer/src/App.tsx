@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
 import { shouldStickToBottom, shouldAutoScrollOnNewMessage } from './scroll-stick'
 import { placeMenu } from './menu-placement'
+import { isUnchangedCommit } from './alias-edit'
 import type { RemoteDevice } from '@shared/types'
 import { isImageFile } from '@shared/ipc'
 import { pickImageItemIndices } from '@shared/clipboard-image'
@@ -302,6 +303,7 @@ function Sidebar(props: {
   const [menuClearError, setMenuClearError] = useState(false) // 「清除备注」失败(Bug#2)
   const [editingFp, setEditingFp] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
+  const [openedWith, setOpenedWith] = useState('') // the name the row showed when the input opened
   const [saveError, setSaveError] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -322,15 +324,24 @@ function Sidebar(props: {
     if (editingFp && editingFp !== fp) void commitEdit(editingFp, draft)
     setEditingFp(fp)
     setDraft(currentAlias)
+    setOpenedWith(currentAlias)
     setSaveError(false)
     closeMenu()
   }
+  const closeEditOf = (fp: string): void => {
+    // 只在"仍在编辑刚提交的这台"时才关编辑态:防切换设备后,旧提交的 await 迟到清掉新编辑(race)
+    setEditingFp((cur) => (cur === fp ? null : cur))
+    setSaveError(false)
+  }
   const commitEdit = async (fp: string, value: string): Promise<void> => {
+    // The unchanged commit: device-alias::REQ-001/AC-04
+    if (isUnchangedCommit(value, openedWith)) {
+      closeEditOf(fp)
+      return
+    }
     const { ok } = await window.transfer.setRemoteAlias(fp, value) // main 侧 trim+空判删
     if (ok) {
-      // 只在"仍在编辑刚提交的这台"时才关编辑态:防切换设备后,旧提交的 await 迟到清掉新编辑(race)
-      setEditingFp((cur) => (cur === fp ? null : cur))
-      setSaveError(false)
+      closeEditOf(fp)
     } else {
       setSaveError(true) // 失败:编辑态不关,标红
     }
@@ -873,6 +884,22 @@ function FileBubble({
   const { t } = useI18n()
   const respondable = canRespond(msg)
   const canOpen = msg.status === 'done' && msg.filePath
+  // A text sent as a file that did not arrive: its .txt is the only copy of the text, so it gets the
+  // same button. Only main knows whether the message is such a file and whether it is still there.
+  const [unfinishedTextFile, setUnfinishedTextFile] = useState(false)
+  useEffect(() => {
+    if (msg.type !== 'file' || msg.direction !== 'sent' || msg.status === 'done') {
+      setUnfinishedTextFile(false)
+      return
+    }
+    let current = true
+    void window.transfer.canShowUnfinishedTextFile(msg.id).then((ok) => {
+      if (current) setUnfinishedTextFile(ok)
+    })
+    return () => {
+      current = false
+    }
+  }, [msg.id, msg.type, msg.direction, msg.status])
   // 传输中(pending/accepted)且有进度 → 百分比进度条(§12.3)
   const transferring = isTransferring(msg.status)
   const pct = prog && prog.total > 0 ? Math.min(100, Math.round((prog.sent / prog.total) * 100)) : null
@@ -888,7 +915,7 @@ function FileBubble({
   // 两者同源(都是"从点发送/点接收算起"),所以传完的瞬间数字不会跳。
   const took = showThumb ? null : fmtDuration(prog ? prog.elapsedMs : msg.durationMs)
   return (
-    <div>
+    <div data-testid="file-bubble">
       {showThumb ? (
         <ImageThumb msg={msg} />
       ) : (
@@ -941,7 +968,7 @@ function FileBubble({
           </button>
         </div>
       )}
-      {canOpen && !showThumb && (
+      {(canOpen || unfinishedTextFile) && !showThumb && (
         <button
           className="tf-btn"
           style={S.openBtn}
