@@ -102,7 +102,7 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 
 ### transfer-chat::REQ-011 A file's icon follows its extension
 
-- transfer-chat::REQ-011/AC-01: A file's icon is chosen by the extension of its file name, whatever the case, from the table below. An extension not in the table gets the plain `file` icon.
+- transfer-chat::REQ-011/AC-01: A file's icon is chosen by the extension of its file name, whatever the case, from the table below. An extension not in the table gets the plain `file` icon. A name with no extension (no dot) also gets the plain `file` icon, even when the whole name equals an extension in the table.
 - transfer-chat::REQ-011/AC-02: PDF files and document files show the same icon.
 - transfer-chat::REQ-011/AC-03: The icon is 17 px, in the accent colour, in a rounded 30 px square. The square has the own-wash tint in a file bubble sent from this device and the accent-soft tint everywhere else: in a file bubble from the other party, in every row of the 已接收文件 / Received Files page, and in the file row an image falls back to when its thumbnail cannot be shown.
 

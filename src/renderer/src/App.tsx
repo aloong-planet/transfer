@@ -859,17 +859,18 @@ function Bubble({ msg, prog }: { msg: UiMessage; prog?: ProgressMap[string] }): 
 const FILE_ICON = 17
 
 /**
- * 按文件扩展名给个贴切的图标(纯装饰,识别不了就用通用文件图标)。
+ * The icon for a file name, chosen by its extension (transfer-chat::REQ-011/AC-01). Purely decorative: a name
+ * that matches nothing gets the plain file icon.
  *
- * 全部取 Lucide 的 `file-*` 家族(A 案,2026-08-21 用户选定):同一个"纸张+折角"轮廓,
- * 一列文件读下来整齐。**扩展名分类规则一字未动**,本次只换表现层。
- *
- * PDF 与文档共用 `file-text`:Lucide 无 PDF 专用字形(1776 个图标全名单已穷举,`pdf` 零命中),
- * 而统一家族里没有第二个合适的替代。代价是丢掉了 emoji 时代 📕 与 📝 的区分——
- * 这是 A 案的已知取舍,不是漏改;要找回区分需跨家族借 `book`,那会破坏家族统一。
+ * Every icon comes from Lucide's `file-*` family, so a list of files reads evenly. PDF has no glyph of its own
+ * (transfer-chat::REQ-011/AC-02): Lucide has none, the family has no second suitable shape, and borrowing one
+ * from another family would break the family's unity.
  */
 function fileTypeIcon(name: string | null): JSX.Element {
-  const ext = (name ?? '').split('.').pop()?.toLowerCase() ?? ''
+  // A name with no dot has no extension, so the whole name is never read as one
+  const fileName = name ?? ''
+  const dot = fileName.lastIndexOf('.')
+  const ext = dot < 0 ? '' : fileName.slice(dot + 1).toLowerCase()
   if (/^(png|jpg|jpeg|gif|webp|heic|bmp|svg)$/.test(ext)) return <FileImageIcon size={FILE_ICON} />
   if (/^(mp4|mov|avi|mkv|webm)$/.test(ext)) return <FileVideoIcon size={FILE_ICON} />
   if (/^(mp3|wav|flac|aac|m4a)$/.test(ext)) return <FileAudioIcon size={FILE_ICON} />
