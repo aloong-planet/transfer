@@ -15,13 +15,22 @@
 
 发布新版本**不需要**跑它:下载区在访客的浏览器里读 `latest.json`(读不到再读 GitHub Releases),版本号与下载链接随发布自动更新,两处部署都不用动,规则见 [transfer-site spec](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/specs/transfer-site.md)(在 aloong-planet-home)。只有站点代码、文案或样式改了才部署。
 
-站点的改动在 aloong-planet-home 里做、合并。镜像不会跟着更新:合并之后再跑下面这条命令。
+站点的改动在 aloong-planet-home 里做、合并。镜像不会跟着更新:等 `.com` 上线了那一版,再跑下面这条命令。
+
+**先确认 `.com` 已经上线了同一版。** 镜像构建的是命令运行那一刻 main 的顶端,不看那个修订的 CI 或部署成不成功;而 `.com` 要等那个修订的 CI 通过,再由 Deploy workflow 的 `deploy-transfer` 一项上传,且上传时它必须仍是 main 的顶端(见 [deployment.md](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/ops/deployment.md))。CI 还没跑完或是红的,镜像会先于 `.com` 上线一个 `.com` 没有的修订,两处就分叉了。跑之前执行这两条(只读):
+
+```bash
+gh api repos/aloong-planet/aloong-planet-home/commits/main --jq .sha
+gh run list --repo aloong-planet/aloong-planet-home --workflow Deploy --branch main --limit 1 --json headSha,conclusion
+```
+
+两条给出的修订相同、且第二条的 `conclusion` 是 `success`,才往下跑。修订不同:那个修订的 CI 还没跑完或没通过,等它或先修好。修订相同但 `conclusion` 不是 `success`:点进那次运行看 `deploy-transfer` 一项,它成功了才往下跑;没成功,先按 deployment.md 重跑那次运行。
 
 ```bash
 pnpm deploy:site:cn
 ```
 
-一条命令完成克隆 → 构建(注入备案号)→ 同步 → 服务器侧修权限 → 自检。构建的是 aloong-planet-home **此刻的 main**(临时目录里一份全新的浅克隆,不是任何本地检出),开头会打印它构建的修订,据此确认那就是要上线的那一版。前提:本机有 git、pnpm,以及 aloong-planet-home 的 README 要求的 Node 版本,并且连得上 github.com。看到下面三行才算成功:
+一条命令完成克隆 → 构建(注入备案号)→ 同步 → 服务器侧修权限 → 自检。构建的是 aloong-planet-home **此刻的 main**(临时目录里一份全新的浅克隆,不是任何本地检出),开头会打印它构建的修订,应与上面核对过的那一版相同。前提:本机有 git、pnpm,以及 aloong-planet-home 的 README 要求的 Node 版本,并且连得上 github.com。看到下面三行才算成功:
 
 ```
     后端 HTTP 200
