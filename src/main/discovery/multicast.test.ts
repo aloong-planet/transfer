@@ -225,4 +225,35 @@ describe('MulticastDiscovery(集成)', () => {
 
     expect(seen).toEqual(['FP_WITNESS'])
   }, 30_000)
+
+  // discovery::REQ-004/AC-02
+  test('an announcement whose fingerprint breaks the fingerprint rule is not listed and not answered', async () => {
+    const seen: string[] = []
+    const responded: string[] = []
+    const a = new MulticastDiscovery({
+      selfFingerprint: 'FP_A',
+      buildAnnouncement: announcementFactory('Device-A', 'FP_A'),
+      onDevice: (info) => seen.push(info.fingerprint),
+      onRespond: (info) => responded.push(info.fingerprint),
+      port: TEST_PORT,
+      multicastAddr: TEST_ADDR,
+      interfaceAddr: ''
+    })
+    running.push(a)
+    await a.start()
+
+    const { createSocket } = await import('node:dgram')
+    const s = createSocket({ type: 'udp4', reuseAddr: true })
+    await new Promise<void>((r) => s.bind(() => r()))
+    const tooLong = 'x'.repeat(129)
+    const longest = 'y'.repeat(128)
+    s.send(Buffer.from(JSON.stringify(announcementFactory('Long', tooLong)(true))), TEST_PORT, TEST_ADDR)
+    // Sent after it from the same socket: once it has been handled, the one before it has had its chance
+    s.send(Buffer.from(JSON.stringify(announcementFactory('Witness', longest)(true))), TEST_PORT, TEST_ADDR)
+    await waitFor(() => (responded.includes(longest) ? true : undefined))
+    s.close()
+
+    expect(seen).toEqual([longest])
+    expect(responded).toEqual([longest])
+  }, 30_000)
 })

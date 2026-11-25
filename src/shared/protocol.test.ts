@@ -1,5 +1,13 @@
 import { test, expect, describe } from 'vitest'
-import { T_SENDER_MS, T_ACCEPT_MS, T_IDLE_MS, T_SWEEP_MS, T_UPLOAD_IDLE_MS, DEFAULT_PORT } from './protocol'
+import {
+  T_SENDER_MS,
+  T_ACCEPT_MS,
+  T_IDLE_MS,
+  T_SWEEP_MS,
+  T_UPLOAD_IDLE_MS,
+  DEFAULT_PORT,
+  isPeerFingerprint
+} from './protocol'
 
 // 超时契约护栏(DESIGN §5.1/§11.2.3):挂起模型的正确性押在这条序关系上。
 // 生产代码的确认窗口是 T_ACCEPT_MS(聊天流内确认;旧的弹框超时常量已随弹框模型一并删除)。
@@ -33,5 +41,28 @@ describe('超时契约不变量(DESIGN §5.1)', () => {
 
   test('默认端口为 LocalSend 约定的 53317', () => {
     expect(DEFAULT_PORT).toBe(53317)
+  })
+})
+
+// discovery::REQ-004/AC-01
+describe('isPeerFingerprint', () => {
+  test.each([
+    ['one character', 'A'],
+    ['128 characters', 'x'.repeat(128)],
+    ['an uppercase colon-hex SHA-256', '40:DD:4E:0A:1B:2C:3D:4E:5F:60:71:82:93:A4:B5:C6:D7:E8:F9:0A:1B:2C:3D:4E:5F:60:71:82:93:A4:B5:C6'],
+    ['the name of an inherited object member', 'constructor']
+  ])('accepts %s', (_label, v) => {
+    expect(isPeerFingerprint(v)).toBe(true)
+  })
+
+  test.each([
+    ['a missing value', undefined],
+    ['null', null],
+    ['a number', 123],
+    ['an object', { fingerprint: 'A' }],
+    ['an empty string', ''],
+    ['129 characters', 'x'.repeat(129)]
+  ])('rejects %s', (_label, v) => {
+    expect(isPeerFingerprint(v)).toBe(false)
   })
 })

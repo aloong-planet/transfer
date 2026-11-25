@@ -122,6 +122,7 @@ describe('文件收发(集成)', () => {
   let sessions: SessionManager
   let cancelledCount: number
   let receivedTexts: string[]
+  let registered: string[]
   let uploadCount: number
   let autoAcceptImpl: (files: PrepareUploadRequest['files']) => boolean
   // 控制接收方"弹框"决策
@@ -133,6 +134,7 @@ describe('文件收发(集成)', () => {
     sessions = new SessionManager({ now: () => Date.now() })
     cancelledCount = 0
     receivedTexts = []
+    registered = []
     autoAcceptImpl = () => false // 默认不自动接收
     askImpl = async (req) => Object.keys(req.files) // 默认全接受
 
@@ -145,7 +147,8 @@ describe('文件收发(集成)', () => {
       onPrepareAsk: (_id, req) => askImpl(req),
       onSessionCancelled: () => cancelledCount++,
       onTextMessage: (text) => receivedTexts.push(text),
-      shouldAutoAcceptFiles: (files) => autoAcceptImpl(files)
+      shouldAutoAcceptFiles: (files) => autoAcceptImpl(files),
+      onRegister: (info) => registered.push(info.fingerprint)
     })
     // 计数 upload 路由调用(验证文本不产生 upload)
     uploadCount = 0
@@ -451,6 +454,32 @@ describe('文件收发(集成)', () => {
     const peer = await registerTo(target, selfInfo('Sender', 'FP_SEND'))
     expect(peer?.fingerprint).toBe(rx.fingerprint) // 拿回对方(server)的 info
     expect(registered).toBe('FP_SEND') // 对方 onRegister 收到我们的 fingerprint
+  })
+
+  // discovery::REQ-004/AC-03
+  test('POST /register from a fingerprint that breaks the fingerprint rule is answered 400 and registers nothing', async () => {
+    const url = `https://${HOST}:${target.port}/api/localsend/v2/register`
+    const rejected = await httpsPostJson(url, selfInfo('Long', 'x'.repeat(129)))
+    expect(rejected.status).toBe(400)
+    const longest = 'y'.repeat(128)
+    const accepted = await httpsPostJson(url, selfInfo('Longest', longest))
+    expect(accepted.status).toBe(200)
+    expect(registered).toEqual([longest])
+  })
+
+  // discovery::REQ-004/AC-03
+  test('POST /prepare-upload from a fingerprint that breaks the fingerprint rule is answered 400 and opens no session', async () => {
+    const url = `https://${HOST}:${target.port}/api/localsend/v2/prepare-upload`
+    const text = (fp: string, body: string): Record<string, unknown> => ({
+      info: selfInfo('S', fp),
+      files: { t1: { id: 't1', fileName: 't1.txt', size: Buffer.byteLength(body), fileType: 'text', preview: body } }
+    })
+    const rejected = await httpsPostJson(url, text('x'.repeat(129), 'dropped'))
+    expect(rejected.status).toBe(400)
+    expect(sessions.current).toBeNull()
+    const accepted = await httpsPostJson(url, text('y'.repeat(128), 'kept'))
+    expect(accepted.status).toBe(204)
+    expect(receivedTexts).toEqual(['kept'])
   })
 
   test('registerTo:目标不可达 → 静默返 null,不抛', async () => {

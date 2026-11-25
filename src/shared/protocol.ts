@@ -48,3 +48,11 @@ export const T_UPLOAD_IDLE_MS = 45_000
  * 因为聊天流里用户可能几分钟才处理(LocalSend 发送方超时 30 天,容忍慢确认)。
  */
 export const T_ACCEPT_MS = 5 * 60_000
+
+/** Longest fingerprint accepted from a peer, in UTF-16 code units. discovery::REQ-004/AC-01 */
+export const MAX_FINGERPRINT_LENGTH = 128
+
+/** Whether a value a peer sent is accepted as its fingerprint. discovery::REQ-004/AC-01 */
+export function isPeerFingerprint(v: unknown): v is string {
+  return typeof v === 'string' && v.length > 0 && v.length <= MAX_FINGERPRINT_LENGTH
+}

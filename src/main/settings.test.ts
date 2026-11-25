@@ -4,6 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { SettingsStore, DEFAULT_SETTINGS } from './settings'
 
+// Reads one saved alias the way AppCore does.
+const aliasOf = (s: SettingsStore, fp: string): string | undefined => s.getDeviceAliases().get(fp)
+
 describe('SettingsStore', () => {
   const dirs: string[] = []
   function mkdir(): string {
@@ -184,20 +187,20 @@ describe('SettingsStore', () => {
   describe('deviceAliases', () => {
     test('首次无文件 → 空 map', () => {
       const s = new SettingsStore(mkdir())
-      expect(s.getDeviceAliases()).toEqual({})
+      expect(s.getDeviceAliases()).toEqual(new Map())
     })
 
     test('setDeviceAlias 持久化 + 重新加载可读', () => {
       const dir = mkdir()
       const ok = new SettingsStore(dir).setDeviceAlias('fp1', '老张的电脑')
       expect(ok).toBe(true)
-      expect(new SettingsStore(dir).getDeviceAliases()).toEqual({ fp1: '老张的电脑' })
+      expect(new SettingsStore(dir).getDeviceAliases()).toEqual(new Map([['fp1', '老张的电脑']]))
     })
 
     test('trim 后存储(去首尾空白)', () => {
       const s = new SettingsStore(mkdir())
       s.setDeviceAlias('fp1', '  备注  ')
-      expect(s.getDeviceAliases().fp1).toBe('备注')
+      expect(s.getDeviceAliases().get('fp1')).toBe('备注')
     })
 
     test('空串(或纯空白)→ 删除该键(恢复默认名)', () => {
@@ -206,17 +209,17 @@ describe('SettingsStore', () => {
       s.setDeviceAlias('fp1', '备注A')
       s.setDeviceAlias('fp2', '备注B')
       s.setDeviceAlias('fp1', '') // 删 fp1
-      expect(s.getDeviceAliases()).toEqual({ fp2: '备注B' })
+      expect(s.getDeviceAliases()).toEqual(new Map([['fp2', '备注B']]))
       s.setDeviceAlias('fp2', '   ') // 纯空白也删
-      expect(s.getDeviceAliases()).toEqual({})
+      expect(s.getDeviceAliases()).toEqual(new Map())
       // 持久化后重载确认 fp1/fp2 均已删
-      expect(new SettingsStore(dir).getDeviceAliases()).toEqual({})
+      expect(new SettingsStore(dir).getDeviceAliases()).toEqual(new Map())
     })
 
     test('删不存在的键 → 幂等无副作用', () => {
       const s = new SettingsStore(mkdir())
       expect(s.setDeviceAlias('nope', '')).toBe(true)
-      expect(s.getDeviceAliases()).toEqual({})
+      expect(s.getDeviceAliases()).toEqual(new Map())
     })
 
     test('normalize 过滤脏数据(非 object / 空 value / 非字符串 value)', () => {
@@ -226,13 +229,13 @@ describe('SettingsStore', () => {
         JSON.stringify({ deviceAliases: { good: '有效', empty: '', blank: '   ', num: 123, '': '空key' } })
       )
       // 只保留 good;empty/blank(空)、num(非串)、''(空key)全滤掉
-      expect(new SettingsStore(dir).getDeviceAliases()).toEqual({ good: '有效' })
+      expect(new SettingsStore(dir).getDeviceAliases()).toEqual(new Map([['good', '有效']]))
     })
 
     test('deviceAliases 为数组 → 归一化为 {}', () => {
       const dir = mkdir()
       writeFileSync(join(dir, 'settings.json'), JSON.stringify({ deviceAliases: ['a', 'b'] }))
-      expect(new SettingsStore(dir).getDeviceAliases()).toEqual({})
+      expect(new SettingsStore(dir).getDeviceAliases()).toEqual(new Map())
     })
 
     // 回归:改一个设置不能抹另一个(spread this.cache)
@@ -251,7 +254,7 @@ describe('SettingsStore', () => {
       s.setDeviceAlias('fp1', '备注')
       s.setTheme('light')
       s.setShortcutCapture('Command+Shift+X')
-      expect(s.getDeviceAliases()).toEqual({ fp1: '备注' })
+      expect(s.getDeviceAliases()).toEqual(new Map([['fp1', '备注']]))
     })
 
     // 失败回滚:持久化失败(目录被删/不可写)→ 返回 false 且 cache 不变(不留假成功)
@@ -265,8 +268,58 @@ describe('SettingsStore', () => {
       mkdirSync(join(dir, 'settings.json')) // 同名占位为目录 → 写文件必 EISDIR 失败
       const ok = s.setDeviceAlias('fp1', '新备注')
       expect(ok).toBe(false)
-      expect(s.getDeviceAliases().fp1).toBe('原备注') // 回滚:仍是旧值,不是"新备注"
+      expect(s.getDeviceAliases().get('fp1')).toBe('原备注') // 回滚:仍是旧值,不是"新备注"
     })
+
+    // device-alias::REQ-003/AC-03
+    test('a settings.json written by the app loads its aliases unchanged and keeps them a map after a save', () => {
+      const dir = mkdir()
+      const fpA = '40:DD:4E:0A:1B:2C:3D:4E:5F:60:71:82:93:A4:B5:C6:D7:E8:F9:0A:1B:2C:3D:4E:5F:60:71:82:93:A4:B5:C6'
+      const fpB = 'B7:73:98:1F:2E:3D:4C:5B:6A:79:88:97:A6:B5:C4:D3:E2:F1:00:1F:2E:3D:4C:5B:6A:79:88:97:A6:B5:C4:D3'
+      writeFileSync(
+        join(dir, 'settings.json'),
+        JSON.stringify(
+          {
+            autoAccept: { enabled: true, maxBytes: 104857600 },
+            theme: 'system',
+            language: 'system',
+            shortcutCapture: 'F1',
+            deviceAliases: { [fpA]: '客厅', [fpB]: '老张的电脑' },
+            offlineKeepMinutes: 60
+          },
+          null,
+          2
+        )
+      )
+      const s = new SettingsStore(dir)
+      expect(s.getDeviceAliases()).toEqual(
+        new Map([
+          [fpA, '客厅'],
+          [fpB, '老张的电脑']
+        ])
+      )
+      expect(s.setDeviceAlias('constructor', '书房')).toBe(true)
+      expect(JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf8')).deviceAliases).toEqual({
+        [fpA]: '客厅',
+        [fpB]: '老张的电脑',
+        constructor: '书房'
+      })
+    })
+
+    // device-alias::REQ-003/AC-01, device-alias::REQ-003/AC-03, device-alias::REQ-003/AC-04
+    test.each(['constructor', '__proto__', 'toString', 'AB:CD:EF:01:23'])(
+      'an alias for fingerprint %s is saved, read back after a reload, and cleared',
+      (fp) => {
+        const dir = mkdir()
+        const s = new SettingsStore(dir)
+        expect(s.setDeviceAlias(fp, '书房')).toBe(true)
+        expect(aliasOf(s, fp)).toBe('书房')
+        expect(aliasOf(new SettingsStore(dir), fp)).toBe('书房')
+        expect(s.setDeviceAlias(fp, '')).toBe(true)
+        expect(aliasOf(s, fp)).toBeUndefined()
+        expect(aliasOf(new SettingsStore(dir), fp)).toBeUndefined()
+      }
+    )
   })
 
   describe('offlineKeepMinutes(离线设备保留时长)', () => {
