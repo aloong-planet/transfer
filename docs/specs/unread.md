@@ -23,7 +23,7 @@ Alerts come in two layers. On the desktop, the app icon shows a count (macOS) or
 ### unread::REQ-003 The alert on the desktop
 
 - unread::REQ-003/AC-01: On macOS the Dock icon shows a badge with the total number of unread messages of all conversations, and no badge when the total is zero.
-- unread::REQ-003/AC-02: On Windows the taskbar icon flashes when an incoming message arrives while the window has no focus, and stops when the window gains focus.
+- unread::REQ-003/AC-02: On Windows the taskbar icon flashes when an incoming message that counts as unread (unread::REQ-001/AC-01) arrives while the window has no focus, and stops when the window gains focus. A change in the state of a message already shown does not flash it.
 
 ## Out of Scope
 
