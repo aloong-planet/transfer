@@ -1,4 +1,4 @@
-// e2e: the main window's first frame is drawn in the language in force (language::REQ-003/AC-02).
+// e2e for language::REQ-003/AC-02.
 //
 // How a first frame is observed: once mounted, the page asks the main process for the language in force, and the answer
 // used to be the only thing that corrected a Chinese placeholder. hold-language.cjs keeps that question unanswered from
@@ -117,7 +117,7 @@ test('the first frame is in Chinese when the preference is Chinese', async () =>
 })
 
 test('the first frame is in the system language when the preference follows the system', async () => {
-  const l = await launch() // no settings.json: the default, follow the system (language::REQ-001/AC-03)
+  const l = await launch() // no settings.json (language::REQ-001/AC-03)
   try {
     const first = await firstFrame(l)
     await release(l)

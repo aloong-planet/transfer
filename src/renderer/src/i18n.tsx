@@ -35,8 +35,8 @@ export function I18nProvider(props: { children: ReactNode }): JSX.Element {
   const [pref, setPrefState] = useState<LangPref>('system')
 
   // Keep the page's URL naming the language in force: View > Reload loads that URL again, and the window's first frame
-  // must then be in the language now in force, not the one the window was created with. A layout effect, so the URL is
-  // current by the time the new language can be seen.
+  // must then be in the language now in force, not the one the window was created with. A layout effect runs before the
+  // browser paints the new language.
   useLayoutEffect(() => {
     window.history.replaceState(window.history.state, '', withLang(window.location.href, lang))
   }, [lang])

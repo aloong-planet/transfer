@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { withLang } from './lang-query'
 
-// The URL a window is loaded from names the language in force, so its first frame is drawn in it (language::REQ-003/AC-02).
+// language::REQ-003/AC-02
 describe('withLang', () => {
   test.each([
     ['a packaged page', 'app://bundle/index.html', 'en', 'app://bundle/index.html?lang=en'],
