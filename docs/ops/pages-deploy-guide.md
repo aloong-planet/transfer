@@ -7,7 +7,7 @@
 - Pages 项目 `transfer-org`、自定义域 `transfer.aloongplanet.com` 和指向它的 DNS 记录都已存在,由 `aloong-planet/infra` 管理(`stacks/apps/landing-pages.tf` 里的 `transfer-org` 条目,生产分支 `master`)。项目、域名、DNS 的任何改动都在 infra 里做:在面板里改的,会在 infra 下一次 plan 里显示为漂移,下一次 apply 时被还原。
 - Cloudflare 的 Git 构建已关,见 [aloong-planet/infra#33](https://github.com/aloong-planet/infra/pull/33):项目不再因任何仓库的推送而构建。
 - 站点代码在 aloong-planet-home 的 `apps/transfer`。该仓库的 Deploy workflow 在 main 上的 CI 通过之后,经 `pnpm --filter @aloong-planet/transfer run cf:deploy` 直接上传构建产物,上传到哪个项目、哪个生产分支由 `apps/transfer/deployment.config.json` 定。命令、令牌与失败后的恢复见 aloong-planet-home 的 [deployment.md](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/ops/deployment.md)。
-- `aloongplanet.com` 区域与这个 Pages 项目在同一个 Cloudflare 账户:infra 的 `stacks/apps` 里,`cloudflare_account_id` 就是拥有该区域和 R2 桶的账户。
+- 这个 Pages 项目建在 infra 变量 `cloudflare_account_id` 指定的账户里;它的自定义域和 DNS 记录经同一个模块建在 `aloongplanet.com` 区域里(`stacks/apps/landing-pages.tf`)。
 
 ## 验证
 
