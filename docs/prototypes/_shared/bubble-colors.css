@@ -1,0 +1,12 @@
+/* Chat bubble fills, shared by every prototype page that draws bubbles: the other party's (bubble-you)
+   and one's own (bubble-me). A page links this file and uses var(--bubble-me) and var(--bubble-you).
+
+   The mode comes from the gallery's settings, as data-demo-mode on the root. A container that must
+   stay in one mode whatever the page's mode is (a fixed light pane beside a fixed dark one) carries
+   data-bubble-mode instead. Both modes are written out, though they are written once only. */
+html[data-demo-mode="light"], [data-bubble-mode="light"] {
+  --bubble-me: #f6f3f8; --bubble-you: #eef0f3;
+}
+html[data-demo-mode="dark"], [data-bubble-mode="dark"] {
+  --bubble-me: #2a2430; --bubble-you: #26282c;
+}

@@ -1,39 +1,28 @@
 <!doctype html>
-<!-- 原型:设置弹层。
-     2026-08-22 重做:上一版是早期方向探索(分区卡、开关、分段控件、120px 标签列),
-     与最终实现完全不是一套。本版**照实现现状复刻**——极简行式布局、标签带冒号且为内容宽度、
-     下拉框而非分段控件、图标按钮贴最右——然后在「存储」区上加「接收文件夹」的新元素。
-     颜色变量名与取值同 theme.css,实现时可直接对应。
-     防真空:弹层压在仿主窗外壳上评判(外壳只是语境占位,不复刻主窗细节;弹层有遮罩+模糊,细节看不见)。 -->
+<!-- Review notes: prototype-settings.md -->
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <title>原型 — 设置弹层(接收文件夹)</title>
+<script src="../manifest.js"></script>
+<script src="../app-identity.js"></script>
+<script src="../dimensions.js"></script>
+<script src="../demo-dimensions.js" data-settings></script>
 <style>
-  /* ── 变量:名称与取值同 src/renderer/src/theme.css ── */
-  :root{
+  /* ── Tokens: the mode comes from the gallery's settings, as data-demo-mode on the root ── */
+  html[data-demo-mode="light"]{
     --bg:#f7f8f9; --card:#ffffff; --ink:#1a1c1f; --ink-2:#52565c; --muted:#868b93;
     --line:#e8eaed; --line-strong:#d9dce0;
     --accent:#8a67ab; --accent-hover:#7c5a9c; --accent-soft:#f0ebf6;
     --shadow-md:0 4px 16px -6px rgba(20,22,26,.12);
-    /* 新增(theme.css 目前没有暖色警告语义,只有 --danger 红):目录失效是**需要注意**而非出错,
-       用警告琥珀色而不是危险红。取的是 amber-600/400 一档(色相 32°)——
-       orange-600(色相 25°)红味仍重,并排看更像报错(2026-08-23 三档并排选定)。
-       --warn 构成文字与边框 → 随全部主题维度变;--warn-soft 是坐在卡片上的底色 → 只随明暗变。
-       本项目当前只有明暗一个维度,故两者都是明暗各写一处。
-       实现时 theme.css 有**四处**变量块(:root、@media dark、[data-theme=light]、[data-theme=dark]),
-       四处都要写——原型只有 @media 一套。 */
     --warn:#d97706; --warn-soft:#fdf6ea;
   }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --bg:#18191b; --card:#1f2124; --ink:#e9eaed; --ink-2:#b4b8bd; --muted:#7f858c;
-      --line:#2a2c30; --line-strong:#34373c;
-      --accent:#a084c7; --accent-hover:#b199d3; --accent-soft:#2a2430;
-      --shadow-md:0 6px 20px -8px rgba(0,0,0,.5);
-      /* 深色下提亮一档(amber-600→amber-400),与 --danger 在深色里 #dc2626→#f87171 的处理同源 */
-      --warn:#fbbf24; --warn-soft:#2c2615;
-    }
+  html[data-demo-mode="dark"]{
+    --bg:#18191b; --card:#1f2124; --ink:#e9eaed; --ink-2:#b4b8bd; --muted:#7f858c;
+    --line:#2a2c30; --line-strong:#34373c;
+    --accent:#a084c7; --accent-hover:#b199d3; --accent-soft:#2a2430;
+    --shadow-md:0 6px 20px -8px rgba(0,0,0,.5);
+    --warn:#fbbf24; --warn-soft:#2c2615;
   }
   *{box-sizing:border-box;margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
   body{background:var(--bg);color:var(--ink);height:100vh;overflow:hidden;font-size:13px}
@@ -74,20 +63,20 @@
   /* ── 存储行:照 S.storageRow / storageLabel / storagePath / storageIconBtn ── */
   .st-row{display:flex;align-items:center;gap:6px;margin:8px 0;font-size:12px}
   .st-lab{flex-shrink:0;color:var(--ink)}
-  /* direction:rtl 让省略号落在**左边**——路径太长时省掉前缀、保留末尾目录名(信息量在末尾)。
-     代价:开头的 "/" 属中性字符,会被双向算法重排到末尾,显示成 "Users/me/Downloads/"
-     (实现里现在就是这个样子)。修法是方向隔离:容器保持 rtl 管截断,路径文本包一层 <bdi>
-     自成 LTR 段落。用 unicode-bidi:plaintext 不行——它让整个元素按 LTR 处理,
-     省略号会跟着跑到右边,把末尾目录名截掉(实测过)。 */
+  /* direction:rtl puts the ellipsis on the left, so a long path drops its prefix and keeps the last
+     folder name. The leading "/" is a neutral character that the bidi algorithm moves to the end
+     ("Users/me/Downloads/"), so the path text is wrapped in a <bdi> that forms its own LTR run while
+     the container stays rtl for the truncation. unicode-bidi:plaintext does not work: it makes the
+     whole element LTR and the ellipsis jumps to the right, cutting the last folder name. */
   .st-path{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     color:var(--muted);direction:rtl;text-align:left}
   .st-btn{flex-shrink:0;border:none;background:none;cursor:pointer;color:var(--muted);
     width:22px;height:22px;border-radius:6px;padding:0;display:grid;place-items:center}
   .st-btn:hover{background:var(--line)}
 
-  /* ── 本次新增:操作行 + 两种提示块 ──
-     操作行与提示块都**不缩进**,左对齐到弹层内边距——与既有的 .hint 行一致
-     (标签宽度随语言变,固定 px 缩进在英文下就会错位)。 */
+  /* ── The actions row and the two notice blocks ──
+     None of them is indented: they align left to the dialog's padding, like the .hint row
+     (the label width changes with the language, so a fixed px indent would misalign in English). */
   .acts{display:flex;gap:14px;margin:-2px 0 4px}
   .lnk{border:0;background:none;padding:0;font-size:12px;font-family:inherit;
     color:var(--accent);cursor:pointer}
@@ -134,54 +123,54 @@
 <div class="shell">
   <div class="side">
     <h1>Transfer</h1>
-    <div class="dev on"><span class="dot"></span>客厅 Mac</div>
+    <div class="dev on"><span class="dot"></span><span data-t="devLiving">客厅 Mac</span></div>
     <div class="dev"><span class="dot"></span>Work-PC</div>
-    <div class="dev"><span class="dot off"></span>旧笔记本</div>
+    <div class="dev"><span class="dot off"></span><span data-t="devOld">旧笔记本</span></div>
   </div>
   <div class="main">
-    <div class="bub">给你发了刚才那份合同</div>
-    <div class="bub me">收到,我看下</div>
+    <div class="bub" data-t="msg1">给你发了刚才那份合同</div>
+    <div class="bub me" data-t="msg2">收到,我看下</div>
   </div>
 </div>
 
 <div class="mask">
 <div class="modal">
-  <h3>设置</h3>
+  <h3 data-t="title">设置</h3>
 
-  <div class="sec-t">接收</div>
-  <label class="row"><input type="checkbox"> 启用自动接收(文本消息始终自动接收)</label>
-  <label class="row off">自动接收文件大小上限: <input class="num" type="number" value="100" disabled> MB</label>
+  <div class="sec-t" data-t="secReceive">接收</div>
+  <label class="row"><input type="checkbox"> <span data-t="autoAccept">启用自动接收(文本消息始终自动接收)</span></label>
+  <label class="row off"><span data-t="maxSize">自动接收文件大小上限:</span> <input class="num" type="number" value="100" disabled> MB</label>
 
-  <div class="sec-t">存储</div>
+  <div class="sec-t" data-t="secStorage">存储</div>
   <div class="st-row">
-    <span class="st-lab">接收文件夹:</span>
+    <span class="st-lab" data-t="dirLabel">接收文件夹:</span>
     <span class="st-path"><bdi id="pathText">/Users/loong_zhou/Downloads</bdi></span>
-    <button class="st-btn" title="在文件管理器中打开"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></button>
+    <button class="st-btn" data-t-title="openFolder" title="在文件管理器中打开"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></button>
   </div>
-  <div class="acts"><button class="lnk" onclick="pick()">更改…</button><button class="lnk" id="btnReset" onclick="reset()">恢复默认</button></div>
+  <div class="acts"><button class="lnk" onclick="pick()" data-t="change">更改…</button><button class="lnk" id="btnReset" onclick="reset()" data-t="reset">恢复默认</button></div>
   <!-- 失效告知:目录已自动退回默认(路径不再记得),告知持久到用户点「知道了」或重新选择 -->
   <div class="warn" id="warnBox" hidden>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
     <div>
-      <div class="warn-t">接收文件夹已改回默认</div>
-      <div class="warn-d">之前选择的文件夹不可用(可能已被删除、改名,或所在磁盘已移除)。新收到的文件存到上面这个文件夹。</div>
-      <button class="lnk warn-ok" onclick="dismiss()">知道了</button>
+      <div class="warn-t" data-t="warnTitle">接收文件夹已改回默认</div>
+      <div class="warn-d" data-t="warnBody">之前选择的文件夹不可用(可能已被删除、改名,或所在磁盘已移除)。新收到的文件存到上面这个文件夹。</div>
+      <button class="lnk warn-ok" onclick="dismiss()" data-t="dismiss">知道了</button>
     </div>
   </div>
   <!-- 改完文件夹后的一次性说明 -->
-  <div class="note" id="noteBox" hidden>此前收到的文件仍在原文件夹,Transfer 不会移动它们。</div>
+  <div class="note" id="noteBox" data-t="movedNote" hidden>此前收到的文件仍在原文件夹,Transfer 不会移动它们。</div>
 
-  <div class="sec-t">快捷键</div>
-  <div class="row"><span>截图:</span><span class="rec">F1</span></div>
+  <div class="sec-t" data-t="secShortcut">快捷键</div>
+  <div class="row"><span data-t="capture">截图:</span><span class="rec">F1</span></div>
 
-  <div class="sec-t">设备发现</div>
-  <div class="row">离线设备保留: <select class="sel"><option>1 小时</option><option>永不移除</option></select></div>
-  <div class="hint">离线设备灰置底保留多久后从列表移除</div>
+  <div class="sec-t" data-t="secDiscovery">设备发现</div>
+  <div class="row"><span data-t="keepLabel">离线设备保留:</span> <select class="sel"><option data-t="keep1h">1 小时</option><option data-t="keepNever">永不移除</option></select></div>
+  <div class="hint" data-t="keepHint">离线设备灰置底保留多久后从列表移除</div>
 
-  <div class="sec-t">语言</div>
-  <div class="row"><select class="sel"><option>中文</option><option>English</option><option>跟随系统</option></select></div>
+  <div class="sec-t" data-t="secLanguage">语言</div>
+  <div class="row"><select class="sel" id="langSel"><option value="zh">中文</option><option value="en">English</option><option value="system" data-t="langSystem">跟随系统</option></select></div>
 
-  <div class="foot"><button class="btn">取消</button><button class="btn p">保存</button></div>
+  <div class="foot"><button class="btn" data-t="cancel">取消</button><button class="btn p" data-t="save">保存</button></div>
 </div>
 </div>
 
@@ -215,6 +204,59 @@
   function dismiss(){ setState('default', RIG(0)); }
 
   setState('default', document.querySelector('.rig button'));
+
+  // ── Language ──
+  // The page presents the language in effect (the gallery's settings, or this page's own select) and
+  // writes the language it shows. The select is the setting being judged, so "Follow System" stays
+  // selectable; the page never simulates a system language: while it is selected, the language in
+  // effect only changes when the gallery changes it.
+  const COPY = {
+    zh: { devLiving:'客厅 Mac', devOld:'旧笔记本', msg1:'给你发了刚才那份合同', msg2:'收到,我看下',
+          title:'设置', secReceive:'接收', autoAccept:'启用自动接收(文本消息始终自动接收)',
+          maxSize:'自动接收文件大小上限:', secStorage:'存储', dirLabel:'接收文件夹:',
+          openFolder:'在文件管理器中打开', change:'更改…', reset:'恢复默认',
+          warnTitle:'接收文件夹已改回默认',
+          warnBody:'之前选择的文件夹不可用(可能已被删除、改名,或所在磁盘已移除)。新收到的文件存到上面这个文件夹。',
+          dismiss:'知道了', movedNote:'此前收到的文件仍在原文件夹,Transfer 不会移动它们。',
+          secShortcut:'快捷键', capture:'截图:', secDiscovery:'设备发现', keepLabel:'离线设备保留:',
+          keep1h:'1 小时', keepNever:'永不移除', keepHint:'离线设备灰置底保留多久后从列表移除',
+          secLanguage:'语言', langSystem:'跟随系统', cancel:'取消', save:'保存' },
+    en: { devLiving:'Living Room Mac', devOld:'Old Laptop', msg1:'Sent you that contract from earlier', msg2:"Got it, I'll take a look",
+          title:'Settings', secReceive:'Receiving', autoAccept:'Enable auto-accept (text messages always auto-accepted)',
+          maxSize:'Auto-accept file size limit:', secStorage:'Storage', dirLabel:'Receive folder:',
+          openFolder:'Show in file manager', change:'Change…', reset:'Reset to Default',
+          warnTitle:'Receive folder reset to default',
+          warnBody:'The folder you chose is unavailable (it may have been deleted, renamed, or its disk removed). New files go to the folder shown above.',
+          dismiss:'Got it', movedNote:'Files you received earlier stay in the previous folder; Transfer does not move them.',
+          secShortcut:'Shortcut', capture:'Screenshot:', secDiscovery:'Device Discovery', keepLabel:'Keep offline devices:',
+          keep1h:'1 hour', keepNever:'Never remove', keepHint:'How long offline devices stay greyed-out before being removed from the list',
+          secLanguage:'Language', langSystem:'Follow System', cancel:'Cancel', save:'Save' }
+  }
+  function present(lang){
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
+    for (const el of document.querySelectorAll('[data-t]')) el.textContent = COPY[lang][el.dataset.t]
+    for (const el of document.querySelectorAll('[data-t-title]')) el.title = COPY[lang][el.dataset.tTitle]
+  }
+
+  // The select's value is a preference: zh, en or system. It starts as zh, the registry's default
+  // language, and reopens as the reader left it.
+  const langSel = document.getElementById('langSel')
+  let pref = ['zh', 'en', 'system'].includes(DemoDimensions.state()?.pref) ? DemoDimensions.state().pref : 'zh'
+  langSel.value = pref
+  langSel.onchange = () => {
+    pref = langSel.value
+    if (pref === 'system') DemoDimensions.set({}, { pref })        // the language in effect stays; only the state is saved
+    else DemoDimensions.set({ language: pref }, { pref })
+  }
+  // Also called on load and when the gallery changes the language: an explicit preference follows it
+  DemoDimensions.on('language', (lang) => {
+    if (pref !== 'system' && pref !== lang) {
+      pref = lang
+      langSel.value = pref
+      DemoDimensions.set({}, { pref })
+    }
+    present(lang)
+  })
 </script>
 </body>
 </html>
