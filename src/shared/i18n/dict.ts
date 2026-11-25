@@ -1,6 +1,6 @@
 // 翻译字典(单一数据源,main + 两个 renderer 共享 import)。
 // 键名格式 `<命名空间>.<短名>`,命名空间按界面区域划分
-// (common / sidebar / chat / settings / overlay / shortcut / downloads / image / theme / error / main),
+// (common / sidebar / chat / settings / overlay / shortcut / downloads / image / theme / error / main / infoPlist),
 // 下方分组注释即索引。
 //
 // 完整性由类型保证:TKey 取自 zh 的键集合,en 必须实现同一组键(Record<TKey,string>),
@@ -186,7 +186,11 @@ const zh = {
   'main.file.imagePrefix': '图片',
   'main.file.textPrefix': '文本',
   'main.file.screenshotPrefix': '截图',
-  'main.file.pngFilterName': 'PNG 图片'
+  'main.file.pngFilterName': 'PNG 图片',
+
+  // infoPlist:macOS 读 Info.plist 里的用户可见文案;不经 t(),由 scripts/gen-info-plist-strings.mjs 生成
+  // build/info-plist/<lproj>.lproj/InfoPlist.strings(随系统语言选用,见 ./info-plist.ts)
+  'infoPlist.localNetworkUsage': 'Transfer 需要访问本地网络来发现同一局域网内的设备并直接传输文件。'
 } as const
 
 /** 所有翻译键(取自 zh) */
@@ -349,7 +353,10 @@ const en: Record<TKey, string> = {
   'main.file.imagePrefix': 'image',
   'main.file.textPrefix': 'text',
   'main.file.screenshotPrefix': 'screenshot',
-  'main.file.pngFilterName': 'PNG Image'
+  'main.file.pngFilterName': 'PNG Image',
+
+  'infoPlist.localNetworkUsage':
+    'Transfer needs access to the local network to discover devices on the same network and transfer files to them directly.'
 }
 
 export const DICT: Record<Lang, Record<TKey, string>> = { zh, en }

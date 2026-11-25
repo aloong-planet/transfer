@@ -1,0 +1,2 @@
+/* Generated from src/shared/i18n/dict.ts by scripts/gen-info-plist-strings.mjs (pnpm gen:info-plist). Do not edit. */
+"NSLocalNetworkUsageDescription" = "Transfer needs access to the local network to discover devices on the same network and transfer files to them directly.";
