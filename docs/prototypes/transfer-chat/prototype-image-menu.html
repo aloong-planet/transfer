@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Review notes: prototype-image-menu.md -->
-<html lang="en">
+<html lang="zh-Hans">
 <head>
 <meta charset="utf-8">
 <title>Image context menu — copy image</title>
@@ -8,20 +8,17 @@
 <script src="../app-identity.js"></script>
 <script src="../dimensions.js"></script>
 <script src="../demo-dimensions.js" data-follow="language mode"></script>
+<script src="../_shared/copy.js"></script>
+<link rel="stylesheet" href="../_shared/palette.css">
 <link rel="stylesheet" href="../_shared/bubble-colors.css">
 <style>
-  :root {
-    --bg: #f7f8f9; --card: #ffffff; --ink: #1a1c1f; --muted: #868b93; --line: #e8eaed;
-    --hover: rgba(20, 22, 26, 0.04); --shadow-md: 0 4px 16px -6px rgba(20, 22, 26, 0.12);
-  }
+  /* The base colours come from the shared palette; these are only this page's (the menu's hover fill and the page chrome) */
   html[data-demo-mode="light"] {
-    --bg: #f7f8f9; --card: #ffffff; --ink: #1a1c1f; --muted: #868b93; --line: #e8eaed;
-    --hover: rgba(20, 22, 26, 0.04); --shadow-md: 0 4px 16px -6px rgba(20, 22, 26, 0.12);
+    --hover: rgba(20, 22, 26, 0.04);
     --pg-bg: #e9ebee; --pg-text: #3a3f46; --pg-title: #1a1c1f;
   }
   html[data-demo-mode="dark"] {
-    --bg: #18191b; --card: #1f2124; --ink: #e9eaed; --muted: #7f858c; --line: #2a2c30;
-    --hover: rgba(255, 255, 255, 0.05); --shadow-md: 0 6px 20px -8px rgba(0, 0, 0, 0.5);
+    --hover: rgba(255, 255, 255, 0.05);
     --pg-bg: #101113; --pg-text: #b4b8bd; --pg-title: #e9eaed;
   }
   * { box-sizing: border-box }
@@ -80,12 +77,14 @@
 </div>
 
 <script>
+  // The page's own copy, on top of the copy shared across the pages
+  const SHARED = window.PROTOTYPE_COPY
   const COPY = {
-    zh: { head: '客厅 Mac', copy: '复制图片', save: '保存图片', open: '用系统程序打开',
-          tip: '点击查看原图 · 右键复制或保存', received: '已接收', delivered: '已送达',
+    zh: { ...SHARED.zh, copy: '复制图片', save: '保存图片', open: '用系统程序打开',
+          tip: '点击查看原图 · 右键复制或保存',
           t1: '刚拍的,你看下方向对不对', t2: '对的,我贴到文档里了' },
-    en: { head: 'Living Room Mac', copy: 'Copy Image', save: 'Save Image', open: 'Open with System App',
-          tip: 'Click to view · Right-click to copy or save', received: 'Received', delivered: 'Delivered',
+    en: { ...SHARED.en, copy: 'Copy Image', save: 'Save Image', open: 'Open with System App',
+          tip: 'Click to view · Right-click to copy or save',
           t1: 'Just took this — is it the right way up?', t2: 'Yes, pasted it into the doc' }
   }
 
@@ -118,7 +117,7 @@
 
   function render() {
     const c = COPY[lang]
-    document.getElementById('head').textContent = c.head
+    document.getElementById('head').textContent = c.deviceLiving
     const bubble = (own, inner, status) =>
       `<div class="row ${own ? 'own' : ''}"><div class="bubble">${inner}` +
       `<div class="meta">${status}${status ? ' · ' : ''}11:09</div></div></div>`
@@ -172,7 +171,7 @@
   window.addEventListener('click', () => { if (menu) { menu = null; paintMenu() } })
   stream.addEventListener('scroll', () => { if (menu) { menu = null; paintMenu() } })
 
-  DemoDimensions.on('language', (v) => { lang = v; document.documentElement.lang = v === 'zh' ? 'zh-CN' : 'en'; render() })
+  DemoDimensions.on('language', (v) => { lang = v; document.documentElement.lang = v === 'zh' ? 'zh-Hans' : 'en'; render() })
 
   // Open on load over the received photo, as if it had been right-clicked there
   const photo = stream.querySelectorAll('.thumb')[0]

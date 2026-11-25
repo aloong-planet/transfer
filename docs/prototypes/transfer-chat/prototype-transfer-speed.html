@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Review notes: prototype-transfer-speed.md -->
-<html lang="zh-CN">
+<html lang="zh-Hans">
 <head>
 <meta charset="utf-8">
 <title>传输速度与总耗时 — 文件气泡</title>
@@ -8,21 +8,20 @@
 <script src="../app-identity.js"></script>
 <script src="../dimensions.js"></script>
 <script src="../demo-dimensions.js" data-follow="language mode"></script>
+<script src="../_shared/copy.js"></script>
+<link rel="stylesheet" href="../_shared/palette.css">
 <link rel="stylesheet" href="../_shared/bubble-colors.css">
 <style>
  /* The two panes are fixed light and fixed dark, side by side: they never follow the mode (their
-    bubble colours come from data-bubble-mode, see the shared table). Only the page chrome around them
-    follows it, as data-demo-mode on the root. */
+    base and bubble colours come from data-palette-mode and data-bubble-mode, see the shared tables).
+    Only the page chrome around them follows it, as data-demo-mode on the root. */
  html[data-demo-mode="light"]{--pg-bg:#e9ebee;--pg-ink:#1a1c1f;--pg-muted:#6d727a;--pg-strong:#3a3f46;
    --pg-q-bg:#fff6e5;--pg-q-line:#e8d5a8}
  html[data-demo-mode="dark"]{--pg-bg:#101113;--pg-ink:#e9eaed;--pg-muted:#9aa0a6;--pg-strong:#d5d8dd;
    --pg-q-bg:#2c2615;--pg-q-line:#5a4a1e}
- .light{--bg:#f7f8f9;--card:#ffffff;--ink:#1a1c1f;--ink-2:#52565c;--muted:#868b93;--line:#e8eaed;
-   --accent:#8a67ab;--accent-soft:#f0ebf6;
-   --own-wash:rgba(138,103,171,.16);--track:rgba(20,22,26,.09);--danger:#c0392b}
- .dark{--bg:#18191b;--card:#1f2124;--ink:#e9eaed;--ink-2:#b4b8bd;--muted:#7f858c;--line:#2a2c30;
-   --accent:#a084c7;--accent-soft:#2a2430;
-   --own-wash:rgba(160,132,199,.2);--track:rgba(255,255,255,.1);--danger:#e57373}
+ /* The progress track is only this page's colour, so it stays here */
+ .light{--track:rgba(20,22,26,.09)}
+ .dark{--track:rgba(255,255,255,.1)}
 
  body{background:var(--pg-bg);margin:0;padding:20px 20px 96px;
    font:13px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:var(--pg-ink)}
@@ -97,8 +96,8 @@
 </p>
 
 <div class="panes">
-  <div class="pane"><div class="tag">浅色</div><div class="shell light" id="p-light" data-bubble-mode="light"></div></div>
-  <div class="pane"><div class="tag">深色</div><div class="shell dark" id="p-dark" data-bubble-mode="dark"></div></div>
+  <div class="pane"><div class="tag">浅色</div><div class="shell light" id="p-light" data-palette-mode="light" data-bubble-mode="light"></div></div>
+  <div class="pane"><div class="tag">深色</div><div class="shell dark" id="p-dark" data-palette-mode="dark" data-bubble-mode="dark"></div></div>
 </div>
 
 <p class="note">
@@ -132,13 +131,14 @@
     en: 'Q3-2026-product-requirements-and-competitive-analysis-final-v7.sketch'
   }
   // 文案取两种语言各自的实测写法;英文普遍更长,挤压态以它为准
+  const SHARED = window.PROTOTYPE_COPY
   const T = {
-    zh: { head: '客厅 Mac',
+    zh: { head: SHARED.zh.deviceLiving,
           enospc: '接收失败:磁盘空间不足',
-          st: { sending: '发送中', recving: '接收中', delivered: '已送达', received: '已接收', failed: '失败' } },
-    en: { head: 'Living Room Mac',
+          st: { sending: '发送中', recving: '接收中', delivered: SHARED.zh.delivered, received: SHARED.zh.received, failed: '失败' } },
+    en: { head: SHARED.en.deviceLiving,
           enospc: 'Receive failed: not enough disk space',
-          st: { sending: 'Sending', recving: 'Receiving', delivered: 'Delivered', received: 'Received', failed: 'Failed' } }
+          st: { sending: 'Sending', recving: 'Receiving', delivered: SHARED.en.delivered, received: SHARED.en.received, failed: 'Failed' } }
   }
 
   /**
@@ -211,7 +211,7 @@
   }
   document.getElementById('toggle-long').onclick = () => { long = !long; paint() }
   // The language comes from the gallery's settings
-  DemoDimensions.on('language', (v) => { lang = v; document.documentElement.lang = v === 'zh' ? 'zh-CN' : 'en'; paint() })
+  DemoDimensions.on('language', (v) => { lang = v; document.documentElement.lang = v === 'zh' ? 'zh-Hans' : 'en'; paint() })
 </script>
 </body>
 </html>

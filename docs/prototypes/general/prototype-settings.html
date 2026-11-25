@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Review notes: prototype-settings.md -->
-<html lang="zh-CN">
+<html lang="zh-Hans">
 <head>
 <meta charset="utf-8">
 <title>原型 — 设置弹层(接收文件夹)</title>
@@ -8,22 +8,12 @@
 <script src="../app-identity.js"></script>
 <script src="../dimensions.js"></script>
 <script src="../demo-dimensions.js" data-settings></script>
+<script src="../_shared/copy.js"></script>
+<link rel="stylesheet" href="../_shared/palette.css">
 <style>
-  /* ── Tokens: the mode comes from the gallery's settings, as data-demo-mode on the root ── */
-  html[data-demo-mode="light"]{
-    --bg:#f7f8f9; --card:#ffffff; --ink:#1a1c1f; --ink-2:#52565c; --muted:#868b93;
-    --line:#e8eaed; --line-strong:#d9dce0;
-    --accent:#8a67ab; --accent-hover:#7c5a9c; --accent-soft:#f0ebf6;
-    --shadow-md:0 4px 16px -6px rgba(20,22,26,.12);
-    --warn:#d97706; --warn-soft:#fdf6ea;
-  }
-  html[data-demo-mode="dark"]{
-    --bg:#18191b; --card:#1f2124; --ink:#e9eaed; --ink-2:#b4b8bd; --muted:#7f858c;
-    --line:#2a2c30; --line-strong:#34373c;
-    --accent:#a084c7; --accent-hover:#b199d3; --accent-soft:#2a2430;
-    --shadow-md:0 6px 20px -8px rgba(0,0,0,.5);
-    --warn:#fbbf24; --warn-soft:#2c2615;
-  }
+  /* ── The base colours come from the shared palette; these two tokens are only this page's (the notice block) ── */
+  html[data-demo-mode="light"]{ --warn:#d97706; --warn-soft:#fdf6ea; }
+  html[data-demo-mode="dark"]{ --warn:#fbbf24; --warn-soft:#2c2615; }
   *{box-sizing:border-box;margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
   body{background:var(--bg);color:var(--ink);height:100vh;overflow:hidden;font-size:13px}
 
@@ -38,7 +28,7 @@
   .bub{max-width:46%;padding:8px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
   .bub.me{align-self:flex-end;background:var(--accent-soft)}
 
-  /* ── 弹层:照 App.tsx 的 S.modalMask / S.modal ── */
+  /* ── The dialog and the mask behind it ── */
   .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;
     justify-content:center;backdrop-filter:blur(2px)}
   .modal{background:var(--card);color:var(--ink);border-radius:14px;padding:24px;width:380px;
@@ -60,7 +50,7 @@
     color:var(--ink);cursor:pointer;font-size:13px;font-family:inherit}
   .btn.p{border-color:var(--accent-soft);background:var(--accent-soft);color:var(--accent)}
 
-  /* ── 存储行:照 S.storageRow / storageLabel / storagePath / storageIconBtn ── */
+  /* ── The receive-folder row: label, path, open-folder button ── */
   .st-row{display:flex;align-items:center;gap:6px;margin:8px 0;font-size:12px}
   .st-lab{flex-shrink:0;color:var(--ink)}
   /* direction:rtl puts the ellipsis on the left, so a long path drops its prefix and keeps the last
@@ -123,19 +113,19 @@
 <div class="shell">
   <div class="side">
     <h1>Transfer</h1>
-    <div class="dev on"><span class="dot"></span><span data-t="devLiving">客厅 Mac</span></div>
-    <div class="dev"><span class="dot"></span>Work-PC</div>
-    <div class="dev"><span class="dot off"></span><span data-t="devOld">旧笔记本</span></div>
+    <div class="dev on"><span class="dot"></span><span data-t="deviceLiving"></span></div>
+    <div class="dev"><span class="dot"></span><span data-t="deviceWork"></span></div>
+    <div class="dev"><span class="dot off"></span><span data-t="deviceOld"></span></div>
   </div>
   <div class="main">
-    <div class="bub" data-t="msg1">给你发了刚才那份合同</div>
-    <div class="bub me" data-t="msg2">收到,我看下</div>
+    <div class="bub" data-t="msgContract"></div>
+    <div class="bub me" data-t="msgGotIt"></div>
   </div>
 </div>
 
 <div class="mask">
 <div class="modal">
-  <h3 data-t="title">设置</h3>
+  <h3 data-t="settings"></h3>
 
   <div class="sec-t" data-t="secReceive">接收</div>
   <label class="row"><input type="checkbox"> <span data-t="autoAccept">启用自动接收(文本消息始终自动接收)</span></label>
@@ -144,7 +134,7 @@
   <div class="sec-t" data-t="secStorage">存储</div>
   <div class="st-row">
     <span class="st-lab" data-t="dirLabel">接收文件夹:</span>
-    <span class="st-path"><bdi id="pathText">/Users/loong_zhou/Downloads</bdi></span>
+    <span class="st-path"><bdi id="pathText"></bdi></span>
     <button class="st-btn" data-t-title="openFolder" title="在文件管理器中打开"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></button>
   </div>
   <div class="acts"><button class="lnk" onclick="pick()" data-t="change">更改…</button><button class="lnk" id="btnReset" onclick="reset()" data-t="reset">恢复默认</button></div>
@@ -176,7 +166,7 @@
 
 <script>
   // 「接收文件夹」四态。默认态没有「恢复默认」——已经是默认了,那个按钮点了什么也不会发生。
-  const DEFAULT_DIR='/Users/loong_zhou/Downloads', CUSTOM_DIR='/Volumes/SSD/Transfer 收件';
+  const DEFAULT_DIR='/Users/me/Downloads', CUSTOM_DIR='/Volumes/SSD/Transfer 收件';
   const STATES={
     default:{ dir:DEFAULT_DIR, reset:false, note:false, warn:false },
     custom :{ dir:CUSTOM_DIR,  reset:true,  note:false, warn:false },
@@ -210,9 +200,11 @@
   // writes the language it shows. The select is the setting being judged, so "Follow System" stays
   // selectable; the page never simulates a system language: while it is selected, the language in
   // effect only changes when the gallery changes it.
+  // The page's own copy, on top of the copy shared across the pages
+  const SHARED = window.PROTOTYPE_COPY
   const COPY = {
-    zh: { devLiving:'客厅 Mac', devOld:'旧笔记本', msg1:'给你发了刚才那份合同', msg2:'收到,我看下',
-          title:'设置', secReceive:'接收', autoAccept:'启用自动接收(文本消息始终自动接收)',
+    zh: { ...SHARED.zh,
+          secReceive:'接收', autoAccept:'启用自动接收(文本消息始终自动接收)',
           maxSize:'自动接收文件大小上限:', secStorage:'存储', dirLabel:'接收文件夹:',
           openFolder:'在文件管理器中打开', change:'更改…', reset:'恢复默认',
           warnTitle:'接收文件夹已改回默认',
@@ -221,8 +213,8 @@
           secShortcut:'快捷键', capture:'截图:', secDiscovery:'设备发现', keepLabel:'离线设备保留:',
           keep1h:'1 小时', keepNever:'永不移除', keepHint:'离线设备灰置底保留多久后从列表移除',
           secLanguage:'语言', langSystem:'跟随系统', cancel:'取消', save:'保存' },
-    en: { devLiving:'Living Room Mac', devOld:'Old Laptop', msg1:'Sent you that contract from earlier', msg2:"Got it, I'll take a look",
-          title:'Settings', secReceive:'Receiving', autoAccept:'Enable auto-accept (text messages always auto-accepted)',
+    en: { ...SHARED.en,
+          secReceive:'Receiving', autoAccept:'Enable auto-accept (text messages always auto-accepted)',
           maxSize:'Auto-accept file size limit:', secStorage:'Storage', dirLabel:'Receive folder:',
           openFolder:'Show in file manager', change:'Change…', reset:'Reset to Default',
           warnTitle:'Receive folder reset to default',
@@ -233,7 +225,7 @@
           secLanguage:'Language', langSystem:'Follow System', cancel:'Cancel', save:'Save' }
   }
   function present(lang){
-    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
+    document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : 'en'
     for (const el of document.querySelectorAll('[data-t]')) el.textContent = COPY[lang][el.dataset.t]
     for (const el of document.querySelectorAll('[data-t-title]')) el.title = COPY[lang][el.dataset.tTitle]
   }

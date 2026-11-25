@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Review notes: prototype-jump-to-latest.md -->
-<html lang="zh-CN">
+<html lang="zh-Hans">
 <head>
 <meta charset="utf-8">
 <title>原型 — 跳到最新按钮(染色玻璃深浅 3 档)</title>
@@ -8,22 +8,12 @@
 <script src="../app-identity.js"></script>
 <script src="../dimensions.js"></script>
 <script src="../demo-dimensions.js" data-follow="language mode"></script>
+<script src="../_shared/copy.js"></script>
+<link rel="stylesheet" href="../_shared/palette.css">
 <link rel="stylesheet" href="../_shared/bubble-colors.css">
 <style>
-  /* The mode comes from the gallery's settings, as data-demo-mode on the root */
-  html[data-demo-mode="light"]{
-    --bg:#f7f8f9; --card:#ffffff; --text:#1a1c1f; --text-2:#52565c; --muted:#868b93;
-    --line:#e8eaed; --line-strong:#d9dce0;
-    --accent:#8a67ab; --accent-soft:#f0ebf6;
-    --shadow-md:0 4px 16px -6px rgba(20,22,26,.12);
-  }
-  html[data-demo-mode="dark"]{
-    --bg:#18191b; --card:#1f2124; --text:#e9eaed; --text-2:#b4b8bd; --muted:#7f858c;
-    --line:#2a2c30; --line-strong:#34373c; --accent:#a084c7; --accent-soft:#2a2430;
-    --shadow-md:0 6px 20px -8px rgba(0,0,0,.5);
-  }
   *{box-sizing:border-box;margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
-  body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;font-size:13px;display:flex}
+  body{background:var(--bg);color:var(--ink);height:100vh;overflow:hidden;font-size:13px;display:flex}
 
   /* ——— 语境外壳(防真空条款:简化版侧栏+聊天页,提供真实数据密度) ——— */
   .side{width:210px;border-right:1px solid var(--line);background:var(--card);padding:12px;flex:none}
@@ -98,17 +88,17 @@
 <body>
   <div class="side">
     <h1>Transfer</h1>
-    <div class="dev on"><span class="dot"></span><span><span data-t="dev1">客厅 Mac</span><div class="sub">macOS · 192.168.3.24</div></span></div>
-    <div class="dev"><span class="dot"></span><span>Work-PC<div class="sub">Windows · 192.168.3.31</div></span></div>
+    <div class="dev on"><span class="dot"></span><span><span data-t="deviceLiving"></span><div class="sub">macOS · 192.168.3.24</div></span></div>
+    <div class="dev"><span class="dot"></span><span><span data-t="deviceWork"></span><div class="sub" data-t="deviceWorkSub"></div></span></div>
   </div>
 
   <div class="chat">
-    <div class="c-h" data-t="dev1">客厅 Mac</div>
+    <div class="c-h" data-t="deviceLiving"></div>
     <div class="flow" id="flow">
       <div class="bub" data-t="m1">收到了,我这边看一下这几张截图。</div>
-      <div class="bub me"><div class="shot" data-t="shot">截图 · 2560×1600</div><div class="meta" data-t="delivered">已送达 · 15:45</div></div>
+      <div class="bub me"><div class="shot" data-t="shot">截图 · 2560×1600</div><div class="meta" data-t="deliveredAt"></div></div>
       <div class="bub" data-t="m2">这版的间距比上一版舒服。</div>
-      <div class="bub me"><div class="shot" data-t="shot">截图 · 2560×1600</div><div class="meta" data-t="delivered">已送达 · 15:45</div></div>
+      <div class="bub me"><div class="shot" data-t="shot">截图 · 2560×1600</div><div class="meta" data-t="deliveredAt"></div></div>
       <!-- 演示:浅色留白垫底 -->
       <div class="pad" style="height:150px"></div>
       <!-- 演示:深色图片垫底 -->
@@ -120,7 +110,7 @@
       </button>
     </div>
     <div class="inp">
-      <div class="box" data-t="placeholder">输入消息,Enter 发送,Shift+Enter 换行</div>
+      <div class="box" data-t="composerPlaceholder"></div>
       <div class="snd">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
       </div>
@@ -139,17 +129,19 @@
   </div>
 
 <script>
-  // The page's product copy; the language comes from the gallery's settings
+  // The page's product copy, on top of the copy shared across the pages; the language comes from the
+  // gallery's settings
+  const SHARED = window.PROTOTYPE_COPY
   const COPY = {
-    zh: { dev1: '客厅 Mac', m1: '收到了,我这边看一下这几张截图。', m2: '这版的间距比上一版舒服。',
-          shot: '截图 · 2560×1600', delivered: '已送达 · 15:45', shotDark: '截图 · 深色内容垫底',
-          jump: '跳到最新', placeholder: '输入消息,Enter 发送,Shift+Enter 换行' },
-    en: { dev1: 'Living Room Mac', m1: "Got them, I'll look at these screenshots.", m2: 'The spacing in this version feels better than the last.',
-          shot: 'Screenshot · 2560×1600', delivered: 'Delivered · 15:45', shotDark: 'Screenshot · dark content underneath',
-          jump: 'Jump to latest', placeholder: 'Type a message. Enter to send, Shift+Enter for newline' }
+    zh: { ...SHARED.zh, m1: '收到了,我这边看一下这几张截图。', m2: '这版的间距比上一版舒服。',
+          shot: '截图 · 2560×1600', deliveredAt: `${SHARED.zh.delivered} · 15:45`, shotDark: '截图 · 深色内容垫底',
+          jump: '跳到最新' },
+    en: { ...SHARED.en, m1: "Got them, I'll look at these screenshots.", m2: 'The spacing in this version feels better than the last.',
+          shot: 'Screenshot · 2560×1600', deliveredAt: `${SHARED.en.delivered} · 15:45`, shotDark: 'Screenshot · dark content underneath',
+          jump: 'Jump to latest' }
   }
   DemoDimensions.on('language', (lang) => {
-    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
+    document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : 'en'
     for (const el of document.querySelectorAll('[data-t]')) el.textContent = COPY[lang][el.dataset.t]
     for (const el of document.querySelectorAll('[data-t-aria]')) el.setAttribute('aria-label', COPY[lang][el.dataset.tAria])
   })

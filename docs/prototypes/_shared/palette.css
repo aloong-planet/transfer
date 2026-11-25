@@ -1,0 +1,28 @@
+/* The app window's base colours, shared by every prototype page that draws the app window. A page links
+   this file and uses var(--bg), var(--card), var(--ink) and the rest; it does not declare them again.
+
+   The mode comes from the gallery's settings, as data-demo-mode on the root. A container that must
+   stay in one mode whatever the page's mode is (a fixed light pane beside a fixed dark one) carries
+   data-palette-mode instead. Both modes are written out in full.
+
+   The values are the prototypes' own baseline: they are not generated from the app's theme and nothing
+   asserts they equal it. They hold the app's colours as they were last read. A colour that only one page
+   uses, and the colours of a page's own chrome around the app window, stay in that page. */
+html[data-demo-mode="light"], [data-palette-mode="light"] {
+  --bg: #f7f8f9; --card: #ffffff;
+  --ink: #1a1c1f; --ink-2: #52565c; --muted: #868b93;
+  --line: #e8eaed; --line-strong: #d9dce0;
+  --accent: #8a67ab; --accent-hover: #7c5a9c; --accent-soft: #f0ebf6;
+  --own-wash: rgba(138, 103, 171, 0.16);
+  --danger: #dc2626;
+  --shadow-md: 0 4px 16px -6px rgba(20, 22, 26, 0.12);
+}
+html[data-demo-mode="dark"], [data-palette-mode="dark"] {
+  --bg: #18191b; --card: #1f2124;
+  --ink: #e9eaed; --ink-2: #b4b8bd; --muted: #7f858c;
+  --line: #2a2c30; --line-strong: #34373c;
+  --accent: #a084c7; --accent-hover: #b199d3; --accent-soft: #2a2430;
+  --own-wash: rgba(160, 132, 199, 0.2);
+  --danger: #f87171;
+  --shadow-md: 0 6px 20px -8px rgba(0, 0, 0, 0.5);
+}
