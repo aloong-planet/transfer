@@ -85,10 +85,10 @@ R2 免费额度(个人项目基本 $0):**10 GB 存储 + egress(下载流量)免�
 
 ## 第 7 步:确认站点里的两个域名
 
-下载域和落地页域名都已经写在站点代码里,没有占位要替换:
+下载域和落地页域名都已经写在站点代码里(在 aloong-planet-home 的 `apps/transfer`,不在本仓库),没有占位要替换:
 
-- `site/src/download-config.ts` 里的下载域是 `dl.aloongplanet.com`:安装包、`latest.json` 和下载统计的地址都用这个域。本地开发时统计请求的代理目标(`site/astro.config.mjs`)也是它。
-- `site/astro.config.mjs` 的 `site` 是 `https://transfer.aloongplanet.com`。
+- `apps/transfer/src/download-config.ts` 里的下载域是 `dl.aloongplanet.com`:安装包、`latest.json` 和下载统计的地址都用这个域。本地开发时统计请求的代理目标(`apps/transfer/astro.config.mjs`)也是它。
+- `apps/transfer/astro.config.mjs` 的 `site` 是 `https://transfer.aloongplanet.com`。
 
 ---
 

@@ -1,10 +1,12 @@
 # `astro check` passes without checking when `@astrojs/check` is missing
 
+> This was written when the website lived in this repository's `site/` directory, which the paths below name. The website now lives in aloong-planet-home's `apps/transfer`, which runs Astro 7 and keeps the `check` script of the Fix section, pinned by its `src/check-script.test.ts`.
+
 ## Symptom
 
 The site's type check went into the `checks` job as `pnpm check` → `astro check`, the command Astro's type-checking guide names. When `@astrojs/check` (or `typescript`) is not installed in `site/node_modules`, it checks no file and still exits 0. With `CI=true` it logs ``[ERROR] [check] The `@astrojs/check` and `typescript` packages are required for this command to work. ...``; without `CI` it shows an install prompt (`Continue? (Y/n)`) and, with no terminal to answer it, exits 0 as well.
 
-Two ordinary events reach that state: a later change drops `@astrojs/check` from `site/package.json` (no source file imports it, so it looks unused), or a local `site/node_modules` was installed before the dependency was added. Either way a step that checked nothing reads as a step that passed, in CI and for anyone running the `[i18n]` declaration's `pnpm --dir site check`.
+Two ordinary events reach that state: a later change drops `@astrojs/check` from `site/package.json` (no source file imports it, so it looks unused), or a local `site/node_modules` was installed before the dependency was added. Either way a step that checked nothing reads as a step that passed, in CI and for anyone running the site's `check` script by hand (the `[i18n]` declaration in `capabilities.toml` then named it).
 
 ## Root cause
 

@@ -101,7 +101,7 @@ https://example.com                        (无该响应头)
 
 ## 本地预览
 
-Astro 开发服务器把同源路径 `/__download-statistics` 代理到 R2 的公开统计 JSON,因此 `pnpm --dir site dev` 下刷新页面也能看到真实数字。该代理只存在于开发服务器;生产构建仍直接读取 `https://dl.aloongplanet.com/stats/downloads.json`,不会扩大 R2 CORS 白名单。
+Astro 开发服务器把同源路径 `/__download-statistics` 代理到 R2 的公开统计 JSON,因此在 aloong-planet-home 里跑 `pnpm --filter @aloong-planet/transfer run dev` 时刷新页面也能看到真实数字。该代理只存在于开发服务器;生产构建仍直接读取 `https://dl.aloongplanet.com/stats/downloads.json`,不会扩大 R2 CORS 白名单。
 
 ## Repository ownership and continuity
 

@@ -11,7 +11,7 @@
 
 ## Solution
 
-**同一份落地页代码构建两次,部署到两个域名。** 两份产物只有一处差异:国内那份的页脚多一条 ICP 备案号(法规要求)。下载源、文案、结构、样式全部相同。
+**同一份落地页代码构建两次,部署到两个域名。** 两份产物只有一处差异:国内那份的页脚多一条 ICP 备案号(法规要求)。下载源、文案、结构、样式全部相同。落地页的代码与规则在 aloong-planet-home([transfer-site](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/specs/transfer-site.md)),本仓库不含站点代码;国内那份由本仓库的部署命令取该仓库当前的 main 构建。
 
 大陆用户因此拿到快的**页面**;**下载仍走境外**——安装包在未备案的 R2 上,这一半没有改变(见 ADR-0018 的「Consequences」)。
 
@@ -31,7 +31,7 @@
 
 | 情形 | 预期行为 |
 |---|---|
-| 环境变量未设置(`.com` / Cloudflare Pages 构建) | 该项**整个不渲染**——不是渲染成空、也不是留一段空白间距。**页脚高度与只有品牌和链接两项时一致** |
+| 环境变量未设置(`.com` 构建) | 该项**整个不渲染**——不是渲染成空、也不是留一段空白间距。**页脚高度与只有品牌和链接两项时一致** |
 | 环境变量已设置且合法(国内构建) | 在页脚同一行的品牌与链接之间出现,链接指向工信部核验页,**页脚高度与未设置时相同** |
 | 环境变量设置了但**格式非法** | **构建失败** |
 | 备案号**合法的形态** | 整个值是 `<省份简称>ICP备<数字>号`,后面可以再带一个 `-<序号>` 后缀(同主体多站点时用):省份简称是 1 至 2 个汉字,`ICP备` 之后是 4 位及以上的数字,序号是一个或多个数字。不符合这一形态的即「格式非法」。这一形态来自常识,没有逐个核对过真实备案号 |
@@ -46,17 +46,17 @@
 
 | 情形 | 预期行为 |
 |---|---|
-| 在国内站点下载 | 走与 `.com` **完全相同**的下载区([landing-page::REQ-002](landing-page.md)) |
-| 国内站的 origin 不在 R2 的 CORS 白名单里 | 最新版指针与统计请求都被拒 → **静默隐藏统计行**,下载区落到 [landing-page::REQ-002/AC-02](landing-page.md) 或 [landing-page::REQ-002/AC-03](landing-page.md) 的状态,页面其余部分完全正常 |
-| 白名单补上之后 | 统计行正常出现,下载区回到 [landing-page::REQ-002/AC-01](landing-page.md),无需改代码或重新部署 |
+| 在国内站点下载 | 走与 `.com` **完全相同**的下载区([transfer-site::REQ-002](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/specs/transfer-site.md)) |
+| 国内站的 origin 不在 R2 的 CORS 白名单里 | 最新版指针与统计请求都被拒 → **静默隐藏统计行**,下载区落到 [transfer-site::REQ-002/AC-02](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/specs/transfer-site.md) 或 [transfer-site::REQ-002/AC-03](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/specs/transfer-site.md) 的状态,页面其余部分完全正常 |
+| 白名单补上之后 | 统计行正常出现,下载区回到 [transfer-site::REQ-002/AC-01](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/specs/transfer-site.md),无需改代码或重新部署 |
 | R2 下载慢或超时 | 浏览器自身行为,不干预(见 Out of Scope) |
 
 ### 构建与部署
 
 | 情形 | 预期行为 |
 |---|---|
-| Cloudflare Pages 侧不设备案号变量 | 构建成功 |
-| CI 跑 site 构建时不设环境变量 | 构建成功 |
+| `.com` 构建不设备案号变量 | 构建成功 |
+| aloong-planet-home 的 CI 构建站点时不设环境变量 | 构建成功 |
 | **部署国内站时忘了设备案号变量** | 不允许发生。部署命令**自己保证**备案号被注入。真忘了(比如手工绕过该命令)时,构建出的产物应当在部署自检中被发现 |
 | 部署脚本收到的不是构建产物目录 | **报错退出**,不能把错误内容推上服务器 |
 | 同步后文件权限 | 必须在服务器侧显式修正,让反代容器里的 nginx 用户读得到新文件 |

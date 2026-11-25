@@ -23,7 +23,7 @@ We choose **option 1**: we deploy the landing page to the filed mainland node an
 - Positive: Both sites are built from one source, so one change to the copy updates both and they do not drift apart into two sites over time.
 - Negative: **Download speed does not change at all.** The installers stay on R2, which has no filing, so mainland downloads still route abroad, and "the domestic mirror is live" is easily misread as "downloads are fast too", the misreading this entry most needs to prevent (ADR-0011's option 3 is only half carried out).
 - Negative: One more deployment has to be maintained, and it is deployed by hand.
-- Negative: When R2's CORS allow-list lacks the mainland site's origin, the statistics line is hidden and the download section falls back to the GitHub state or the list state (`landing-page::REQ-002`).
+- Negative: When R2's CORS allow-list lacks the mainland site's origin, the statistics line is hidden and the download section falls back to the GitHub state or the list state ([`transfer-site::REQ-002`](https://github.com/aloong-planet/aloong-planet-home/blob/main/docs/specs/transfer-site.md), in aloong-planet-home).
 - Neutral: Two domains serve the same content, which raises a duplicate-content question for search engines; the landing page has neither a canonical link nor a sitemap, and none is added for this.
 
 ## Sources
