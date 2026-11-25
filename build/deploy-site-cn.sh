@@ -3,7 +3,10 @@
 #
 #   pnpm deploy:site:cn
 #
-# .com 那份由 Cloudflare Pages 在 master 合并后自动构建部署,不经过本脚本。
+# The website's source is aloong-planet-home's apps/transfer; this repository has none. The script builds
+# a fresh shallow clone of that repository's main branch in a temporary directory, and prints the revision it built.
+# The .com site is built and deployed by that repository's Deploy workflow after a push to its main branch,
+# not by this script.
 # 两份的唯一差异是页脚的 ICP 备案号,由本脚本注入的构建期环境变量决定。
 
 set -euo pipefail
@@ -25,10 +28,17 @@ BACKEND_PORT=8081
 
 [ -f "$KEY" ] || { echo "找不到部署密钥:$KEY" >&2; exit 1; }
 
-echo "==> 构建(注入备案号)"
-PUBLIC_ICP_BEIAN="$ICP_BEIAN" pnpm --dir "$REPO_ROOT/site" build
+echo "==> 构建(取 aloong-planet-home 的 main,注入备案号)"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/transfer-site-cn.XXXXXX")"
+trap 'rm -rf "$WORK"' EXIT
+# The same address and branch that scripts/site-assets.mjs clones.
+git clone --quiet --depth 1 --branch main --single-branch https://github.com/aloong-planet/aloong-planet-home.git "$WORK/home"
+echo "    aloong-planet-home 修订:$(git -C "$WORK/home" rev-parse HEAD)"
+# Only Transfer's closure (apps/transfer and the workspace packages it uses), from the frozen lockfile.
+pnpm --dir "$WORK/home" install --frozen-lockfile --filter '@aloong-planet/transfer...'
+PUBLIC_ICP_BEIAN="$ICP_BEIAN" pnpm --dir "$WORK/home" --filter @aloong-planet/transfer run build
 
-DIST="$REPO_ROOT/site/dist"
+DIST="$WORK/home/apps/transfer/dist"
 [ -f "$DIST/index.html" ] || { echo "构建产物里没有 index.html:$DIST" >&2; exit 1; }
 
 # 构建期就把「漏注入」挡掉。备案号缺失是合规问题,不能等上线后靠人去看页脚才发现。
