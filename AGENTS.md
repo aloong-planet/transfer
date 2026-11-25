@@ -29,6 +29,7 @@ Each class of document has exactly one home, chosen by how fast it rots; see `do
 - In a quiet test instance, mouse events are built as `MouseEvent`s inside the page, never through Playwright's `dispatchEvent('contextmenu')` (docs/postmortems/playwright-contextmenu-no-coordinates.md).
 - A quiet test instance's window is never shown in order to take a screenshot: it renders while hidden, and `toBeVisible()` there tests layout visibility only (the comment on `QUIET` in `src/main/index.ts`).
 - An e2e case replaces one of the app's IPC handlers only after `firstWindow()` has returned (the header of `e2e/screenshot.spec.ts`).
+- An e2e spec starts the app only through `e2e/helpers/quiet-launch.ts`, whose launch returns after `firstWindow()`; a launch without `TRANSFER_USERDATA`, or without a window wait, is asked for by name (`launchQuietSwitchOnly`).
 - The repository carries project knowledge, not the operator's working instructions: `CLAUDE.md`, `.claude/` and `docs/.workings/` are not committed, so what a fresh clone must know goes into a knowledge document (ADR-0013, `docs/agents/docs-layout.md`).
 
 ## Agent skills

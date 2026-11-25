@@ -23,9 +23,10 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { MessageStore } from '../src/main/db/messages'
 import type { TransferApi } from '../src/preload'
+import { launchQuiet } from './helpers/quiet-launch'
 
 const SENDER_X = 'e2e-recv-alias-x'
 const SENDER_Y = 'e2e-recv-alias-y'
@@ -75,12 +76,7 @@ test.beforeAll(async () => {
   })
   store.close()
 
-  app = await electron.launch({
-    args: ['.', `--user-data-dir=${userData}`],
-    env: { ...process.env, NODE_ENV: 'production', TRANSFER_E2E_QUIET: '1', TRANSFER_USERDATA: userData }
-  })
-  page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  ;({ app, page } = await launchQuiet(userData))
 })
 
 test.afterAll(async () => {

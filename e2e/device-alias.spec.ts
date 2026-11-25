@@ -25,10 +25,11 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import type { TransferApi } from '../src/preload'
 import { EVT } from '../src/shared/ipc'
 import type { RemoteDevice } from '../src/shared/types'
+import { launchQuiet } from './helpers/quiet-launch'
 
 let app: ElectronApplication
 let page: Page
@@ -118,12 +119,7 @@ test.describe.serial('device alias input', () => {
     userData = mkdtempSync(join(tmpdir(), 'transfer-alias-e2e-'))
     // zh, so the menu labels asserted below are the dictionary's Chinese ones
     writeFileSync(join(userData, 'settings.json'), JSON.stringify({ language: 'zh' }))
-    app = await electron.launch({
-      args: ['.', `--user-data-dir=${userData}`],
-      env: { ...process.env, NODE_ENV: 'production', TRANSFER_E2E_QUIET: '1', TRANSFER_USERDATA: userData }
-    })
-    page = await app.firstWindow()
-    await page.waitForLoadState('domcontentloaded')
+    ;({ app, page } = await launchQuiet(userData))
   })
 
   test.afterAll(async () => {

@@ -23,9 +23,10 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, unlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { MessageStore } from '../src/main/db/messages'
 import { openChatWith } from './helpers/open-chat'
+import { launchQuiet } from './helpers/quiet-launch'
 import type { TransferApi } from '../src/preload'
 import { injectMetadata, phoneMetadata } from '../src/main/image-orientation.fixture'
 
@@ -185,12 +186,7 @@ test.describe.serial('image copy', () => {
     })
     store.close()
 
-    app = await electron.launch({
-      args: ['.', `--user-data-dir=${userData}`],
-      env: { ...process.env, NODE_ENV: 'production', TRANSFER_E2E_QUIET: '1', TRANSFER_USERDATA: userData }
-    })
-    page = await app.firstWindow()
-    await page.waitForLoadState('domcontentloaded')
+    ;({ app, page } = await launchQuiet(userData))
 
     // Fixture files exist before the chat opens, so every thumbnail loads (broken.png never decodes)
     mkdirSync(files, { recursive: true })
