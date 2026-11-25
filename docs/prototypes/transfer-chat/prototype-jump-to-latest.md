@@ -16,6 +16,6 @@ The simplified sidebar and chat page around the button give it real content dens
 
 Not part of the design; do not implement.
 
-- A dark pill at the bottom centre holds the variant switch (← / →), an unread-dot switch and a content-bed switch.
-- "Content bed": the real app has no such control. The glass only shows when content sits under it, so the switch puts the button over a light blank area or over a dark image bubble. In the app, what lies underneath is wherever the user has scrolled to.
+- A floating "Demo ·" bar (the shared demo bar, which can be dragged or collapsed) has three groups: Variant (A, B and C; the left and right arrow keys step through them), Unread dot (Off, On) and Under the button (Light blank, Dark image). The window leaves room under it, so the bar at its default position does not cover the composer.
+- "Under the button": the real app has no such control. The glass only shows when content sits under it, so the switch puts the button over a light blank area or over a dark image bubble. In the app, what lies underneath is wherever the user has scrolled to.
 - "Unread dot": in the app the dot depends on whether a message arrived while the user was scrolled up; there is no control.

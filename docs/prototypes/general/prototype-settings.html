@@ -90,25 +90,24 @@
   .note{margin:6px 0 4px;padding:8px 10px;border-radius:7px;font-size:11.5px;line-height:1.45;
     background:var(--accent-soft);color:var(--ink-2)}
 
-  /* 原型工装(非产品 UI):切换「接收文件夹」的四种状态 */
-  .rig{position:fixed;top:10px;left:10px;z-index:9;display:flex;gap:6px;align-items:center;
-    background:var(--card);border:1px solid var(--line-strong);border-radius:8px;padding:7px 10px}
-  .rig b{font-size:11px;color:var(--muted);font-weight:600;margin-right:2px}
-  .rig button{font-size:11px;padding:4px 9px;border-radius:5px;cursor:pointer;font-family:inherit;
-    border:1px solid var(--line-strong);background:var(--card);color:var(--ink)}
-  .rig button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 </style>
 </head>
 <body>
 
-<!-- 原型工装:切换「接收文件夹」的四种状态。非产品 UI。 -->
-<div class="rig">
-  <b>接收文件夹状态</b>
-  <button onclick="setState('default',this)" class="on">默认</button>
-  <button onclick="setState('custom',this)">已自选</button>
-  <button onclick="setState('changed',this)">刚改完</button>
-  <button onclick="setState('broken',this)">失效待处理</button>
+<div data-demo-harness>
+  <span class="dh-tag">Demo ·</span>
+  <div class="dh-group">
+    <span class="dh-title">Receive folder</span>
+    <div class="dh-opts">
+      <button type="button" class="dh-opt" data-state="default" aria-pressed="true">Default</button>
+      <button type="button" class="dh-opt" data-state="custom" aria-pressed="false">Chosen by the user</button>
+      <button type="button" class="dh-opt" data-state="changed" aria-pressed="false">Just changed</button>
+      <button type="button" class="dh-opt" data-state="broken" aria-pressed="false">No longer valid</button>
+    </div>
+  </div>
+  <p class="dh-note">App: the state follows the stored receive folder and whether that folder is still available; there is no such control.</p>
 </div>
+<script src="../demo-harness.js"></script>
 
 <div class="shell">
   <div class="side">
@@ -175,25 +174,27 @@
     // 也不出现「恢复默认」。原来选的那个路径**不再记得**,故告知里说不出是哪个。
     broken :{ dir:DEFAULT_DIR, reset:false, note:false, warn:true }
   };
-  function setState(name, btn){
+  function setState(name){
     const s=STATES[name];
     document.getElementById('pathText').textContent=s.dir;       // <bdi>,只承载文本与方向隔离
     document.getElementById('btnReset').hidden=!s.reset;
     document.getElementById('warnBox').hidden=!s.warn;
     document.getElementById('noteBox').hidden=!s.note;
-    document.querySelectorAll('.rig button').forEach(b=>b.classList.remove('on'));
-    btn.classList.add('on');
+    document.querySelectorAll('[data-demo-harness] [data-state]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.state===name)));
   }
+  document.querySelector('[data-demo-harness]').addEventListener('click', (e)=>{
+    const b=e.target.closest('[data-state]');
+    if(b) setState(b.dataset.state);
+  });
   // 三个操作都**立即生效**(与同页的语言、离线保留一致);「取消」不回滚它们。
-  const RIG=(i)=>document.querySelectorAll('.rig button')[i];
   // 「更改…」:真实里这一步是系统选择器,选定后立刻落盘并提示旧文件仍在原处
-  function pick(){ setState('changed', RIG(2)); }
-  function reset(){ setState('default', RIG(0)); }
+  function pick(){ setState('changed'); }
+  function reset(){ setState('default'); }
   // 「知道了」= 清掉那个标记位。清完就回到默认态——路径本来就已经是默认目录了,
   // 唯一的变化是告知消失。**不可撤销**:原来选的路径没记,没有"再看一眼"这回事。
-  function dismiss(){ setState('default', RIG(0)); }
+  function dismiss(){ setState('default'); }
 
-  setState('default', document.querySelector('.rig button'));
+  setState('default');
 
   // ── Language ──
   // The page presents the language in effect (the gallery's settings, or this page's own select) and

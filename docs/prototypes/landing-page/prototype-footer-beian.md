@@ -14,6 +14,6 @@ The footer is drawn as the site has it: the brand on the left, the product links
 
 Not part of the design; do not implement.
 
-- The "Build target" switch (`.com` / `.com.cn`): the real site decides at build time from an environment variable and has no such control. `.com` (Cloudflare Pages) sets none and the whole row is absent; `.com.cn` (Aliyun ECS) sets it and the row renders.
+- A floating "Demo ·" bar (the shared demo bar, which can be dragged or collapsed) has one group, Build target, that switches between `.com` (Pages) and `.com.cn` (ECS): the real site decides at build time from an environment variable and has no such control. `.com` (Cloudflare Pages) sets none and the whole row is absent; `.com.cn` (Aliyun ECS) sets it and the row renders.
 
 The page follows the gallery's language and mode settings, so the four combinations of language and mode are seen by changing them there.

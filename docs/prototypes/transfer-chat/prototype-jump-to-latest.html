@@ -13,7 +13,9 @@
 <link rel="stylesheet" href="../_shared/bubble-colors.css">
 <style>
   *{box-sizing:border-box;margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
-  body{background:var(--bg);color:var(--ink);height:100vh;overflow:hidden;font-size:13px;display:flex}
+  /* The bottom padding leaves room under the window for the demo bar at its default position, so the bar
+     does not sit on the composer */
+  body{background:var(--bg);color:var(--ink);height:100vh;padding-bottom:112px;overflow:hidden;font-size:13px;display:flex}
 
   /* ——— 语境外壳(防真空条款:简化版侧栏+聊天页,提供真实数据密度) ——— */
   .side{width:210px;border-right:1px solid var(--line);background:var(--card);padding:12px;flex:none}
@@ -72,17 +74,6 @@
   body.dark-bed .pad{display:none}
   body:not(.dark-bed) .bed{display:none}
 
-  /* ——— 演示基建(独立悬浮层,非设计的一部分) ——— */
-  .harness{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99;
-    display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:999px;
-    background:#1c1e23;color:#e7e9ee;font-size:12px;box-shadow:0 8px 26px -8px rgba(0,0,0,.6)}
-  .harness .tag{color:#8b919e;padding-right:2px}
-  .harness .sep{width:1px;height:16px;background:#33363d}
-  .harness .nav{display:flex;align-items:center;gap:6px}
-  .harness button{background:#2b2e35;color:#e7e9ee;border:0;border-radius:6px;width:24px;height:22px;cursor:pointer;font-size:13px}
-  .harness button:hover{background:#3a3e46}
-  .harness .name{min-width:118px;text-align:center}
-  .harness label{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
 </style>
 </head>
 <body>
@@ -117,16 +108,33 @@
     </div>
   </div>
 
-  <div class="harness" data-demo-harness>
-    <span class="tag">演示·变体</span>
-    <div class="nav">
-      <button id="prev">←</button><span class="name" id="vname"></span><button id="next">→</button>
+  <div data-demo-harness>
+    <span class="dh-tag">Demo ·</span>
+    <div class="dh-group">
+      <span class="dh-title">Variant</span>
+      <div class="dh-opts">
+        <button type="button" class="dh-opt" data-variant="vA" aria-pressed="true">A · .16/.30</button>
+        <button type="button" class="dh-opt" data-variant="vB" aria-pressed="false">B · .24/.40</button>
+        <button type="button" class="dh-opt" data-variant="vC" aria-pressed="false">C · .32/.50</button>
+      </div>
     </div>
-    <span class="sep"></span>
-    <label><input type="checkbox" id="unread"> 未读圆点</label>
-    <span class="sep"></span>
-    <label><input type="checkbox" id="bed"> 深色内容垫底</label>
+    <div class="dh-group">
+      <span class="dh-title">Unread dot</span>
+      <div class="dh-opts">
+        <button type="button" class="dh-opt" data-unread="0" aria-pressed="true">Off</button>
+        <button type="button" class="dh-opt" data-unread="1" aria-pressed="false">On</button>
+      </div>
+    </div>
+    <div class="dh-group">
+      <span class="dh-title">Under the button</span>
+      <div class="dh-opts">
+        <button type="button" class="dh-opt" data-bed="0" aria-pressed="true">Light blank</button>
+        <button type="button" class="dh-opt" data-bed="1" aria-pressed="false">Dark image</button>
+      </div>
+    </div>
+    <p class="dh-note">App: the dot shows when a message arrived while the user was scrolled up, and what lies under the button is wherever the user has scrolled to; there are no such controls.</p>
   </div>
+  <script src="../demo-harness.js"></script>
 
 <script>
   // The page's product copy, on top of the copy shared across the pages; the language comes from the
@@ -146,26 +154,30 @@
     for (const el of document.querySelectorAll('[data-t-aria]')) el.setAttribute('aria-label', COPY[lang][el.dataset.tAria])
   })
 
-  const VARIANTS = [
-    { cls: 'vA', name: 'A · 现状 .16/.30' },
-    { cls: 'vB', name: 'B · 稍深 .24/.40' },
-    { cls: 'vC', name: 'C · 更深 .32/.50' }
-  ]
+  // The three variants are the options of the demo bar's Variant group
+  const VARIANTS = ['vA', 'vB', 'vC']
   const jump = document.getElementById('jump')
-  const vname = document.getElementById('vname')
-  let i = Math.max(0, VARIANTS.findIndex((v) => v.cls === location.hash.slice(1)))
+  const bar = document.querySelector('[data-demo-harness]')
+  let i = Math.max(0, VARIANTS.indexOf(location.hash.slice(1)))
 
+  // The bar is built once in the markup; only aria-pressed changes, in place
+  function press(attr, value) {
+    for (const b of bar.querySelectorAll(`[${attr}]`)) b.setAttribute('aria-pressed', String(b.getAttribute(attr) === value))
+  }
   function render() {
-    jump.className = 'jump ' + VARIANTS[i].cls
-    vname.textContent = VARIANTS[i].name
-    location.hash = VARIANTS[i].cls
+    jump.className = 'jump ' + VARIANTS[i]
+    press('data-variant', VARIANTS[i])
+    location.hash = VARIANTS[i]
   }
   function step(d) { i = (i + d + VARIANTS.length) % VARIANTS.length; render() }
 
-  document.getElementById('prev').onclick = () => step(-1)
-  document.getElementById('next').onclick = () => step(1)
-  document.getElementById('unread').onchange = (e) => document.body.classList.toggle('has-unread', e.target.checked)
-  document.getElementById('bed').onchange = (e) => document.body.classList.toggle('dark-bed', e.target.checked)
+  bar.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-variant], [data-unread], [data-bed]')
+    if (!b) return
+    if (b.dataset.variant) { i = VARIANTS.indexOf(b.dataset.variant); render() }
+    if (b.dataset.unread) { document.body.classList.toggle('has-unread', b.dataset.unread === '1'); press('data-unread', b.dataset.unread) }
+    if (b.dataset.bed) { document.body.classList.toggle('dark-bed', b.dataset.bed === '1'); press('data-bed', b.dataset.bed) }
+  })
   addEventListener('keydown', (e) => {
     if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName) || e.target.isContentEditable) return
     if (e.key === 'ArrowLeft') step(-1)

@@ -10,7 +10,7 @@ window.PROTOTYPES = [
   },
   {
     module: 'transfer-chat', type: 'ui', id: 'file-type-icons',
-    name: '文件类型图标(选型)',
+    name: '文件类型图标',
     path: 'transfer-chat/prototype-file-type-icons.html'
   },
   {
@@ -20,7 +20,7 @@ window.PROTOTYPES = [
   },
   {
     module: 'transfer-chat', type: 'ui', id: 'empty-state-icon',
-    name: '聊天空状态图标(选型)',
+    name: '聊天空状态图标',
     path: 'transfer-chat/prototype-empty-state-icon.html'
   },
   {
@@ -45,7 +45,7 @@ window.PROTOTYPES = [
   },
   {
     module: 'screenshot', type: 'ui', id: 'annotation-toolbar',
-    name: '标注工具条(图标选型)',
+    name: '标注工具条(图标)',
     path: 'screenshot/prototype-annotation-toolbar.html'
   },
   {

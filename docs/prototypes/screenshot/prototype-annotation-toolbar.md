@@ -2,7 +2,7 @@
 
 ## Question
 
-Which icon each tool of the screenshot annotation toolbar uses: rectangle, ellipse, arrow, line, pen, mosaic, blur, text, number, undo and redo. The page shows the toolbar over a mock screenshot and a table of the icon set with each icon's name and source library. Icons come from Lucide first, then Tabler where Lucide has no equivalent, then Material as the last resort; the SVG content is each library's official one.
+Which icon each tool of the screenshot annotation toolbar has, and which library it comes from: rectangle, ellipse, arrow, line, pen, mosaic, blur, text, number, undo and redo. The page shows the toolbar over a mock screenshot and a table of the icon set with each icon's name and source library. Icons come from Lucide first, then Tabler where Lucide has no equivalent, then Material as the last resort; the SVG content is each library's official one.
 
 ## Structure basis
 
