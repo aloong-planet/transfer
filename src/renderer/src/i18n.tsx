@@ -1,8 +1,9 @@
 // 渲染层 i18n:React context 持有当前有效语言,驱动整树热切换。
 // 两个 window(index + overlay)各包一个 <I18nProvider>;它们读同一 settings,effective 一致。
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
 import { DICT, type TKey } from '@shared/i18n/dict'
+import { withLang } from '@shared/i18n/lang-query'
 import { createT, type Lang, type TFn } from '@shared/i18n/t'
 import type { LangPref } from '@shared/ipc'
 
@@ -19,19 +20,26 @@ type I18nValue = {
 
 const I18nContext = createContext<I18nValue | null>(null)
 
-/** 从 URL query 读初始语言(overlay 无闪注入用);无则 null。 */
+/** 从 URL query 读初始语言(主窗与 overlay 无闪注入用);无则 null。 */
 function langFromQuery(): Lang | null {
   const q = new URLSearchParams(window.location.search).get('lang')
   return q === 'zh' || q === 'en' ? q : null
 }
 
 /**
- * lang 初值:overlay 由 URL query(?lang=)注入 → 首帧即正确(无中文闪现,langFromQuery);
- * 主窗无 query → 用占位 'zh',异步 IPC(getLanguage)拉回 effective 后校正。
+ * lang 初值:两个 window 都由 main 经 URL query(?lang=)注入 → 首帧即正确(langFromQuery)。
+ * 只有没带 query 的页面(如 dev 下直接用浏览器打开)才用占位 'zh',异步 IPC(getLanguage)拉回 effective 后校正。
  */
 export function I18nProvider(props: { children: ReactNode }): JSX.Element {
   const [lang, setLang] = useState<Lang>(() => langFromQuery() ?? 'zh')
   const [pref, setPrefState] = useState<LangPref>('system')
+
+  // Keep the page's URL naming the language in force: View > Reload loads that URL again, and the window's first frame
+  // must then be in the language now in force, not the one the window was created with. A layout effect, so the URL is
+  // current by the time the new language can be seen.
+  useLayoutEffect(() => {
+    window.history.replaceState(window.history.state, '', withLang(window.location.href, lang))
+  }, [lang])
 
   // 首次:拉回持久化的偏好 + 有效语言(system 已由 main 解析)。
   // 并订阅 main 广播的语言变化:覆盖"另一个 window 改了语言"(尤其常驻 overlay)——
