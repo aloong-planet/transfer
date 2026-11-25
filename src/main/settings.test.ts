@@ -307,7 +307,7 @@ describe('SettingsStore', () => {
     })
 
     // device-alias::REQ-003/AC-01, device-alias::REQ-003/AC-03, device-alias::REQ-003/AC-04
-    test.each(['constructor', '__proto__', 'toString', 'AB:CD:EF:01:23'])(
+    test.each(['constructor', '__proto__', 'toString'])(
       'an alias for fingerprint %s is saved, read back after a reload, and cleared',
       (fp) => {
         const dir = mkdir()

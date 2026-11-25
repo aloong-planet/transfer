@@ -123,6 +123,8 @@ describe('文件收发(集成)', () => {
   let cancelledCount: number
   let receivedTexts: string[]
   let registered: string[]
+  // Which prepare-upload path each request reached, with the sender's fingerprint
+  let reached: [string, string][]
   let uploadCount: number
   let autoAcceptImpl: (files: PrepareUploadRequest['files']) => boolean
   // 控制接收方"弹框"决策
@@ -135,6 +137,7 @@ describe('文件收发(集成)', () => {
     cancelledCount = 0
     receivedTexts = []
     registered = []
+    reached = []
     autoAcceptImpl = () => false // 默认不自动接收
     askImpl = async (req) => Object.keys(req.files) // 默认全接受
 
@@ -144,10 +147,17 @@ describe('文件收发(集成)', () => {
       tls: receiver.tls,
       selfInfo: () => selfInfo('Receiver', receiver.fingerprint),
       receiveDir: () => recvDir,
-      onPrepareAsk: (_id, req) => askImpl(req),
+      onPrepareAsk: (_id, req) => {
+        reached.push(['ask', req.info.fingerprint])
+        return askImpl(req)
+      },
       onSessionCancelled: () => cancelledCount++,
-      onTextMessage: (text) => receivedTexts.push(text),
+      onTextMessage: (text, info) => {
+        receivedTexts.push(text)
+        reached.push(['text', info.fingerprint])
+      },
       shouldAutoAcceptFiles: (files) => autoAcceptImpl(files),
+      onAutoAccept: (_files, info) => reached.push(['auto', info.fingerprint]),
       onRegister: (info) => registered.push(info.fingerprint)
     })
     // 计数 upload 路由调用(验证文本不产生 upload)
@@ -468,19 +478,28 @@ describe('文件收发(集成)', () => {
   })
 
   // discovery::REQ-004/AC-03
-  test('POST /prepare-upload from a fingerprint that breaks the fingerprint rule is answered 400 and opens no session', async () => {
-    const url = `https://${HOST}:${target.port}/api/localsend/v2/prepare-upload`
-    const text = (fp: string, body: string): Record<string, unknown> => ({
-      info: selfInfo('S', fp),
-      files: { t1: { id: 't1', fileName: 't1.txt', size: Buffer.byteLength(body), fileType: 'text', preview: body } }
-    })
-    const rejected = await httpsPostJson(url, text('x'.repeat(129), 'dropped'))
-    expect(rejected.status).toBe(400)
-    expect(sessions.current).toBeNull()
-    const accepted = await httpsPostJson(url, text('y'.repeat(128), 'kept'))
-    expect(accepted.status).toBe(204)
-    expect(receivedTexts).toEqual(['kept'])
-  })
+  test.each([
+    { path: 'text', autoAccept: false, fileType: 'text', status: 204 },
+    { path: 'auto', autoAccept: true, fileType: 'application/octet-stream', status: 200 },
+    { path: 'ask', autoAccept: false, fileType: 'application/octet-stream', status: 200 }
+  ])(
+    'POST /prepare-upload on the $path path from a fingerprint that breaks the fingerprint rule is answered 400 and opens no session',
+    async ({ path, autoAccept, fileType, status }) => {
+      autoAcceptImpl = () => autoAccept
+      const url = `https://${HOST}:${target.port}/api/localsend/v2/prepare-upload`
+      const request = (fp: string): Record<string, unknown> => ({
+        info: selfInfo('S', fp),
+        files: { f1: { id: 'f1', fileName: 'f1.txt', size: 4, fileType, preview: fileType === 'text' ? 'kept' : undefined } }
+      })
+      const rejected = await httpsPostJson(url, request('x'.repeat(129)))
+      expect(rejected.status).toBe(400)
+      expect(sessions.current).toBeNull()
+      const longest = 'y'.repeat(128)
+      const accepted = await httpsPostJson(url, request(longest))
+      expect(accepted.status).toBe(status)
+      expect(reached).toEqual([[path, longest]])
+    }
+  )
 
   test('registerTo:目标不可达 → 静默返 null,不抛', async () => {
     // 连一个没人监听的端口(afterEach 会关真 server;这里直接指一个死端口)

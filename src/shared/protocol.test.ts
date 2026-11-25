@@ -50,7 +50,7 @@ describe('isPeerFingerprint', () => {
     ['one character', 'A'],
     ['128 characters', 'x'.repeat(128)],
     ['an uppercase colon-hex SHA-256', '40:DD:4E:0A:1B:2C:3D:4E:5F:60:71:82:93:A4:B5:C6:D7:E8:F9:0A:1B:2C:3D:4E:5F:60:71:82:93:A4:B5:C6'],
-    ['the name of an inherited object member', 'constructor']
+    ['an English word', 'constructor']
   ])('accepts %s', (_label, v) => {
     expect(isPeerFingerprint(v)).toBe(true)
   })

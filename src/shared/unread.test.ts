@@ -63,7 +63,7 @@ describe('shouldCountUnread', () => {
 const counts = (entries: [string, number][]): Map<string, number> => new Map(entries)
 const countOf = (c: ReadonlyMap<string, number>, peer: string): number | undefined => c.get(peer)
 
-// Fingerprints that are names of members every plain object has, and one shaped like a real one.
+// Fingerprints the cases below run for.
 const PEERS = ['constructor', '__proto__', 'toString', 'AB:CD:EF:01:23']
 
 describe('addUnread', () => {

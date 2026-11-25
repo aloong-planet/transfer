@@ -10,7 +10,7 @@ import { MessageStore } from './db/messages'
 import { SettingsStore } from './settings'
 import type { DeviceInfo, RemoteDevice } from '@shared/types'
 
-// Fingerprints that are names of members every plain object has
+// Fingerprints the cases below run for
 const ODD_FPS = ['constructor', '__proto__', 'toString']
 
 describe('AppCore 设备备注', () => {
