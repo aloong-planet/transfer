@@ -44,7 +44,8 @@ jobs:
         run: pnpm typecheck
 
       # The root vitest covers src/**; the site's tests run in their own step below.
-      # pnpm test also runs the macOS packaging script's own tests (node --test build/mac-packaging.test.cjs), before vitest.
+      # pnpm test also runs, before vitest, the macOS packaging script's own tests (node --test build/mac-packaging.test.cjs)
+      # and the website assets command's (node --test scripts/site-assets.test.mjs).
       - name: Test
         run: pnpm test
 
