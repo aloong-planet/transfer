@@ -299,18 +299,13 @@ function receiveDirInfo(): ReceiveDirInfo {
 const PRELOAD = join(__dirname, '../preload/index.cjs')
 
 /**
- * 按窗口加载 renderer 入口(§4.1)。
- * dev:主窗用裸 ELECTRON_RENDERER_URL(保持根路由不变),overlay 拼 /overlay.html。
- * prod:走 app://bundle/<entry>.html(自定义 scheme,标准安全 origin;见 docs/adr/0007)。
+ * 加载主窗的 renderer 入口(§4.1;overlay 由 ScreenshotService 自己加载)。
+ * dev:裸 ELECTRON_RENDERER_URL(保持根路由不变)。
+ * prod:走 app://bundle/index.html(自定义 scheme,标准安全 origin;见 docs/adr/0007)。
  * The language in force goes into the URL, so the page draws its first frame in it instead of asking for it afterwards.
  */
-function loadRenderer(win: BrowserWindow, entry: 'index' | 'overlay', lang: Lang): void {
-  const devUrl = process.env['ELECTRON_RENDERER_URL']
-  const url = devUrl
-    ? entry === 'index'
-      ? devUrl
-      : `${devUrl}/${entry}.html`
-    : `app://${APP_HOST}/${entry}.html`
+function loadRenderer(win: BrowserWindow, lang: Lang): void {
+  const url = process.env['ELECTRON_RENDERER_URL'] || `app://${APP_HOST}/index.html`
   win.loadURL(withLang(url, lang))
 }
 
@@ -355,7 +350,7 @@ function createWindow(): void {
     send(EVT.windowFocus, true)
   })
   mainWindow.on('blur', () => send(EVT.windowFocus, false))
-  loadRenderer(mainWindow, 'index', getMainLang())
+  loadRenderer(mainWindow, getMainLang())
 }
 
 function registerIpc(): void {
