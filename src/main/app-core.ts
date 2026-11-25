@@ -270,7 +270,7 @@ export class AppCore {
   private applyAliases(devices: RemoteDevice[]): RemoteDevice[] {
     const aliases = this.opts.settings.getDeviceAliases()
     return devices.map((d) => {
-      const custom = aliases[d.info.fingerprint] // 恒非空或 undefined(SettingsStore normalize 已滤空)
+      const custom = aliases.get(d.info.fingerprint) // 恒非空或 undefined(SettingsStore normalize 已滤空)
       return {
         ...d,
         info: {
@@ -293,10 +293,9 @@ export class AppCore {
   listReceivedFiles(args?: { limit?: number; before?: number }): Message[] {
     const aliases = this.opts.settings.getDeviceAliases()
     return this.opts.store.listReceivedFiles(args).map((m) => {
-      // A message's peerFp is the one the peer sent, so a value such as "constructor" must not resolve to
-      // a member that `aliases` inherits: only a stored string is an alias
-      const alias = aliases[m.peerFp]
-      return typeof alias === 'string' ? { ...m, peerAlias: alias } : m
+      // device-alias::REQ-003/AC-04
+      const alias = aliases.get(m.peerFp)
+      return alias !== undefined ? { ...m, peerAlias: alias } : m
     })
   }
 

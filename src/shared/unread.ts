@@ -31,3 +31,15 @@ export function shouldCountUnread(ctx: UnreadContext): boolean {
     ctx.windowFocused && ctx.view === 'chat' && ctx.currentPeer === ctx.msgPeer
   return !activelyViewing
 }
+
+/** Counts after one more unread message from `peer`. unread::REQ-002/AC-01 */
+export function addUnread(counts: ReadonlyMap<string, number>, peer: string): Map<string, number> {
+  return new Map(counts).set(peer, (counts.get(peer) ?? 0) + 1)
+}
+
+/** Sum of every peer's unread count. unread::REQ-003/AC-01 */
+export function totalUnread(counts: ReadonlyMap<string, number>): number {
+  let total = 0
+  for (const n of counts.values()) total += n
+  return total
+}

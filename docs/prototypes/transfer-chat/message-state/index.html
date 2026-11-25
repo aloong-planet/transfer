@@ -5,14 +5,19 @@
 <head>
 <meta charset="utf-8">
 <title>原型 — 消息状态机</title>
+<script src="../../manifest.js"></script>
+<script src="../../app-identity.js"></script>
+<script src="../../dimensions.js"></script>
+<script src="../../demo-dimensions.js" data-follow="mode"></script>
 <style>
-  :root{
+  /* The mode comes from the gallery's settings, as data-demo-mode on the root */
+  html[data-demo-mode="light"]{
     --bg:#f7f8f9; --card:#ffffff; --text:#37352f; --text-2:#787774;
     --line:#e8eaed; --line-strong:#d9dce0; --accent:#8a67ab; --accent-soft:#f0ebf6;
   }
-  @media (prefers-color-scheme: dark){
-    :root{ --bg:#18191b; --card:#1f2124; --text:#e6e6e5; --text-2:#9b9a97;
-      --line:#2a2c30; --line-strong:#34373c; --accent:#a084c7; --accent-soft:#2c2733; }
+  html[data-demo-mode="dark"]{
+    --bg:#18191b; --card:#1f2124; --text:#e6e6e5; --text-2:#9b9a97;
+    --line:#2a2c30; --line-strong:#34373c; --accent:#a084c7; --accent-soft:#2c2733;
   }
   *{box-sizing:border-box;margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
   body{background:var(--bg);color:var(--text);font-size:13px;padding:28px;max-width:860px;margin:0 auto}
@@ -22,6 +27,8 @@
   h4{font-size:12px;color:var(--text-2);margin:18px 0 8px}
   .dg{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto}
   .dg pre{font-size:12px;white-space:pre-wrap}
+  /* The canvas stays a light sheet in either mode: each diagram's palette is fixed light by the %%{init}%%
+     directive in its own source, which wins over any theme this page passes to mermaid */
   .dg.pan{height:56vh;padding:0;overflow:hidden;position:relative;cursor:grab;touch-action:none;user-select:none;background:#fdfdfd}
   .dg.pan.dragging{cursor:grabbing}
   .dg.pan svg{display:block;transform-origin:0 0;will-change:transform;overflow:visible}
@@ -44,10 +51,14 @@
   .st-row .k{width:96px;color:var(--text-2);font-family:ui-monospace,Menlo,monospace;font-size:12px;flex:none}
   .badge{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;font-weight:600;
     padding:2px 10px;border-radius:5px;border:1px solid transparent}
-  .badge.pending{background:#fff6b8;border-color:#e4c800;color:#5c5100}
-  .badge.accepted{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
-  .badge.done{background:#dcfce7;border-color:#86efac;color:#166534}
-  .badge.failed,.badge.rejected{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+  html[data-demo-mode="light"] .badge.pending{background:#fff6b8;border-color:#e4c800;color:#5c5100}
+  html[data-demo-mode="light"] .badge.accepted{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
+  html[data-demo-mode="light"] .badge.done{background:#dcfce7;border-color:#86efac;color:#166534}
+  html[data-demo-mode="light"] .badge.failed,html[data-demo-mode="light"] .badge.rejected{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+  html[data-demo-mode="dark"] .badge.pending{background:#3a3316;border-color:#7a6a1e;color:#f0dd8a}
+  html[data-demo-mode="dark"] .badge.accepted{background:#17263f;border-color:#2c4d80;color:#93c5fd}
+  html[data-demo-mode="dark"] .badge.done{background:#12301d;border-color:#2a6540;color:#86efac}
+  html[data-demo-mode="dark"] .badge.failed,html[data-demo-mode="dark"] .badge.rejected{background:#2a1416;border-color:#7f1d1d;color:#fca5a5}
   .badge.expired{background:var(--line);border-color:var(--line-strong);color:var(--text-2)}
   .badge.empty{background:transparent;border-color:var(--line-strong);color:var(--text-2);border-style:dashed}
   .bar{width:170px;height:7px;border-radius:4px;background:var(--line);overflow:hidden;flex:none}
@@ -59,14 +70,8 @@
   .illegal.ok{color:var(--text-2);border-color:var(--line);background:transparent}
   .illegal.idle{color:var(--text-2);border-color:var(--line);background:transparent;opacity:.6}
   .illegal .ev{font-family:ui-monospace,Menlo,monospace;color:var(--accent);font-weight:600}
-  .illegal.bad{color:#991b1b;border-color:#fca5a5;background:#fee2e2}
-  @media (prefers-color-scheme:dark){
-    .illegal.bad{color:#fca5a5;border-color:#7f1d1d;background:#2a1416}
-    .badge.pending{background:#3a3316;border-color:#7a6a1e;color:#f0dd8a}
-    .badge.accepted{background:#17263f;border-color:#2c4d80;color:#93c5fd}
-    .badge.done{background:#12301d;border-color:#2a6540;color:#86efac}
-    .badge.failed,.badge.rejected{background:#2a1416;border-color:#7f1d1d;color:#fca5a5}
-  }
+  html[data-demo-mode="light"] .illegal.bad{color:#991b1b;border-color:#fca5a5;background:#fee2e2}
+  html[data-demo-mode="dark"] .illegal.bad{color:#fca5a5;border-color:#7f1d1d;background:#2a1416}
   .acts{display:flex;flex-direction:column;gap:10px}
   .grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .grp-t{font-size:11px;color:var(--text-2);width:78px;flex:none;
@@ -157,14 +162,8 @@
       }
       try {
         // 内置 dark 主题近乎灰度,default 是浅底设计——用 base+themeVariables 接项目色板
-        const dark = matchMedia('(prefers-color-scheme: dark)').matches;
         mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'base',
-          themeVariables: dark ? {
-            primaryColor: '#2c2733', primaryTextColor: '#e6e6e5', primaryBorderColor: '#a084c7',
-            lineColor: '#9b9a97', textColor: '#e6e6e5', edgeLabelBackground: '#1f2124',
-            noteBkgColor: '#34373c', noteTextColor: '#e6e6e5', background: '#18191b',
-            secondaryColor: '#1f2124', tertiaryColor: '#232526'
-          } : {
+          themeVariables: {
             primaryColor: '#f0ebf6', primaryTextColor: '#37352f', primaryBorderColor: '#8a67ab',
             lineColor: '#787774', textColor: '#37352f', edgeLabelBackground: '#ffffff',
             noteBkgColor: '#f7f8f9', noteTextColor: '#37352f', background: '#ffffff',

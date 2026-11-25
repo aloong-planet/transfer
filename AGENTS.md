@@ -15,6 +15,7 @@ Each class of document has exactly one home, chosen by how fast it rots; see `do
 - A change to windows, sessions, protocols, IPC handlers, launch inputs, the Electron major version or the packaging platforms updates `docs/ops/electron-security.md` in the same change.
 - Every peer request goes through the pinned HTTPS agent except the discovery reply (`POST /register`), which goes through the unpinned `discoveryAgent` (docs/specs/discovery.md section E, `src/main/transfer/http-client.ts`).
 - A peer's registered address is never refreshed from a `POST /register` response body, which omits the port (docs/specs/discovery.md section A, `src/main/app-core.ts`).
+- A string that came from a peer, the fingerprint included, is never used as a key of a plain object: use a `Map`, or read only own entries (device-alias::REQ-003/AC-04 in docs/specs/device-alias.md, `src/main/settings.ts`).
 - A transfer timeout is an idle timeout, never a total duration, and every code path that receives or sends upload bytes refreshes the idle timer, including the one that discards a duplicate body (ADR-0020).
 - A schema change edits the declared columns, never a hand-written `ALTER`; a new column is nullable; the pre-change `CREATE` statement is added as a snapshot to the migration test (ADR-0021).
 - Code that reads a message's `status` or `error_reason` copes with values outside the union: a set-membership judgement is a `Record` lookup over every member, collapsed to a boolean, never `Set.has` or chained `===` (`src/shared/message.ts`).

@@ -10,6 +10,9 @@ import { MessageStore } from './db/messages'
 import { SettingsStore } from './settings'
 import type { DeviceInfo, RemoteDevice } from '@shared/types'
 
+// Fingerprints the cases below run for
+const ODD_FPS = ['constructor', '__proto__', 'toString']
+
 describe('AppCore 设备备注', () => {
   const dirs: string[] = []
   afterEach(() => {
@@ -167,9 +170,36 @@ describe('AppCore 设备备注', () => {
     const before = updates.length
     const r = core.setRemoteAlias('fp-ghost', '幽灵设备备注') // 该 fp 从未被发现
     expect(r).toEqual({ ok: true }) // 允许写(不校验在线)
-    expect(settings.getDeviceAliases()['fp-ghost']).toBe('幽灵设备备注') // 已入盘
+    expect(settings.getDeviceAliases().get('fp-ghost')).toBe('幽灵设备备注') // 已入盘
     expect(updates.length).toBe(before + 1) // 仍推一次(即便列表空,不崩)
     expect(updates[updates.length - 1]).toHaveLength(0) // 推的是空列表(该 fp 不在 registry)
+  })
+
+  // device-alias::REQ-002/AC-01, device-alias::REQ-003/AC-04
+  test.each(ODD_FPS)('a device with fingerprint %s and no alias is listed and pushed by its own name', (fp) => {
+    const { core, settings, updates, addDevice } = makeCore()
+    settings.setDeviceAlias('fp-A', '老张的电脑')
+    addDevice('fp-A', 'Alice-MacBook')
+    addDevice(fp, 'Odd-PC')
+    const pushed = updates[updates.length - 1]
+    for (const list of [core.listDevices(), pushed]) {
+      const odd = list.find((d) => d.info.fingerprint === fp)!
+      expect(odd.info).toMatchObject({ alias: 'Odd-PC', defaultAlias: 'Odd-PC', hasCustomAlias: false })
+      const named = list.find((d) => d.info.fingerprint === 'fp-A')!
+      expect(named.info).toMatchObject({ alias: '老张的电脑', hasCustomAlias: true })
+    }
+    // The pushed list crosses to the renderer by structured clone
+    expect(structuredClone(pushed)).toEqual(pushed)
+  })
+
+  // device-alias::REQ-003/AC-01, device-alias::REQ-003/AC-04
+  test.each(ODD_FPS)('setRemoteAlias saves and clears the alias of a device with fingerprint %s', (fp) => {
+    const { core, updates, addDevice } = makeCore()
+    addDevice(fp, 'Odd-PC')
+    expect(core.setRemoteAlias(fp, '书房')).toEqual({ ok: true })
+    expect(updates[updates.length - 1][0].info).toMatchObject({ alias: '书房', hasCustomAlias: true })
+    expect(core.setRemoteAlias(fp, '')).toEqual({ ok: true })
+    expect(updates[updates.length - 1][0].info).toMatchObject({ alias: 'Odd-PC', hasCustomAlias: false })
   })
 
   // The Received Files page: device-alias::REQ-002/AC-02. The page names each file's sender by the alias
@@ -228,11 +258,14 @@ describe('AppCore 设备备注', () => {
       expect(core.listReceivedFiles().map((m) => m.peerAlias)).toEqual(['书房', '客厅'])
     })
 
-    // The fingerprint stored with a message is whatever string the peer sent, so it can be the name of a
-    // member every object has
-    test('a sender whose fingerprint is the name of an inherited object member is named by the stored name', () => {
+    // device-alias::REQ-002/AC-02, device-alias::REQ-003/AC-04
+    test.each(ODD_FPS)('a sender with fingerprint %s is named by its alias only while one is saved for it', (fp) => {
       const { core, store } = makeCore()
-      receive(store, 'f-odd', 'constructor', 'Odd-PC', 100)
+      receive(store, 'f-odd', fp, 'Odd-PC', 100)
+      expect(core.listReceivedFiles()[0].peerAlias).toBe('Odd-PC')
+      expect(core.setRemoteAlias(fp, '书房')).toEqual({ ok: true })
+      expect(core.listReceivedFiles()[0].peerAlias).toBe('书房')
+      expect(core.setRemoteAlias(fp, '')).toEqual({ ok: true })
       expect(core.listReceivedFiles()[0].peerAlias).toBe('Odd-PC')
     })
   })

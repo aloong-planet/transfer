@@ -6,7 +6,7 @@ import type { RemoteDevice } from '@shared/types'
 import { isImageFile } from '@shared/ipc'
 import { pickImageItemIndices } from '@shared/clipboard-image'
 import { eventToAccelerator, acceleratorRejectReason } from '@shared/accelerator'
-import { shouldCountUnread } from '@shared/unread'
+import { addUnread, shouldCountUnread, totalUnread } from '@shared/unread'
 import { OFFLINE_KEEP_PRESETS } from '@shared/offline-keep'
 import { isTerminal, isTransferring, canRespond } from '@shared/message'
 import type { ErrorReason } from '@shared/message'
@@ -108,7 +108,7 @@ export function App(): JSX.Element {
   const [view, setView] = useState<'chat' | 'downloads'>('chat')
   const [auto, setAuto] = useState<AutoAcceptSettings>({ enabled: false, maxBytes: 100 * 1024 * 1024 })
   // 每个对端的未读数(app 内角标 + 总数驱动 Dock)。正在看该会话时清零。
-  const [unread, setUnread] = useState<Record<string, number>>({})
+  const [unread, setUnread] = useState<ReadonlyMap<string, number>>(() => new Map())
   // 窗口聚焦态用 **state**(驱动清零 effect),同时镜像到 ref(供消息回调闭包读最新值)。
   const [focused, setFocused] = useState(true)
 
@@ -153,7 +153,7 @@ export function App(): JSX.Element {
               msgPeer: m.peerFp
             })
           ) {
-            setUnread((u) => ({ ...u, [m.peerFp]: (u[m.peerFp] ?? 0) + 1 }))
+            setUnread((u) => addUnread(u, m.peerFp))
           }
         }
         setMessages((prev) => {
@@ -204,17 +204,16 @@ export function App(): JSX.Element {
   // 正在看某会话(chat 视图 + 选中 peer + 窗口聚焦)→ 清该 peer 未读。
   // 依赖含 focused 和该 peer 未读数:覆盖"切进会话""聚焦回来""已在会话上又来新未读"三种情形
   // ——只靠 [peer,view] 会漏掉后两种(后台收消息时已停在该会话,呼出后 peer/view 不变,不清零的 bug)。
-  const peerUnread = peer ? (unread[peer] ?? 0) : 0
+  const peerUnread = peer ? (unread.get(peer) ?? 0) : 0
   useEffect(() => {
     if (view === 'chat' && peer && focused && peerUnread > 0) {
-      setUnread((u) => (u[peer] ? { ...u, [peer]: 0 } : u))
+      setUnread((u) => (u.get(peer) ? new Map(u).set(peer, 0) : u))
     }
   }, [peer, view, focused, peerUnread])
 
   // 未读变化 → 把总未读同步给 main(驱动 mac Dock 数字角标)。
   useEffect(() => {
-    const total = Object.values(unread).reduce((a, b) => a + b, 0)
-    window.transfer.setUnread(total)
+    window.transfer.setUnread(totalUnread(unread))
   }, [unread])
 
   // 选中对端的消息(按对端 fingerprint 过滤)
@@ -281,7 +280,7 @@ function Sidebar(props: {
   devices: RemoteDevice[]
   peer: string | null
   view: 'chat' | 'downloads'
-  unread: Record<string, number>
+  unread: ReadonlyMap<string, number>
   themePref: ThemePref
   onCycleTheme: () => void
   onPick: (fp: string) => void
@@ -381,7 +380,7 @@ function Sidebar(props: {
   const DeviceRow = (d: RemoteDevice): JSX.Element => {
     const off = d.status === 'offline'
     const active = view === 'chat' && peer === d.info.fingerprint
-    const n = unread[d.info.fingerprint] ?? 0
+    const n = unread.get(d.info.fingerprint) ?? 0
     const editing = editingFp === d.info.fingerprint
     return (
       <div
@@ -799,6 +798,7 @@ function Downloads(): JSX.Element {
     })
     // The list names each sender by its alias (device-alias::REQ-002/AC-02) and saving or clearing an alias
     // pushes the device list, so the page reloads on that push to follow the change without being reopened
+    // (device-alias::REQ-002/AC-03)
     const offDevices = window.transfer.onDevicesUpdated(reload)
     return () => {
       offMessage()

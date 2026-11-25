@@ -4,7 +4,7 @@
 // pipe 落盘,不用 @fastify/multipart;该路由绕过默认 bodyLimit。
 
 import Fastify, { type FastifyInstance } from 'fastify'
-import { EP } from '@shared/protocol'
+import { EP, isPeerFingerprint } from '@shared/protocol'
 import type { DeviceInfo, PrepareUploadRequest } from '@shared/types'
 import { SessionManager } from './session'
 import { receiveFileToDir } from './receive-file'
@@ -63,11 +63,13 @@ export function createHttpServer(deps: HttpServerDeps): FastifyInstance {
   app.get(EP.info, async () => deps.selfInfo())
 
   // POST /register — 双向发现 fallback(DESIGN §1.1)
-  app.post(EP.register, async (req) => {
-    const info = req.body as DeviceInfo
-    if (info && typeof info.fingerprint === 'string') {
-      deps.onRegister?.(info, req.ip)
+  app.post(EP.register, async (req, reply) => {
+    const info = req.body as DeviceInfo | null
+    // discovery::REQ-004/AC-03
+    if (!info || !isPeerFingerprint(info.fingerprint)) {
+      return reply.code(400).send({ message: 'Invalid body' })
     }
+    deps.onRegister?.(info, req.ip)
     // 响应体是本机 info(省略 port/protocol,DESIGN §1.1)
     const self = deps.selfInfo()
     return {
@@ -83,7 +85,14 @@ export function createHttpServer(deps: HttpServerDeps): FastifyInstance {
   // POST /prepare-upload — 元数据 + 意图协商(挂起等弹框)
   app.post(EP.prepareUpload, async (req, reply) => {
     const body = req.body as PrepareUploadRequest
-    if (!body || !body.info || !body.files || typeof body.files !== 'object') {
+    // discovery::REQ-004/AC-03
+    if (
+      !body ||
+      !body.info ||
+      !isPeerFingerprint(body.info.fingerprint) ||
+      !body.files ||
+      typeof body.files !== 'object'
+    ) {
       return reply.code(400).send({ message: 'Invalid body' })
     }
 

@@ -91,13 +91,16 @@ function normalize(raw: unknown): AppSettings {
       ? r.receiveDir
       : DEFAULT_SETTINGS.receiveDir
   // 设备备注:非 object → {};逐项过滤,保证 value 恒为非空字符串(消费端不用再判空)。
-  const deviceAliases: Record<string, string> = {}
+  // Object.fromEntries keeps every key as an own entry. device-alias::REQ-003/AC-04
   const rawMap = r.deviceAliases as unknown
-  if (rawMap && typeof rawMap === 'object' && !Array.isArray(rawMap)) {
-    for (const [fp, name] of Object.entries(rawMap as Record<string, unknown>)) {
-      if (fp && typeof name === 'string' && name.trim()) deviceAliases[fp] = name
-    }
-  }
+  const deviceAliases: Record<string, string> =
+    rawMap && typeof rawMap === 'object' && !Array.isArray(rawMap)
+      ? Object.fromEntries(
+          Object.entries(rawMap as Record<string, unknown>).filter(
+            (e): e is [string, string] => !!e[0] && typeof e[1] === 'string' && !!e[1].trim()
+          )
+        )
+      : {}
   return {
     autoAccept: {
       enabled: typeof aa.enabled === 'boolean' ? aa.enabled : DEFAULT_SETTINGS.autoAccept.enabled,
@@ -237,8 +240,8 @@ export class SettingsStore {
     return this.cache.shortcutCapture
   }
 
-  getDeviceAliases(): Record<string, string> {
-    return this.cache.deviceAliases
+  getDeviceAliases(): ReadonlyMap<string, string> {
+    return new Map(Object.entries(this.cache.deviceAliases))
   }
 
   /**
@@ -249,11 +252,11 @@ export class SettingsStore {
    */
   setDeviceAlias(fingerprint: string, alias: string): boolean {
     const trimmed = alias.trim()
-    const next = { ...this.cache.deviceAliases }
-    if (trimmed) next[fingerprint] = trimmed
-    else delete next[fingerprint]
+    const next = new Map(Object.entries(this.cache.deviceAliases))
+    if (trimmed) next.set(fingerprint, trimmed)
+    else next.delete(fingerprint)
     const prevCache = this.cache
-    this.cache = normalize({ ...this.cache, deviceAliases: next })
+    this.cache = normalize({ ...this.cache, deviceAliases: Object.fromEntries(next) })
     try {
       this.persist()
       return true

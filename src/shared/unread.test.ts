@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shouldCountUnread, type UnreadContext } from './unread'
+import { addUnread, shouldCountUnread, totalUnread, type UnreadContext } from './unread'
 
 // 默认:收到的新消息、窗口未聚焦、在看别的会话 → 应计未读
 function ctx(over: Partial<UnreadContext> = {}): UnreadContext {
@@ -56,5 +56,29 @@ describe('shouldCountUnread', () => {
     expect(
       shouldCountUnread(ctx({ windowFocused: true, view: 'chat', currentPeer: null, msgPeer: 'peerA' }))
     ).toBe(true)
+  })
+})
+
+// Builds and reads unread counts the way the app holds them.
+const counts = (entries: [string, number][]): Map<string, number> => new Map(entries)
+const countOf = (c: ReadonlyMap<string, number>, peer: string): number | undefined => c.get(peer)
+
+// Fingerprints the cases below run for.
+const PEERS = ['constructor', '__proto__', 'toString', 'AB:CD:EF:01:23']
+
+describe('addUnread', () => {
+  // unread::REQ-001/AC-01, unread::REQ-002/AC-01
+  it.each(PEERS)('two messages from %s count as 2 and leave other peers alone', (peer) => {
+    const next = addUnread(addUnread(counts([['peerB', 2]]), peer), peer)
+    expect(countOf(next, peer)).toBe(2)
+    expect(countOf(next, 'peerB')).toBe(2)
+  })
+})
+
+describe('totalUnread', () => {
+  // unread::REQ-003/AC-01
+  it.each(PEERS)('adds the count of %s to the other peers', (peer) => {
+    const c = addUnread(addUnread(counts([['peerB', 3]]), peer), peer)
+    expect(totalUnread(c)).toBe(5)
   })
 })
