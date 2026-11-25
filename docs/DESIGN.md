@@ -613,7 +613,7 @@ settings.ts            # 自动接收开关+阈值(持久化,复用 identity.jso
 
 - 新 IPC `message:listReceivedFiles { limit, before }` → 查 `direction='recv' AND type='file' AND status='done'`(即已落盘的接收文件),按 created_at **降序**(最新在前);`limit ≤ LIST_MAX_LIMIT`。
 - 复用 message 表(已有 fileName/fileSize/createdAt/peerAlias/filePath),无需新表。store 加 `listReceivedFiles` 方法。
-- UI:独立面板(sidebar "📥 已接收文件" 入口),列表项显示 文件名 / 大小 / 接收时间(MM-DD HH:mm)/ 发送人(peerAlias) / **"打开所在文件夹"**按钮(`showInFolder` → `shell.showItemInFolder`,定位并高亮该文件)。
+- UI:独立面板(sidebar "📥 已接收文件" 入口),列表项显示 文件名 / 大小 / 接收时间(当时为 MM-DD HH:mm;现行按系统区域格式书写,见 [language::REQ-004](specs/language.md))/ 发送人(peerAlias) / **"打开所在文件夹"**按钮(`showInFolder` → `shell.showItemInFolder`,定位并高亮该文件)。
 - **刷新精度(3-B 修复)**:面板只在收到 **recv+file+done** 的 `onMessageUpserted` 时重拉,避免任意消息 upsert(如文本收发、状态流转)刷爆 IPC+SQLite+重渲染。
 
 ### 12.6 边界/失败(新增)
