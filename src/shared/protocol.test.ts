@@ -49,6 +49,7 @@ describe('isPeerFingerprint', () => {
   test.each([
     ['one character', 'A'],
     ['128 characters', 'x'.repeat(128)],
+    ['128 three-byte characters', '指'.repeat(128)],
     ['an uppercase colon-hex SHA-256', '40:DD:4E:0A:1B:2C:3D:4E:5F:60:71:82:93:A4:B5:C6:D7:E8:F9:0A:1B:2C:3D:4E:5F:60:71:82:93:A4:B5:C6'],
     ['an English word', 'constructor']
   ])('accepts %s', (_label, v) => {
@@ -61,7 +62,8 @@ describe('isPeerFingerprint', () => {
     ['a number', 123],
     ['an object', { fingerprint: 'A' }],
     ['an empty string', ''],
-    ['129 characters', 'x'.repeat(129)]
+    ['129 characters', 'x'.repeat(129)],
+    ['65 characters outside the BMP (130 UTF-16 code units)', '😀'.repeat(65)]
   ])('rejects %s', (_label, v) => {
     expect(isPeerFingerprint(v)).toBe(false)
   })

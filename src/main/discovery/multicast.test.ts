@@ -226,7 +226,7 @@ describe('MulticastDiscovery(集成)', () => {
     expect(seen).toEqual(['FP_WITNESS'])
   }, 30_000)
 
-  // discovery::REQ-004/AC-02
+  // discovery::REQ-001/AC-03, discovery::REQ-004/AC-02
   test('an announcement whose fingerprint breaks the fingerprint rule is not listed and not answered', async () => {
     const seen: string[] = []
     const responded: string[] = []
