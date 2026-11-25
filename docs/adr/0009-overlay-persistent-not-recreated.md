@@ -1,26 +1,28 @@
-# ADR-0009: 截图 overlay 窗口常驻复用,不重建
+# ADR-0009: The capture overlay window is created once and reused, not recreated
 
-- 状态: 已接受
+- Status: Accepted (2026-07-27)
 
-## 背景与问题
+## Context
 
-截图选区 overlay 若每次触发都新建窗口,唤起延迟明显,截图"快"的体验要求不达标。
+Creating the capture overlay window on every trigger puts a visible delay between the shortcut and the selection appearing. Capturing is meant to feel fast.
 
-## 备选项
+## Options
 
-1. **懒建后常驻复用**:只 hide/show,不重载页面
-2. 每次新建/销毁——否决:窗口创建 + 页面加载的冷启动延迟直接落在每次唤起上
-3. 预建但每次 reload——否决:reload 仍有加载延迟,且状态传递问题与方案 2 相同
+1. **Create the window on first use, then keep it and only hide and show it, without reloading its page** — chosen.
+2. Create and destroy the window on every trigger — rejected: the cold start of window creation plus page load falls on every trigger.
+3. Create the window ahead of time and reload its page on every trigger — rejected: the reload still costs a page load, and its state-passing issue is the same as option 2's.
 
-## 决策
+## Decision
 
-选定**方案 1**。由此派生一条硬约束:给 overlay 传**会变的状态**(语言/主题)必须 ① loadOverlay 时注入初值 ② 变化时广播事件热更新——不能假设"每次打开都会重新拉取"。
+We keep one capture overlay window (option 1). Its page is loaded once, so state that changes while the app runs, such as the interface language, reaches the overlay in two ways: an initial value injected when the overlay loads, and an event broadcast whenever the state changes. Nothing may assume the overlay takes the state in again each time it opens.
 
-## 后果
+## Consequences
 
-- 正面:唤起截图零窗口创建开销。
-- 负面:所有新增的"overlay 需要感知的状态"都要走注初值 + 事件两条路,漏一条就出"改了设置 overlay 不生效"类 bug(已踩过,教训即本 ADR 的由来)。
+- Positive: A capture after the first creates no window, so it carries no window-creation cost.
+- Negative: Every state the overlay needs has to take both routes, and a state that misses one leaves the overlay showing the old value after a setting changes.
+- Neutral: The window is created by the first capture of a run and lives until the app quits, so only that first capture pays for creating it.
 
-## 来源
+## Sources
 
-memory「overlay常驻非重建」;screenshot-feature.md。
+- `screenshot-feature.md`, a design document from before the document system, deleted in the documentation reorganisation (#15); the index README says how to recover it.
+- The project memory note "overlay常驻非重建".

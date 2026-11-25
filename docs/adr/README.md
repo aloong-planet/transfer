@@ -27,7 +27,7 @@ The files named without a link in the Sources of older entries (such as `https-m
 | [0006](0006-broadcast-fallback-dual-channel.md) | announce 双通道——多播之外同时发子网广播 | 已接受 |
 | [0007](0007-app-scheme-replaces-file.md) | 生产环境用 app:// 自定义 scheme 加载渲染页(替代 file://) | 已接受 |
 | [0008](0008-screenshot-scope.md) | 截图功能范围——三出口,对齐 Snipaste 标注,不做通用截图软件 | 已接受 |
-| [0009](0009-overlay-persistent-not-recreated.md) | 截图 overlay 窗口常驻复用,不重建 | 已接受 |
+| [0009](0009-overlay-persistent-not-recreated.md) | The capture overlay window is created once and reused, not recreated | Accepted |
 | [0010](0010-mac-three-arch-plus-locale-prune.md) | macOS 三架构全打(universal + arm64 + x64)+ locale 裁剪 | 已接受 |
 | [0011](0011-remove-gitee-mirror.md) | 移除 Gitee 镜像,下载源精简为 R2(主)+ GitHub(兜底) | 已接受 |
 | [0012](0012-notarization-gate-fail-closed.md) | 正式版 macOS 发布公证门禁 fail-closed;预发布只签名 | Superseded by [ADR-0023](0023-notarize-every-published-mac-build.md) |

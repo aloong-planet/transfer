@@ -26,7 +26,7 @@ _Avoid_: 与"本机名"混淆——`device:setAlias` 改**本机名**(identity.j
 **alias / defaultAlias / hasCustomAlias**: `alias` = 合并后的**显示名**(备注优先);`defaultAlias` = 对端广播的原始默认名;`hasCustomAlias` = main 显式下发的布尔。
 _Avoid_: 用 `alias !== defaultAlias` 判断"有无备注"——备注可以与默认名相同,必须用 `hasCustomAlias`。
 
-**overlay**: 截图选区窗口。懒建后**常驻复用**,只 hide/show 不重建;会变的状态(语言/主题)靠加载时注初值 + 广播事件热更(见 ADR-0009)。
+**overlay**: 截图选区窗口。懒建后**常驻复用**,只 hide/show 不重建;会变的状态(如语言)靠加载时注初值 + 广播事件热更(见 ADR-0009);主题不经此路,overlay 配色固定(见 theme spec)。
 _Avoid_: "每次打开重新加载"——错误假设,曾因此出 bug。
 
 **sent-images**: userData 下存发送截图副本的**内部目录**,不暴露给用户;设置里只展示**接收文件夹**。
