@@ -8,6 +8,9 @@
 //
 // Gap: nothing here reaches GitHub. `git push` to github.com and `gh pr create` run for real only in a run of the
 // command itself; the evidence run recorded in the delivery of the pull request that added it is the one such run.
+//
+// Gap: that the website's pages read the screenshot and the icon from the paths the command writes is not tested here, since
+// the pages are not in this repository; a test of the built pages in aloong-planet-home (apps/transfer) pins those paths.
 import { after, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
@@ -131,7 +134,7 @@ const clones = (result) => result.calls.filter(([command, args]) => command === 
 const SHOT_PATH = `${ASSET_DIR}/screenshots/main.png`
 const ICON_PATH = `${ASSET_DIR}/favicon.svg`
 
-test('the site shows one screenshot and one icon, at the paths the pages read them from', () => {
+test('the command writes one screenshot and the favicon, at these paths of the website repository, and takes the icon from build/icon.svg', () => {
   assert.deepEqual(SHOT_NAMES, ['main.png'])
   assert.deepEqual(ASSET_PATHS, ['apps/transfer/public/screenshots/main.png', 'apps/transfer/public/favicon.svg'])
   assert.equal(ICON_SOURCE, 'build/icon.svg')
@@ -144,7 +147,7 @@ test('a PNG is read for its size, and a file that is no whole PNG is named for w
   assert.match(pngSize(Buffer.alloc(0)).problem, /not a PNG/)
 })
 
-test('the screenshots are checked as a set: each one that is missing, extra, damaged or of another size is a problem of its own', () => {
+test('the screenshots are checked as a set: each one that is missing, extra, cut short, no PNG or of another size is a problem of its own', () => {
   assert.deepEqual(readShots(shotsDir()).problems, [])
   assert.deepEqual(readShots(shotsDir()).shots, ['main.png'])
 
@@ -162,9 +165,17 @@ test('the screenshots are checked as a set: each one that is missing, extra, dam
   assert.deepEqual(readShots(damaged).problems, ['main.png is not a PNG'])
   writeFileSync(join(damaged, 'main.png'), png(1800, 1280).subarray(0, 40))
   assert.deepEqual(readShots(damaged).problems, ['main.png is cut short: it does not end with the PNG end chunk'])
-  writeFileSync(join(damaged, 'main.png'), png(1840, 1035))
-  assert.deepEqual(readShots(damaged).problems, ['main.png is 1840×1035, not 1800×1280'])
-  assert.deepEqual(readShots(damaged).shots, [])
+  // Either side of the size alone is wrong: a screenshot that is as wide as the hero's image, or as high, but not both
+  for (const [width, height] of [[1840, 1280], [1800, 1035]]) {
+    writeFileSync(join(damaged, 'main.png'), png(width, height))
+    assert.deepEqual(readShots(damaged).problems, [`main.png is ${width}×${height}, not 1800×1280`], `${width}×${height}`)
+    assert.deepEqual(readShots(damaged).shots, [], `${width}×${height}`)
+  }
+
+  // A directory can be wrong in two ways at once, and both are said: the screenshot the Mac named itself is not main.png
+  const macName = dir('shots')
+  writeFileSync(join(macName, 'Screenshot 2026-11-25 at 10.12.30.png'), shot('retaken'))
+  assert.deepEqual(readShots(macName).problems, ['main.png is missing', 'Screenshot 2026-11-25 at 10.12.30.png is not the site\'s screenshot'])
 
   // The Finder's file is no screenshot and no problem
   const finder = shotsDir()
@@ -197,19 +208,35 @@ test('an answer that has no login and numeric id to make the identity of is refu
   for (const [name, answer] of rows) assert.throws(() => identityFromUser(answer), /did not answer with a login and an id/, name)
 })
 
-test('shots that cannot be used stop the run before any command starts', async () => {
-  const incomplete = shotsDir()
-  rmSync(join(incomplete, 'main.png'))
-  const result = await send(['--shots', incomplete])
+test('shots that cannot be used stop the run before any command starts, and every problem with them is printed', async () => {
+  const wrongName = dir('shots')
+  writeFileSync(join(wrongName, 'Screenshot 2026-11-25 at 10.12.30.png'), shot('retaken'))
+  const result = await send(['--shots', wrongName])
   assert.equal(result.code, 1)
   assert.match(result.printed, /main\.png is missing/)
+  assert.match(result.printed, /Screenshot 2026-11-25 at 10\.12\.30\.png is not the site's screenshot/)
   assert.deepEqual(result.calls, [], 'no command ran')
 })
 
-test('options that make no sense are refused', async () => {
-  assert.equal(await main([]), 1)
-  assert.equal(await main(['--shots']), 1)
-  assert.equal(await main(['--shots', 'x', '--frobnicate']), 1)
+test('an option that makes no sense is refused, by its own refusal, before any command starts', async () => {
+  const shots = shotsDir()
+  // Each row is good in every other respect (a directory that holds the screenshot, a repository that holds the icon), so that
+  // only the option can be what stops the run; and a run that was not stopped would reach the commands, which are recorded
+  const rows = [
+    ['an option that does not exist', ['--shots', shots, '--dryrun'], 'unknown option --dryrun'],
+    ['a value that is missing after --title', ['--shots', shots, '--title'], '--title needs a value'],
+    ['a value that is missing after --shots', ['--shots'], '--shots needs a value'],
+    ['no --shots at all', ['--dry-run'], '--shots <directory> is required']
+  ]
+  for (const [name, argv, message] of rows) {
+    const errors = []
+    const calls = []
+    const code = await main(argv, { root: transfer(), run: (...call) => { calls.push(call); return '' }, logError: (text) => errors.push(text), log: () => {} })
+    assert.equal(code, 1, name)
+    assert.equal(errors.length, 1, name)
+    assert.ok(errors[0].startsWith(message), `${name}: ${errors[0]}`)
+    assert.deepEqual(calls, [], `${name}: no command ran`)
+  }
 })
 
 test('an icon source with uncommitted changes stops the run', async () => {
@@ -224,11 +251,19 @@ test('an icon source with uncommitted changes stops the run', async () => {
 })
 
 test('an icon source that is no SVG stops the run, since the site would serve it as its icon', async () => {
-  const result = await send(['--shots', shotsDir()], { root: transfer('not an icon') })
-  assert.equal(result.code, 1)
-  assert.match(result.printed, /build\/icon\.svg is not an SVG/)
-  assert.deepEqual(clones(result), [])
-  assert.deepEqual(result.prs, [])
+  // Each row fails one half of "an <svg> element, and its closing tag at the end" and passes the other
+  const rows = [
+    ['text that is not an SVG at all', 'not an icon'],
+    ['an SVG that is cut short: no closing tag', '<svg viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg"><rect width="8" height="8"/>\n'],
+    ['text that only ends the way an SVG does', 'this is a note about </svg>\n']
+  ]
+  for (const [name, icon] of rows) {
+    const result = await send(['--shots', shotsDir()], { root: transfer(icon) })
+    assert.equal(result.code, 1, name)
+    assert.match(result.printed, /build\/icon\.svg is not an SVG/, name)
+    assert.deepEqual(clones(result), [], name)
+    assert.deepEqual(result.prs, [], name)
+  }
 })
 
 test('when gh cannot say who is logged in, the run stops before it clones or sends anything, and says why', async () => {

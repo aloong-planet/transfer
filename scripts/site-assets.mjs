@@ -7,8 +7,9 @@
 //                    [--remote <git url>] [--repo <owner/name>] [--base <branch>]
 //
 // What it does, in order:
-//   1. Checks the directory of screenshots: exactly the one file main.png, a whole PNG of 1800×1280 pixels. Anything
-//      missing, extra, damaged or of another size fails the run before anything else starts, and every problem is listed.
+//   1. Checks the directory of screenshots: exactly the one file main.png, a PNG of 1800×1280 pixels that is not cut short
+//      (its header, and the end chunk where a PNG ends; the picture's data is not read). Anything missing, extra, cut short,
+//      no PNG or of another size fails the run before anything else starts, and every problem is listed.
 //   2. Refuses to go on when the app icon, build/icon.svg, has uncommitted changes, since the pull request names this
 //      repository's HEAD as the source of the assets, or when it is not an SVG, since the site serves it as its favicon.
 //   3. Asks `gh` who is logged in (`gh api user`) and takes the commit's author and committer from the answer: the
@@ -50,7 +51,7 @@ export const ASSET_PATHS = [`${ASSET_DIR}/screenshots/main.png`, `${ASSET_DIR}/f
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const PNG_END = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82])
 
-/** The size a PNG's header gives, or the reason it is not a whole PNG */
+/** The size a PNG's header gives, or the reason the bytes are no PNG that is cut at neither end: not a PNG, or cut short */
 export function pngSize(bytes) {
   if (bytes.length < 33 || !bytes.subarray(0, 8).equals(PNG_SIGNATURE) || bytes.toString('latin1', 12, 16) !== 'IHDR') {
     return { problem: 'is not a PNG' }
@@ -168,12 +169,12 @@ const isSvg = (text) => /<svg[\s>]/.test(text) && text.trimEnd().endsWith('</svg
 
 /** Runs the command; resolves to the exit code. `deps` replaces the system boundary in tests. */
 export async function main(argv, deps = {}) {
-  const { run, root, now, log = console.log } = { ...defaults, ...deps }
+  const { run, root, now, log = console.log, logError = console.error } = { ...defaults, ...deps }
   let options
   try {
     options = parseArgs(argv)
   } catch (error) {
-    console.error(error.message)
+    logError(error.message)
     return 1
   }
 
@@ -248,7 +249,8 @@ export async function main(argv, deps = {}) {
       log(`title: ${title}\nbody:\n${body}`)
       return 0
     }
-    // An image can be more than git's default 1 MiB HTTP buffer, and a push that does not fit it is answered with HTTP 400
+    // Raises git's HTTP post buffer from its default of 1 MiB, so that a push of an image larger than that is not sent in
+    // chunks (http.postBuffer in git-config)
     run('git', ['-c', 'http.postBuffer=524288000', 'push', '--quiet', 'origin', branch], { cwd: home })
     const url = run('gh', ['pr', 'create', '--repo', options.repo, '--base', options.base, '--head', branch, '--title', title, '--body', body], { cwd: home }).trim()
     log(`opened ${url}`)
