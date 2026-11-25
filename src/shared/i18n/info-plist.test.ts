@@ -1,7 +1,8 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
+import { parse } from 'yaml'
 import { DICT } from './dict'
-import { LPROJ_NAMES, infoPlistStringsFiles } from './info-plist'
+import { INFO_PLIST_KEYS, LPROJ_NAMES, infoPlistStringsFiles } from './info-plist'
 
 // A dictionary whose Info.plist text is told apart by language; every other key is irrelevant to the function
 function dictWith(zh: string, en: string): typeof DICT {
@@ -86,5 +87,43 @@ describe('build/info-plist, which the packages ship, matches the dictionary (fix
     for (const [name, content] of generated) {
       expect(committed.get(name), name).toBe(content)
     }
+  })
+})
+
+interface BuilderConfig {
+  mac: { extendInfo: Record<string, unknown>; extraResources?: unknown }
+  mas?: { extendInfo?: Record<string, unknown>; extraResources?: unknown }
+  masDev?: { extendInfo?: Record<string, unknown>; extraResources?: unknown }
+}
+const BUILDER_CONFIG = parse(readFileSync(new URL('../../../electron-builder.yml', import.meta.url), 'utf8')) as BuilderConfig
+
+// language::REQ-003/AC-04
+describe('electron-builder.yml carries the Info.plist text into the packages', () => {
+  test('the base value of each localized key is the English dictionary text, what a language with no folder falls back to', () => {
+    const keys = Object.entries(INFO_PLIST_KEYS)
+    expect(keys.length).toBeGreaterThan(0)
+    for (const [plistKey, dictKey] of keys) {
+      expect(BUILDER_CONFIG.mac.extendInfo[plistKey], plistKey).toBe(DICT.en[dictKey])
+    }
+  })
+
+  test('no other user-visible Info.plist text is set in a build config without going through the dictionary', () => {
+    // Not user-visible: the Team ID Electron names its Mach service by, and the export-compliance declaration
+    const NOT_USER_VISIBLE = ['ElectronTeamID', 'ITSAppUsesNonExemptEncryption']
+    const configured = [BUILDER_CONFIG.mac, BUILDER_CONFIG.mas, BUILDER_CONFIG.masDev].flatMap((line) =>
+      Object.keys(line?.extendInfo ?? {})
+    )
+    expect(configured.length).toBeGreaterThan(0)
+    for (const key of configured) {
+      expect([...Object.keys(INFO_PLIST_KEYS), ...NOT_USER_VISIBLE], key).toContain(key)
+    }
+  })
+
+  test('both macOS release lines ship build/info-plist into Contents/Resources', () => {
+    // The Mac App Store builds are packed with the mac options merged with their own: the list is shared as long as
+    // neither of them sets a list of its own, which would replace this one
+    expect(BUILDER_CONFIG.mac.extraResources).toContainEqual({ from: 'build/info-plist', to: '.' })
+    expect(BUILDER_CONFIG.mas?.extraResources).toBeUndefined()
+    expect(BUILDER_CONFIG.masDev?.extraResources).toBeUndefined()
   })
 })
