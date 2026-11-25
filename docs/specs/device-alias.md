@@ -20,6 +20,8 @@ The user gives any discovered device a name of their own. The app shows that nam
 ### device-alias::REQ-002 The alias is the name shown
 
 - device-alias::REQ-002/AC-01: A device that has an alias shows it, and not the name the device announces, in the device list and in the title bar of that device's chat, the same in both.
+- device-alias::REQ-002/AC-02: Each file on the 已接收文件 / Received Files page names its sender by the sender's alias when the sender has one, whether or not the sender is online or in the device list, and otherwise by the name the sender announced when the file arrived.
+- device-alias::REQ-002/AC-03: With the Received Files page open, saving or clearing a device's alias changes the name on that device's files without the page being reopened.
 
 ### device-alias::REQ-003 The alias belongs to the device
 

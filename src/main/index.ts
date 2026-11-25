@@ -397,7 +397,7 @@ function registerIpc(): void {
     return core?.chat.list(args) ?? []
   })
   handle(CMD.listReceivedFiles, (_e, args?: ListMessagesArgs) => {
-    return store?.listReceivedFiles(args) ?? []
+    return core?.listReceivedFiles(args) ?? []
   })
   handle(CMD.openFile, (_e, messageId: string) => {
     // ④-B:按 id 精确取(store.get),不受 list 分页上限限制

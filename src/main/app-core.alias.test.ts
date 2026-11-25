@@ -27,6 +27,7 @@ describe('AppCore 设备备注', () => {
   function makeCore(): {
     core: AppCore
     settings: SettingsStore
+    store: MessageStore
     setDir: string
     updates: RemoteDevice[][]
     addDevice: (fp: string, alias: string) => void
@@ -64,7 +65,7 @@ describe('AppCore 设备备注', () => {
         '192.168.1.5'
       )
     }
-    return { core, settings, setDir, updates, addDevice }
+    return { core, settings, store, setDir, updates, addDevice }
   }
 
   test('无备注:listDevices 显示默认名 alias,hasCustomAlias=false,defaultAlias=原名', () => {
@@ -168,5 +169,70 @@ describe('AppCore 设备备注', () => {
     expect(settings.getDeviceAliases()['fp-ghost']).toBe('幽灵设备备注') // 已入盘
     expect(updates.length).toBe(before + 1) // 仍推一次(即便列表空,不崩)
     expect(updates[updates.length - 1]).toHaveLength(0) // 推的是空列表(该 fp 不在 registry)
+  })
+
+  // The Received Files page: device-alias::REQ-002/AC-02. The page names each file's sender by the alias
+  // held for the fingerprint stored with the message, so a device that is offline or has left the list
+  // keeps its alias there (device-alias::REQ-003/AC-02).
+  describe('received files list', () => {
+    /** A finished received file from `fp`, stored with the name the device announced when it arrived */
+    function receive(store: MessageStore, id: string, fp: string, storedName: string, createdAt: number): void {
+      store.insert({
+        id,
+        type: 'file',
+        direction: 'recv',
+        peerFp: fp,
+        peerAlias: storedName,
+        content: null,
+        fileName: `${id}.txt`,
+        fileSize: 1,
+        filePath: `/received/${id}.txt`,
+        status: 'done',
+        errorReason: null,
+        transferId: null,
+        createdAt
+      })
+    }
+
+    test("names a file's sender by its alias, and a sender without one by the stored name", () => {
+      const { core, store } = makeCore()
+      receive(store, 'f-a', 'fp-A', 'Alice-MacBook', 200)
+      receive(store, 'f-b', 'fp-B', 'Bob-PC', 100)
+      core.setRemoteAlias('fp-A', '老张的电脑')
+      expect(core.listReceivedFiles().map((m) => m.peerAlias)).toEqual(['老张的电脑', 'Bob-PC'])
+    })
+
+    test('clearing the alias names the sender by the stored name again', () => {
+      const { core, store } = makeCore()
+      receive(store, 'f-a', 'fp-A', 'Alice-MacBook', 100)
+      core.setRemoteAlias('fp-A', '老张的电脑')
+      expect(core.listReceivedFiles()[0].peerAlias).toBe('老张的电脑')
+      core.setRemoteAlias('fp-A', '')
+      expect(core.listReceivedFiles()[0].peerAlias).toBe('Alice-MacBook')
+    })
+
+    test('a device that is offline, or no longer in the device list, is still named by its alias', () => {
+      const { core, store, addDevice } = makeCore()
+      addDevice('fp-off', 'Offline-PC')
+      // Offline is set on the registry's entry as app-core.offline-keep.test.ts does: only the 5 s tick of
+      // start() sets it, and that needs the network
+      const registry = (core as unknown as { registry: { list: () => RemoteDevice[] } }).registry
+      registry.list().find((d) => d.info.fingerprint === 'fp-off')!.status = 'offline'
+      receive(store, 'f-off', 'fp-off', 'Offline-PC', 200)
+      receive(store, 'f-gone', 'fp-gone', 'Gone-PC', 100) // never in the list, as a device dropped from it
+      core.setRemoteAlias('fp-off', '书房')
+      core.setRemoteAlias('fp-gone', '客厅')
+      // The state the case claims: one device listed and offline, the other not listed at all
+      expect(core.listDevices().map((d) => `${d.info.fingerprint}:${d.status}`)).toEqual(['fp-off:offline'])
+      expect(core.listReceivedFiles().map((m) => m.peerAlias)).toEqual(['书房', '客厅'])
+    })
+
+    // The fingerprint stored with a message is whatever string the peer sent, so it can be the name of a
+    // member every object has
+    test('a sender whose fingerprint is the name of an inherited object member is named by the stored name', () => {
+      const { core, store } = makeCore()
+      receive(store, 'f-odd', 'constructor', 'Odd-PC', 100)
+      expect(core.listReceivedFiles()[0].peerAlias).toBe('Odd-PC')
+    })
   })
 })

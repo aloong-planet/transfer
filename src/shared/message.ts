@@ -50,6 +50,8 @@ export type ErrorReason =
  *
  * 这**同时**是 SQLite 行的对象形态与过 IPC 发给 renderer 的形态——两者不是碰巧一致:
  * 取消息的查询全是 `SELECT *`,`messageUpserted` 送的是完整对象,全链路无投影无转换。
+ * (The one exception is the Received Files list from `AppCore.listReceivedFiles`: its `peerAlias` is the
+ * sender's alias when the sender has one, device-alias::REQ-002/AC-02. The shape does not change.)
  * 故此处是唯一定义,`main/db/messages` 的 `Message` 与 `shared/ipc` 的 `UiMessage`
  * 都是它的别名。将来若 UI 真的需要库里没有的字段(或反之),那才是引入映射函数的时机;
  * 在那之前多留一份手抄的接口只会漂移。
