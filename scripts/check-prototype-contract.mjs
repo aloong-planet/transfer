@@ -239,8 +239,10 @@ function check(root) {
       const line = comments.length ? lineOf(text, start + comments[0].index) : rootTag ? lineOf(text, rootTag.index) : 1
       if (comments.length !== 1) {
         report(page, line, 4, `expected one header comment (<!-- ${want} -->) between the doctype and the root element, found ${comments.length}`)
-      } else if (comments[0][1].trim() !== want || comments[0][1].includes('\n')) {
-        report(page, line, 4, `the header comment must be the single line <!-- ${want} -->, found <!--${comments[0][1].replace(/\s+/g, ' ')}-->`)
+      } else if (comments[0][1].includes('\n')) {
+        report(page, line, 4, `the header comment spans ${comments[0][1].split('\n').length} lines; it must be the single line <!-- ${want} -->`)
+      } else if (comments[0][1].trim() !== want) {
+        report(page, line, 4, `the header comment must be the single line <!-- ${want} -->, found <!--${comments[0][1]}-->`)
       }
       if (!files.includes(`${dir === '.' ? '' : `${dir}/`}${stem}.md`)) report(page, line, 4, `${stem}.md does not exist beside the page`)
     }
