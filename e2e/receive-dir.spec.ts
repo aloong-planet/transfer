@@ -21,7 +21,8 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { test, expect, _electron as electron, type ElectronApplication } from '@playwright/test'
+import { test, expect, type ElectronApplication } from '@playwright/test'
+import { launchQuiet } from './helpers/quiet-launch'
 
 interface Launched {
   app: ElectronApplication
@@ -36,16 +37,7 @@ interface Launched {
 async function launch(seed?: Record<string, unknown>, recheckMs = 200): Promise<Launched> {
   const userData = mkdtempSync(join(tmpdir(), 'transfer-recvdir-e2e-'))
   if (seed) writeFileSync(join(userData, 'settings.json'), JSON.stringify(seed))
-  const app = await electron.launch({
-    args: ['.', `--user-data-dir=${userData}`],
-    env: {
-      ...process.env,
-      NODE_ENV: 'production',
-      TRANSFER_E2E_QUIET: '1',
-      TRANSFER_USERDATA: userData,
-      TRANSFER_RECHECK_MS: String(recheckMs)
-    }
-  })
+  const { app } = await launchQuiet(userData, { env: { TRANSFER_RECHECK_MS: String(recheckMs) } })
   return { app, userData }
 }
 

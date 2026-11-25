@@ -21,8 +21,9 @@ import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import type { TransferApi } from '../src/preload'
+import { launchQuiet } from './helpers/quiet-launch'
 
 /** A page that is not Transfer's: it records in its title whether it holds the API and what an IPC call gets */
 const PROBE = `<!doctype html><title>probe</title><script>
@@ -51,12 +52,7 @@ test.beforeAll(async () => {
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
   const address = server.address()
   foreign = `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}/probe.html`
-  app = await electron.launch({
-    args: ['.', `--user-data-dir=${join(dir, 'data')}`],
-    env: { ...process.env, NODE_ENV: 'production', TRANSFER_E2E_QUIET: '1', TRANSFER_USERDATA: join(dir, 'data') }
-  })
-  page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  ;({ app, page } = await launchQuiet(join(dir, 'data')))
 })
 
 test.afterAll(async () => {
