@@ -14,9 +14,10 @@
 // - The start-up placeholder the main window shows before its page has mounted is not read: it carries the page's static
 //   default tag and shows only the product name. Closable by reading the attribute at the first paint of a shown window.
 // - The follow-the-system case cannot tell a wired app from an unwired one on a machine whose first system language is
-//   Chinese: the placeholder is Chinese too. There is no seam for the system's languages (the main process reads no
-//   launch input but TRANSFER_*, ADR-0024), and the explicit-preference cases do not depend on the machine. Closable by
-//   such a seam, or by running this file on an English system.
+//   Chinese: the placeholder is Chinese too. The seam for the system's languages (TRANSFER_SYSTEM_LANGUAGES, see
+//   src/main/system-locale.ts) exists but this file does not use it: its cases hold the language lookup with a preloaded
+//   module, and the explicit-preference cases do not depend on the machine. Closable by launching the follow-the-system
+//   case with that seam set to Chinese.
 //
 // Each case launches its own app: the language preference is the input under test and is read once, at launch.
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'

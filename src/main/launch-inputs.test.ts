@@ -118,7 +118,15 @@ describe('the launch inputs a packaged build refuses (mac-distribution::CON-006)
     expect(refusedLaunchInputs([], { ELECTRON_RENDERER_URL: value })).toEqual(['ELECTRON_RENDERER_URL'])
   })
 
-  it.each(['TRANSFER_E2E_QUIET', 'TRANSFER_USERDATA', 'TRANSFER_PORT', 'TRANSFER_RECHECK_MS', 'TRANSFER_A_SEAM_NOT_WRITTEN_YET'])(
+  it.each([
+    'TRANSFER_E2E_QUIET',
+    'TRANSFER_USERDATA',
+    'TRANSFER_PORT',
+    'TRANSFER_RECHECK_MS',
+    'TRANSFER_SYSTEM_LANGUAGES',
+    'TRANSFER_SYSTEM_LOCALE',
+    'TRANSFER_A_SEAM_NOT_WRITTEN_YET'
+  ])(
     'refuses a test seam by its prefix: %s',
     (name) => {
       expect(refusedLaunchInputs([], { [name]: '1' })).toEqual([name])

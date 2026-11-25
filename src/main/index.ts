@@ -38,6 +38,7 @@ import {
 } from '@shared/ipc'
 import { isValidAccelerator } from '@shared/accelerator'
 import { withLang } from '@shared/i18n/lang-query'
+import { regionFormatLocaleOf, withRegionFormat } from '@shared/i18n/region-format'
 import { handle, installWebGuards } from './web-guards'
 import { loadOrCreateIdentity, saveAlias } from './device-identity'
 import { AppCore } from './app-core'
@@ -48,6 +49,7 @@ import { SettingsStore } from './settings'
 import { ScreenshotService, persistAndSend } from './screenshot-service'
 import { APP_HOST, registerAppProtocol } from './app-protocol'
 import { t, setMainLang, getMainLang, resolveSystemEffective } from './i18n'
+import { systemLocale } from './system-locale'
 import { orientBitmap, readJpegOrientation, thumbnailFit } from './image-orientation'
 import {
   resolveReceiveDir,
@@ -303,10 +305,11 @@ const PRELOAD = join(__dirname, '../preload/index.cjs')
  * dev:裸 ELECTRON_RENDERER_URL(保持根路由不变)。
  * prod:走 app://bundle/index.html(自定义 scheme,标准安全 origin;见 docs/adr/0007)。
  * The language in force goes into the URL, so the page draws its first frame in it instead of asking for it afterwards.
+ * So does the locale the system formats dates and times in (language::REQ-004), read now, when the window is created.
  */
 function loadRenderer(win: BrowserWindow, lang: Lang): void {
   const url = process.env['ELECTRON_RENDERER_URL'] || `app://${APP_HOST}/index.html`
-  win.loadURL(withLang(url, lang))
+  win.loadURL(withRegionFormat(withLang(url, lang), regionFormatLocaleOf(systemLocale())))
 }
 
 function createWindow(): void {
