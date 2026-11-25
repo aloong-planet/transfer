@@ -1,5 +1,5 @@
 // e2e: the 已接收文件 / Received Files page names each file's sender by the sender's alias, and follows a
-// change of alias without being reopened (device-alias::REQ-002/AC-02).
+// change of alias without being reopened (device-alias::REQ-002/AC-02, device-alias::REQ-002/AC-03).
 //
 // Which name wins, and that an alias outlives the device list (device-alias::REQ-003/AC-02), are unit cases
 // in src/main/app-core.alias.test.ts. This file holds the wiring they cannot show: the page's list comes

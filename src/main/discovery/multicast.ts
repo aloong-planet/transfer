@@ -7,7 +7,7 @@
 
 import { createSocket, type Socket } from 'node:dgram'
 import { networkInterfaces } from 'node:os'
-import { MULTICAST_ADDR, DEFAULT_PORT } from '@shared/protocol'
+import { MULTICAST_ADDR, DEFAULT_PORT, isPeerFingerprint } from '@shared/protocol'
 import type { Announcement, DeviceInfo } from '@shared/types'
 import { pickMulticastInterface, pickAllLanInterfaces, pickBroadcastTargets } from './pick-interface'
 
@@ -179,8 +179,9 @@ export class MulticastDiscovery {
     } catch {
       return // 非法报文,忽略
     }
-    if (!msg || typeof msg.fingerprint !== 'string' || typeof msg.alias !== 'string') {
-      return // 缺必需字段,忽略
+    // discovery::REQ-001/AC-03, discovery::REQ-004/AC-02
+    if (!msg || !isPeerFingerprint(msg.fingerprint) || typeof msg.alias !== 'string') {
+      return
     }
     // 防自发现(loopback 默认开,同机另一实例也会到这里,靠 fingerprint 区分)
     if (msg.fingerprint === this.opts.selfFingerprint) return
