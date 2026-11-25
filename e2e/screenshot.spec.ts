@@ -11,6 +11,13 @@
 // Known gap: the real handler's answer with the conflict set is not exercised end to end; its answer without one is
 // (the second case).
 //
+// The main process is touched only after `firstWindow()`. `electron.launch` can return before the app's
+// `app.whenReady()` handler has run, so an `app.evaluate` made right after it can land first. A handler registered then
+// for a channel the app registers itself makes `registerIpc()` throw on the duplicate: the ready handler stops before
+// `createWindow()`, no window ever opens, and the case fails with a `firstWindow` timeout. The first window exists only
+// once `registerIpc()` has run (src/main/index.ts), and Settings asks for the answer only when it opens, so replacing
+// the handler between the two keeps each case's meaning.
+//
 // A quiet instance per case: its own userData, no window shown, no global shortcut, no network (see ui-icons.spec.ts).
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -48,7 +55,10 @@ async function close(l: Launched): Promise<void> {
   rmSync(l.userData, { recursive: true, force: true })
 }
 
-/** The main process answers that the saved combination (F1) could not be registered at startup */
+/**
+ * The main process answers that the saved combination (F1) could not be registered at startup. Call it only after
+ * `firstWindow()` (see the header).
+ */
 async function reportStartupConflict(app: ElectronApplication): Promise<void> {
   await app.evaluate(({ ipcMain }) => {
     // The channel of CMD.getShortcut (src/shared/ipc.ts)
@@ -57,19 +67,24 @@ async function reportStartupConflict(app: ElectronApplication): Promise<void> {
   })
 }
 
-async function openSettings(l: Launched): Promise<Page> {
+/** The instance's window; it exists only after the app's startup has registered its IPC handlers */
+async function firstPage(l: Launched): Promise<Page> {
   const page = await l.app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
-  await page.getByTestId('btn-settings').click()
   return page
+}
+
+async function openSettings(page: Page): Promise<void> {
+  await page.getByTestId('btn-settings').click()
 }
 
 for (const language of ['zh', 'en'] as const) {
   test(`a startup refusal is told in Settings from the moment it opens, in ${language}`, async () => {
     const l = await launch(language)
     try {
+      const page = await firstPage(l)
       await reportStartupConflict(l.app)
-      const page = await openSettings(l)
+      await openSettings(page)
       const capture = page.getByRole('button', { name: 'F1', exact: true })
       await expect(capture).toBeVisible()
       await expect(page.getByText(NOTICE[language], { exact: true })).toBeVisible()
@@ -90,7 +105,8 @@ test('Settings shows no notice when the saved combination was not refused', asyn
   // The real handler answers: a quiet instance registers nothing, so nothing was refused
   const l = await launch('zh')
   try {
-    const page = await openSettings(l)
+    const page = await firstPage(l)
+    await openSettings(page)
     await expect(page.getByRole('button', { name: 'F1', exact: true })).toBeVisible()
     await expect(page.getByText(NOTICE.zh, { exact: true })).toHaveCount(0)
   } finally {
@@ -101,6 +117,7 @@ test('Settings shows no notice when the saved combination was not refused', asyn
 test('setting a combination that registers removes the notice', async () => {
   const l = await launch('zh')
   try {
+    const page = await firstPage(l)
     await reportStartupConflict(l.app)
     // Electron's registration is replaced at its boundary: the real one would claim the combination system-wide
     // from a test instance. The change itself goes through the real handler and the real service.
@@ -108,7 +125,7 @@ test('setting a combination that registers removes the notice', async () => {
       globalShortcut.register = () => true
       globalShortcut.unregister = () => {}
     })
-    const page = await openSettings(l)
+    await openSettings(page)
     await expect(page.getByText(NOTICE.zh, { exact: true })).toBeVisible()
 
     await page.getByRole('button', { name: 'F1', exact: true }).click()
