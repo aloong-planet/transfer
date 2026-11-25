@@ -8,6 +8,7 @@ import {
   app,
   BrowserWindow,
   dialog,
+  globalShortcut,
   shell,
   clipboard,
   nativeImage,
@@ -31,7 +32,8 @@ import {
   type LangResult,
   type ReceiveDirInfo,
   type PickReceiveDirResult,
-  type SetShortcutResult
+  type SetShortcutResult,
+  type ShortcutState
 } from '@shared/ipc'
 import { isValidAccelerator } from '@shared/accelerator'
 import { handle, installWebGuards } from './web-guards'
@@ -534,8 +536,8 @@ function registerIpc(): void {
     for (const w of BrowserWindow.getAllWindows()) w.webContents.send(EVT.languageChanged, effective)
     return { pref, effective }
   })
-  // 截图快捷键:取当前值。
-  handle(CMD.getShortcut, (): string => settings!.getShortcutCapture())
+  // Screenshot shortcut: the saved combination, and whether the system refused to register it at startup.
+  handle(CMD.getShortcut, (): ShortcutState => screenshot!.shortcutState())
   // 设新键:先粗校验格式 → 试注册(rebind,失败自动回滚旧键)→ 成功才持久化。
   handle(CMD.setShortcut, (_e, accel: string): SetShortcutResult => {
     if (!isValidAccelerator(accel)) return { ok: false, reason: 'invalid' }
@@ -637,6 +639,7 @@ app.whenReady().then(async () => {
     preload: PRELOAD,
     sentImagesDir: join(userData, 'sent-images'),
     getShortcut: () => settings!.getShortcutCapture(),
+    shortcuts: globalShortcut,
     // 聊天区截图按钮触发时,截图前隐藏主窗、截完恢复(F1 路径不用,主窗本就可能不在前台)
     getMainWindow: () => mainWindow,
     // 复用现有聊天发送链路(§3.4:必须走 core.chat.sendFiles 才入库/推 UI/串行化)
