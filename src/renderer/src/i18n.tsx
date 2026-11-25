@@ -3,6 +3,7 @@
 
 import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
 import { DICT, type TKey } from '@shared/i18n/dict'
+import { htmlLang } from '@shared/i18n/html-lang'
 import { withLang } from '@shared/i18n/lang-query'
 import { createT, type Lang, type TFn } from '@shared/i18n/t'
 import type { LangPref } from '@shared/ipc'
@@ -39,6 +40,12 @@ export function I18nProvider(props: { children: ReactNode }): JSX.Element {
   // browser paints the new language.
   useLayoutEffect(() => {
     window.history.replaceState(window.history.state, '', withLang(window.location.href, lang))
+  }, [lang])
+
+  // The document element declares the language in force, which assistive technology and the engine's font and hyphenation
+  // choices follow. A layout effect runs before the browser paints the new language, so the tag changes with the text.
+  useLayoutEffect(() => {
+    document.documentElement.lang = htmlLang(lang)
   }, [lang])
 
   // 首次:拉回持久化的偏好 + 有效语言(system 已由 main 解析)。
