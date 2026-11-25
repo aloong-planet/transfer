@@ -84,22 +84,23 @@ export function regionFormatFromSearch(search: string): string | undefined {
   return value === null || value === '' ? undefined : canonical(value)
 }
 
-/** What the interface writes an instant as, in one locale. Built once per page: the locale is fixed for the page's life. */
+/** What the interface writes an instant with, in one locale. Built once per page: the locale is fixed for the page's life. */
 export type RegionFormats = {
   /** A message's time: hour and minute. */
-  time: (ts: number) => string
+  time: Intl.DateTimeFormat
   /** A received file's date and time: month, day, hour and minute, in the region's order and on the region's clock. */
-  dateTime: (ts: number) => string
+  dateTime: Intl.DateTimeFormat
 }
 
 /** The formatters for `locale`; no locale means the platform's own default formatting. */
 export function regionFormats(locale: string | undefined): RegionFormats {
-  const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' })
-  const dateTime = new Intl.DateTimeFormat(locale, {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-  return { time: (ts) => time.format(ts), dateTime: (ts) => dateTime.format(ts) }
+  return {
+    time: new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }),
+    dateTime: new Intl.DateTimeFormat(locale, {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
 }

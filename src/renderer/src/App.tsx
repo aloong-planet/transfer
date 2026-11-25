@@ -1457,10 +1457,10 @@ function pageFormats(): RegionFormats {
   return regionFormatsOfPage
 }
 function fmtTime(ts: number): string {
-  return pageFormats().time(ts)
+  return pageFormats().time.format(ts)
 }
 function fmtDateTime(ts: number): string {
-  return pageFormats().dateTime(ts)
+  return pageFormats().dateTime.format(ts)
 }
 function fmtSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`

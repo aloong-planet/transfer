@@ -24,8 +24,8 @@ export function getMainLang(): Lang {
 }
 
 /**
- * 把偏好解析成有效语言 —— system 时读系统语言列表(systemLanguages,即 app.getPreferredSystemLanguages(),测试可替换)。
- * 必须在 app ready 之后调用(Electron 要求)。
+ * Resolves the preference to the language in force: for `system`, the system's language list (`systemLanguages`, that is
+ * `app.getPreferredSystemLanguages()`, which a test can replace). Must be called after app ready (Electron requires it).
  */
 export function resolveSystemEffective(pref: LangPref): Lang {
   return resolveEffective(pref, systemLanguages())

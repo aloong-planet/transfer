@@ -1,3 +1,10 @@
+// Gaps:
+// - A page that forces a locale where the system reported none (language::REQ-004/AC-04, last sentence) shows only on a
+//   machine whose platform default is not the locale it forces: on an en-US machine `?? 'en-US'` writes the same text as
+//   the default does, so the case "writes in the platform's own default" below cannot go red there. Closable by running
+//   this file under another default locale (`LC_ALL=de_DE.UTF-8 pnpm exec vitest run <this file>`), which was done once
+//   for the delivery of the change, or by a suite whose machine has a default other than en-US.
+// - A time zone forced to UTC shows nowhere when the suite itself runs in UTC.
 import { describe, expect, test } from 'vitest'
 import {
   regionFormatFromSearch,
@@ -9,42 +16,59 @@ import {
 
 // language::REQ-004/AC-01, language::REQ-004/AC-04
 //
-// The pairs are deliberately mismatched where it matters: the language is the one the interface may be in, the region is
-// the one the system formats dates and times in, and the platform silently drops a region it has no data for with that
-// language. So every expectation below is the locale that took effect when read back from the formatter, never only the
-// string that was asked for.
+// The pairs are deliberately mismatched where it matters: the language is the one the system pairs with its region, the
+// region is the one the system formats dates and times in, and the platform silently drops a region it has no data for
+// with that language. So every expectation below is the locale that took effect when read back from the formatters the
+// page writes with, never only the string that was asked for. The rows with Germany and China under another language are
+// where the region speaks in its own language, which is not English there.
 const PAIRS = [
   ['English with the German region', 'en', 'DE', 'en-DE', 'h23'],
-  ['Chinese with the US region, which the platform has no data for, so the region speaks for itself', 'zh-Hans', 'US', 'en-US', 'h12'],
+  ['Chinese with the German region, which the platform has no data for, so the region speaks German', 'zh-Hans', 'DE', 'de-DE', 'h23'],
+  ['English with the Chinese region, which the platform has no data for, so the region speaks Chinese', 'en', 'CN', 'zh-CN', 'h23'],
+  ['Chinese with the US region, which the platform has no data for, so the region speaks English', 'zh-Hans', 'US', 'en-US', 'h12'],
   ['English with the US region, the control', 'en', 'US', 'en-US', 'h12']
 ] as const
+
+/** The text one part of a formatted instant carries, or undefined when the format writes no such part. */
+function valueOf(parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes): string | undefined {
+  return parts.find((p) => p.type === type)?.value
+}
 
 describe('regionFormatLocale', () => {
   test.each(PAIRS)('%s', (_name, language, region, expected, hourCycle) => {
     const locale = regionFormatLocale(language, region)
+    const { time, dateTime } = regionFormats(locale)
 
     expect(locale).toBe(expected)
-    // The locale the formatter really used is the one handed back, not a fallback it picked silently.
-    expect(new Intl.DateTimeFormat(locale).resolvedOptions().locale).toBe(locale)
+    // The locale the formatters really used is the one handed back, not a fallback they picked silently.
+    expect(time.resolvedOptions().locale).toBe(locale)
+    expect(dateTime.resolvedOptions().locale).toBe(locale)
     // The clock is the region's: German region 24-hour even in English, US region 12-hour even in Chinese.
-    expect(new Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hourCycle).toBe(hourCycle)
+    expect(time.resolvedOptions().hourCycle).toBe(hourCycle)
   })
 
-  // A locale that took effect still has to show the moment itself: the hour and minute a formatter writes are the local
-  // ones whichever clock it writes them on. 00:05 is in because a 12-hour clock writes it as 12:05 AM.
-  test.each(PAIRS)('%s: writes the moment\'s own local hour and minute', (_name, language, region) => {
-    const locale = regionFormatLocale(language, region)
+  // A locale that took effect still has to show the moment itself: what the page's formatters write is the local hour and
+  // minute (and for the date and time, the local month and day) whichever clock they write on. 00:05 is in because a
+  // 12-hour clock writes it as 12:05 AM.
+  test.each(PAIRS)('%s: writes the moment\'s own local time', (_name, language, region) => {
+    const { time, dateTime } = regionFormats(regionFormatLocale(language, region))
 
     for (const moment of [new Date(2026, 10, 25, 21, 30), new Date(2026, 10, 25, 0, 5)]) {
-      const parts = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).formatToParts(moment)
-      const part = (type: string): string | undefined => parts.find((p) => p.type === type)?.value
-      const period = part('dayPeriod')
-      const written = Number(part('hour'))
-      const hour24 = period === undefined ? written : (written % 12) + (period === 'PM' ? 12 : 0)
+      for (const format of [time, dateTime]) {
+        const parts = format.formatToParts(moment)
+        const period = valueOf(parts, 'dayPeriod')
+        const written = Number(valueOf(parts, 'hour'))
+        const hour24 = period === undefined ? written : (written % 12) + (period === 'PM' ? 12 : 0)
 
-      expect({ hour: hour24, minute: Number(part('minute')) }).toEqual({
-        hour: moment.getHours(),
-        minute: moment.getMinutes()
+        expect({ hour: hour24, minute: Number(valueOf(parts, 'minute')) }).toEqual({
+          hour: moment.getHours(),
+          minute: moment.getMinutes()
+        })
+      }
+      const parts = dateTime.formatToParts(moment)
+      expect({ month: Number(valueOf(parts, 'month')), day: Number(valueOf(parts, 'day')) }).toEqual({
+        month: moment.getMonth() + 1,
+        day: moment.getDate()
       })
     }
   })
@@ -68,7 +92,8 @@ describe('regionFormatLocaleOf', () => {
     ['a language and the German region', 'en-DE', 'en-DE'],
     ['the same with an underscore', 'en_DE', 'en-DE'],
     ['a region written in its own language', 'de-DE', 'de-DE'],
-    ['Chinese with a script and the US region, which the platform has no data for', 'zh-Hans-US', 'en-US']
+    ['Chinese with a script and the US region, which the platform has no data for', 'zh-Hans-US', 'en-US'],
+    ['Chinese with a script and the German region, which the platform has no data for', 'zh-Hans-DE', 'de-DE']
   ] as const)('reads %s', (_name, systemLocale, expected) => {
     expect(regionFormatLocaleOf(systemLocale)).toBe(expected)
   })
@@ -95,8 +120,17 @@ describe('regionFormats', () => {
   ] as const)('writes %s', (_name, locale, time, dateTime) => {
     const formats = regionFormats(locale)
 
-    expect(formats.time(evening)).toBe(time)
-    expect(formats.dateTime(evening)).toBe(dateTime)
+    expect(formats.time.format(evening)).toBe(time)
+    expect(formats.dateTime.format(evening)).toBe(dateTime)
+  })
+
+  // language::REQ-004/AC-04, last sentence: where the system reports no region the page writes as the platform does.
+  test('writes in the platform\'s own default when there is no locale', () => {
+    const { time, dateTime } = regionFormats(undefined)
+    const platformDefault = new Intl.DateTimeFormat().resolvedOptions().locale
+
+    expect(time.resolvedOptions().locale).toBe(platformDefault)
+    expect(dateTime.resolvedOptions().locale).toBe(platformDefault)
   })
 })
 
