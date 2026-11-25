@@ -20,8 +20,9 @@ export class TaskbarFlasher {
   /**
    * The renderer's total unread count, reported on every change of it. The flash follows the
    * count: the total rises only when the renderer counts a message (`shouldCountUnread`), so a
-   * state change of a message already shown, or a message sent from here, cannot flash. This
-   * process never learns whether a message is new; only the renderer knows that.
+   * state change of a message already shown, or a message sent from here, cannot flash. The
+   * message callback this process gets does not say whether a message is new; the renderer
+   * decides that, once, for the count, and the flash reuses its answer.
    */
   onUnreadTotal(total: number): void {
     const rose = total > this.previousTotal

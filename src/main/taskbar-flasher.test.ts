@@ -3,7 +3,9 @@ import { TaskbarFlasher } from './taskbar-flasher'
 
 // Gap: the real taskbar flash needs a Windows desktop, and the wiring from the renderer's
 // unread total (`CMD.setUnread` in index.ts) to this class cannot be driven from a macOS dev
-// machine. These cases cover the decision itself through the injected seams.
+// machine. These cases cover the decision itself through the injected seams. That a state change
+// of a message already shown, or a message sent from here, never raises the total is the count's
+// rule and is covered by src/shared/unread.test.ts.
 
 function setup(over: { platform?: string; focused?: boolean } = {}) {
   const state = { focused: over.focused ?? false, flashes: 0 }
