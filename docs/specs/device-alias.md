@@ -13,8 +13,9 @@ The user gives any discovered device a name of their own. The app shows that nam
 ### device-alias::REQ-001 Setting and clearing an alias
 
 - device-alias::REQ-001/AC-01: Right-clicking a device's row in the device list opens a menu with 修改备注 / Edit Note, and, when the device has an alias, 清除备注 / Clear Note.
-- device-alias::REQ-001/AC-02: Choosing 修改备注 turns the device's name in the row into an input. Enter, or clicking elsewhere, saves what is in the input as the alias; Esc leaves the input without a change.
+- device-alias::REQ-001/AC-02: Choosing 修改备注 turns the device's name in the row into an input. Enter, or clicking elsewhere, saves what is in the input as the alias, except as device-alias::REQ-001/AC-04 says. Esc leaves the input without a change.
 - device-alias::REQ-001/AC-03: Choosing 清除备注 removes the alias, and the device shows the name it most recently announced again.
+- device-alias::REQ-001/AC-04: Committing the input (device-alias::REQ-001/AC-02) saves nothing, and closes the input, when what is in it, apart from surrounding spaces, is the name the row showed when the input opened.
 
 ### device-alias::REQ-002 The alias is the name shown
 
