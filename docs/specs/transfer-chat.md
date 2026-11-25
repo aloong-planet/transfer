@@ -74,8 +74,9 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 
 ### transfer-chat::REQ-006 Showing a finished file in its folder
 
-- transfer-chat::REQ-006/AC-01: A file message that has been received or delivered, and whose file is stored, has a text button 打开所在文件夹 / Show in Folder that shows the file, selected, in the system's file manager. A message whose file is an image (png, jpg, jpeg, gif, webp, bmp, heic or svg) has no such button in the chat, whether or not a thumbnail can be shown, and neither has a file that is pending, failed, rejected or expired.
+- transfer-chat::REQ-006/AC-01: A file message that has been received or delivered, and whose file is stored, has a text button 打开所在文件夹 / Show in Folder that shows the file, selected, in the system's file manager. A message whose file is an image (png, jpg, jpeg, gif, webp, bmp, heic or svg) has no such button in the chat, whether or not a thumbnail can be shown, and neither has a file that is pending, failed, rejected or expired, except as transfer-chat::REQ-006/AC-03 says.
 - transfer-chat::REQ-006/AC-02: Every received file listed on the 已接收文件 / Received Files page has the same button.
+- transfer-chat::REQ-006/AC-03: A message whose file the app wrote from a text sent as a file (section E) has the button of transfer-chat::REQ-006/AC-01 also when it failed, was rejected or expired, as long as that file is still in the app's own data folder.
 
 ### transfer-chat::REQ-007 The message input takes screenshots and pasted images
 
@@ -164,7 +165,9 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 |---|---|---|
 | 一条纯文本 | 编码成特殊"文件"随协商请求送达,不走传输通道,对方回 204 | 〔测〕 |
 | 文本 + 文件混在一批 | 不按文本处理,走正常传输 | 〔测〕 |
-| 正文超长 | 截断到上限 | 〔测〕 |
+| A text over 32 KiB (32 × 1024 bytes in UTF-8; exactly 32 KiB is still a text message) | Not sent as a text message but as a file holding the whole text, named as in transfer-chat::REQ-007/AC-02 except that the prefix is 文本_ (Chinese interface) or text_ (English interface) and the ending is .txt. The sender's conversation shows one sent file message; the receiver gets an ordinary file message, asked or auto-accepted under transfer-chat::REQ-008. It keeps its place among the other sends to the same peer (section D), and its file stays in the app's own data folder. When it does not arrive: transfer-chat::REQ-006/AC-03 | 〔测〕 |
+| Writing that file fails (disk full, no permission) | Nothing is sent and the peer is not contacted: the sender's conversation shows a failed text message with the whole text, labelled 磁盘空间不足 / Not enough disk space when the disk is full and 失败 / Failed for any other cause | 〔测〕 |
+| 正文超长: a text message of more than 64 KiB (64 × 1024 bytes in UTF-8) reaches the receiver | Cut to its first 64 KiB, counted in bytes, not characters; exactly 64 KiB is not cut. A character the cut splits becomes one U+FFFD, so the stored text can be up to 2 bytes over 64 KiB | 〔测〕 |
 | 非 ASCII 正文 | 长度按字节算,不按字符数 | 〔测〕 |
 | 连发两条相同内容 | 两条都要收到,不能被当成重复丢掉 | 〔测〕 |
 | 文本不受自动接收开关限制 | 始终自动接收 | 〔测〕 |
@@ -270,6 +273,7 @@ Image copy and orientation (transfer-chat::US-001, transfer-chat::REQ-001 to REQ
 - **PIN 校验**:只识别对端要求 PIN 并提示,不实现。
 - **多播报文伪造 / 放大攻击**:属发现层,不在本模块处理。
 - **总时长上限**:选了空闲语义就意味着放弃它;涓流可以让传输无限期挂着(ADR-0020 的负面后果)。
+- **Marking a text the receiver cut**: a cut text shows no mark or note that it was cut. A sender that follows the limit in section E never sends a text message longer than the receiver keeps, so only a sender that ignores that limit causes a cut.
 - **不为"传输中用时在走"与"速度的渲染"补端到端测试**(2026-08-22 用户裁定)。两者的计算逻辑有纯函数单测、显示形态有真机渲染核对过;补齐它们需要能驱动渲染层连续多帧的 e2e 基建,投入与收益不成比例。**这是决定,不是遗漏** —— 后来者不必再把它当待办。
 - **A file reference on the clipboard** (so that pasting in Finder or Explorer yields the file): rejected 2026-10-22. Electron has no API for it, each platform would need its own low-level clipboard format, and chat apps that see a file reference may attach a file instead of inserting the image.
 - **Feedback after copying** (a "Copied" toast, or an error on failure): decided against, 2026-10-22. It matches the screenshot's copy exit and the image menu's other two items, which give none either.
