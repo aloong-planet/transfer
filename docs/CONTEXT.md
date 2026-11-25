@@ -18,6 +18,8 @@ _Avoid_: "证书校验"——我们不走 CA 链。
 
 **prepare-upload**: LocalSend 协议的传输入口。**文本消息也是 fileType=text 的"文件",正文放 `preview` 字段,只走 prepare-upload、不走 upload**。
 
+**文本消息**: 随协商请求送达、不占用传输通道的文字(fileType=text 的"文件",见 prepare-upload)。超过发送上限的文字不是文本消息,而是作为 `.txt` 的普通文件消息发送(上限与规则见 transfer-chat spec 的 E 节)。
+
 **自动接收**: 针对**文件**的可配置开关 + 大小阈值,默认关(全部文件需确认);开启后 `size ≤ 阈值` 自动收。**文本消息不受此开关限制,始终自动接收**。
 
 **备注(远端设备别名)**: 用户给发现到的设备起的自定义名,按 fingerprint 存 `settings.json` 的 `deviceAliases`,**永久保留**(离线/真删不清)。合并在 **main 侧** `applyAliases` 做,renderer 无感。
