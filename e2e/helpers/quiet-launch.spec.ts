@@ -40,3 +40,8 @@ test('only the switch-only launch gives no TRANSFER_USERDATA, and it drops every
   expect(args).toEqual(['.', `--user-data-dir=${DIR}`])
   expect(env).toEqual({ PATH: '/usr/bin', NODE_ENV: 'production', TRANSFER_E2E_QUIET: '1' })
 })
+
+test('a launch with an empty data directory is refused, quiet or switch-only', () => {
+  expect(() => quietLaunchOptions('')).toThrow('needs the directory')
+  expect(() => switchOnlyLaunchOptions('')).toThrow('needs the directory')
+})

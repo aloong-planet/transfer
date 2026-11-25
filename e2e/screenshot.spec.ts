@@ -11,7 +11,7 @@
 // Known gap: the real handler's answer with the conflict set is not exercised end to end; its answer without one is
 // (the second case).
 //
-// The main process is touched only after `firstWindow()`. Electron's launch can return before the app's
+// The main process is touched only after `firstWindow()`. `electron.launch` can return before the app's
 // `app.whenReady()` handler has run, so an `app.evaluate` made right after it can land first. A handler registered then
 // for a channel the app registers itself makes `registerIpc()` throw on the duplicate: the ready handler stops before
 // `createWindow()`, no window ever opens, and the case fails with a `firstWindow` timeout. The first window exists only

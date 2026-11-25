@@ -22,7 +22,8 @@ interface Launched {
 async function launch(): Promise<Launched> {
   const userData = mkdtempSync(join(tmpdir(), 'transfer-e2e-'))
   const errors: string[] = []
-  // The listener is attached as the process starts, before the launch waits for the window, so it sees start-up errors too
+  // The listener is attached as soon as the launch has started the process, before it waits for the window: the output
+  // the app prints while it starts up is read too
   const { app } = await launchQuiet(userData, {
     onLaunch: (app) =>
       app.process().stderr?.on('data', (b: Buffer) => {
@@ -52,9 +53,8 @@ async function close(l: Launched): Promise<void> {
 test('测试实例不打扰用户:窗口不显示、不占用全局快捷键', async () => {
   const l = await launch()
   try {
-    // 必须先等窗口就绪:launch 返回时 createWindow 可能还没跑,
-    // 此时 getAllWindows() 为空,下面的 not.toContain(true) 会对空数组恒真。
-    await l.app.firstWindow()
+    // 窗口必须已就绪:否则 getAllWindows() 为空,下面的 not.toContain(true) 会对空数组恒真。
+    // launch 返回时 launchQuiet 已等过 firstWindow(),下面的长度断言防的是这条保证哪天失效。
 
     const visible = await l.app.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows().map((w) => w.isVisible())

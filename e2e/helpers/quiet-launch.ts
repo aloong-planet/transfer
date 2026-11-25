@@ -3,14 +3,14 @@
 // Every instance is quiet and keeps its data in a directory of its own, so a run of the suite never disturbs the person
 // running it:
 // - `TRANSFER_E2E_QUIET=1`: no window shown, no global shortcut, nothing on the LAN (QUIET in src/main/index.ts).
-// - The data directory is passed twice because two readers need it: `--user-data-dir` is Chromium's, `TRANSFER_USERDATA`
-//   is the main process's, which sets `userData` itself. With only the first, a main process that takes its own `setPath`
-//   branch still lands in the real folder.
+// - The data directory is passed twice, as `--user-data-dir` (Chromium's) and as `TRANSFER_USERDATA` (the main process's),
+//   so the data stays out of the real folder even if one of the two were ignored. Each alone does put it there:
+//   launch-inputs.spec.ts shows it for the switch, and src/main/index.ts sets `userData` from the variable.
 // - `NODE_ENV=production`, as the specs have always passed it.
 //
-// The data directory is an argument without a default. A copy of this block that forgot it ran the spec against the real
-// data folder of whoever ran the suite, and nothing flagged it: types do not, and CI has no real data to lose. Now a launch
-// without one has to be asked for by name (`launchQuietSwitchOnly`).
+// The data directory is an argument without a default. A copy of this block that missed it would run its spec against the
+// real data folder of whoever runs the suite, and nothing would flag it: types do not, and CI has no real data to lose. So
+// a launch without one has to be asked for by name (`launchQuietSwitchOnly`), and an empty one is refused.
 //
 // The ordinary launch returns only after `firstWindow()` has returned. An e2e case replaces one of the app's IPC handlers
 // only after that point (the header of screenshot.spec.ts gives the reason), so a case can do it right after the launch.
@@ -49,6 +49,8 @@ function buildOptions(
     switchOnly?: boolean
   }
 ): QuietLaunchOptions {
+  // An empty directory leaves TRANSFER_USERDATA unset as far as the main process is concerned (`if (userDataOverride)`)
+  if (userData === '') throw new Error('A quiet launch needs the directory its data lives in')
   const base: Record<string, string> = {}
   for (const [name, value] of Object.entries(inherited)) {
     if (value === undefined) continue
@@ -87,6 +89,7 @@ export function switchOnlyLaunchOptions(userData: string, inherited: NodeJS.Proc
   return buildOptions(userData, inherited, { switchOnly: true })
 }
 
+// The one call of `electron.launch` in e2e/: both launches below go through it, so a search for the call finds this line only
 function start(options: QuietLaunchOptions): Promise<ElectronApplication> {
   return electron.launch(options)
 }
