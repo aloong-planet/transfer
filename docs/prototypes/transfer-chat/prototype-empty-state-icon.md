@@ -2,9 +2,9 @@
 
 ## Question
 
-Which icon the chat area shows as its empty state when no conversation is selected, and whether the two lines of text share one icon or each has its own: "Select a device on the left to start chatting" when devices have been found, and "Searching for devices on the LAN…" when none have. The text already branches on whether any device has been found, so an icon that follows the same condition adds no new state.
+Which icon the chat area shows as its empty state when no conversation is selected: a radar with "Searching for devices on the LAN…" while no device has been found, and a message bubble with "Select a device on the left to start chatting" once devices have been found. The text already branches on whether any device has been found, so the icon follows the same condition and adds no new state.
 
-The page lays the candidates out in light and dark, then as pairs. The banner at its top names the pair taken, and the other candidates stay for reference.
+The page shows both states at 40px in light and in dark.
 
 ## Structure basis
 
@@ -12,4 +12,4 @@ The empty state's geometry is the app's: a centred column on the card background
 
 ## Demo scaffolding
 
-Not part of the design; do not implement. The light and dark panes side by side, the candidate tables and the size comparison.
+Not part of the design; do not implement. The light and dark panes side by side.

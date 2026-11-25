@@ -80,24 +80,6 @@
   .footer-beian a:hover { color: var(--fg); }
   .footer-beian[hidden] { display: none; }
 
-  /* ---------- 演示基建(非设计) ---------- */
-  .demo-bar {
-    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 90;
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
-    background: #171522; color: #cfc9dd; border: 1px solid #322c45;
-    border-radius: 999px; padding: 7px 10px 7px 14px;
-    box-shadow: 0 10px 34px rgba(0,0,0,.42);
-    font-size: 0.78rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    max-width: calc(100vw - 24px);
-  }
-  .demo-label { color: #6f6885; letter-spacing: .04em; white-space: nowrap; }
-  .demo-sep { width: 1px; height: 17px; background: #322c45; }
-  .demo-bar button {
-    background: #241f33; color: #cfc9dd; border: 1px solid #3a3350;
-    border-radius: 999px; padding: 4px 11px; cursor: pointer; font: inherit;
-  }
-  .demo-bar button:hover { background: #2f2942; }
-  .demo-bar button[aria-pressed='true'] { background: #cfc9dd; color: #171522; border-color: #cfc9dd; }
 </style>
 </head>
 <body>
@@ -132,11 +114,18 @@
 </footer>
 
 <!-- ========== 演示基建:非设计的一部分,勿实现 ========== -->
-<div class="demo-bar" data-demo-harness>
-  <span class="demo-label">演示 · 构建目标</span>
-  <button data-target-btn="com" aria-pressed="true">.com（Pages）</button>
-  <button data-target-btn="cn" aria-pressed="false">.com.cn（ECS）</button>
+<div data-demo-harness>
+  <span class="dh-tag">Demo ·</span>
+  <div class="dh-group">
+    <span class="dh-title">Build target</span>
+    <div class="dh-opts">
+      <button type="button" class="dh-opt" data-target-btn="com" aria-pressed="true">.com (Pages)</button>
+      <button type="button" class="dh-opt" data-target-btn="cn" aria-pressed="false">.com.cn (ECS)</button>
+    </div>
+  </div>
+  <p class="dh-note">Site: whether the filing row is rendered is decided at build time by an environment variable that only the .com.cn build sets; there is no such control.</p>
 </div>
+<script src="../demo-harness.js"></script>
 
 <script>
   /* The copy table: the site's footer and tail-section texts, per language */

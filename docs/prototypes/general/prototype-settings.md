@@ -14,5 +14,5 @@ Everything except the Receive folder element is drawn from the settings dialog a
 
 Not part of the design; do not implement.
 
-- A bar at the top left switches the four Receive folder states. In the app the state follows the stored folder and whether it is available; there is no such control.
+- A floating "Demo ·" bar (the shared demo bar, which can be dragged or collapsed) has one group, Receive folder, that switches the four states: Default, Chosen by the user, Just changed and No longer valid. In the app the state follows the stored folder and whether it is available; there is no such control.
 - The Language select writes the interface language to the gallery's shared settings, so every other prototype page follows it. The page shows the language in effect; "Follow System" stays selectable, and the page never simulates a system language. The mode (light or dark) comes from the gallery's settings; this page has no control for it.

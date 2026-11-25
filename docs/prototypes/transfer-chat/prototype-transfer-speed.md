@@ -10,4 +10,4 @@ The placement of time and speed is the direction the user confirmed; the transfe
 
 ## Demo scaffolding
 
-Not part of the design; do not implement. A floating "Demo ·" bar with a long-file-name switch. In the app a bubble's state comes from the message's real state; here the mock states are laid out side by side. The page follows the gallery's language and mode settings; the two panes stay light and dark whatever the mode is.
+Not part of the design; do not implement. A floating "Demo ·" bar (the shared demo bar, which can be dragged or collapsed) has one group, File name, that switches the ten bubbles between a short and a very long file name; in the app the name is the file's own. In the app a bubble's state comes from the message's real state; here the mock states are laid out side by side. The page follows the gallery's language and mode settings; the two panes stay light and dark whatever the mode is.

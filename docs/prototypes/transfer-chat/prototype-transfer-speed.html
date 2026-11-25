@@ -76,14 +76,6 @@
  .q{background:var(--pg-q-bg);border:1px solid var(--pg-q-line);border-radius:8px;padding:9px 12px;
    font-size:11.5px;margin:14px 0 0;max-width:900px;line-height:1.65}
 
- /* ── 演示基建(独立悬浮层,不嵌页面内容流)──────────────────── */
- .harness{position:fixed;left:0;right:0;bottom:14px;margin:0 auto;width:max-content;max-width:92vw;
-   background:#22252a;color:#e6e8ea;border-radius:999px;padding:7px 14px;display:flex;
-   align-items:center;gap:10px;font-size:11.5px;box-shadow:0 6px 24px rgba(0,0,0,.28);z-index:9}
- .harness .pfx{opacity:.55;padding-right:2px}
- .harness button{font:inherit;background:rgba(255,255,255,.1);color:inherit;border:0;
-   border-radius:999px;padding:3px 11px;cursor:pointer}
- .harness button[aria-pressed=true]{background:#e6e8ea;color:#22252a}
 </style>
 </head>
 <body>
@@ -115,14 +107,22 @@
 </p>
 
 <div class="q">
-  <b>图片消息不显示用时(已定)。</b>图片传完变缩略图(第 8 条),那一支整个没有文件行,
+  <b>图片消息不显示用时。</b>图片传完变缩略图(第 8 条),那一支整个没有文件行,
   用时依附的位置不存在;为它单独造一行不值得,于是不显示。文件消息不受影响。
 </div>
 
-<div class="harness" data-demo-harness>
-  <span class="pfx">演示 ·</span>
-  <button id="toggle-long" aria-pressed="false">超长文件名</button>
+<div data-demo-harness>
+  <span class="dh-tag">Demo ·</span>
+  <div class="dh-group">
+    <span class="dh-title">File name</span>
+    <div class="dh-opts">
+      <button type="button" class="dh-opt" data-long="0" aria-pressed="true">Short</button>
+      <button type="button" class="dh-opt" data-long="1" aria-pressed="false">Very long</button>
+    </div>
+  </div>
+  <p class="dh-note">App: the name is the sent or received file's own name; there is no such control.</p>
 </div>
+<script src="../demo-harness.js"></script>
 
 <script>
   const SHORT = { zh: '设计稿-v3.sketch', en: 'design-draft-v3.sketch' }
@@ -207,9 +207,12 @@
   function paint() {
     render(document.getElementById('p-light'))
     render(document.getElementById('p-dark'))
-    document.getElementById('toggle-long').setAttribute('aria-pressed', String(long))
+    for (const b of document.querySelectorAll('[data-demo-harness] [data-long]')) b.setAttribute('aria-pressed', String((b.dataset.long === '1') === long))
   }
-  document.getElementById('toggle-long').onclick = () => { long = !long; paint() }
+  document.querySelector('[data-demo-harness]').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-long]')
+    if (b) { long = b.dataset.long === '1'; paint() }
+  })
   // The language comes from the gallery's settings
   DemoDimensions.on('language', (v) => { lang = v; document.documentElement.lang = v === 'zh' ? 'zh-Hans' : 'en'; paint() })
 </script>

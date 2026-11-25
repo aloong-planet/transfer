@@ -94,6 +94,28 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 
 - transfer-chat::REQ-009/AC-01: No limit applies to the size of a file or to the number of files in a request. What bounds a transfer is the free disk space of the receiver, not the speed of the network.
 
+### transfer-chat::REQ-010 The empty chat area's icon follows whether a device has been found
+
+- transfer-chat::REQ-010/AC-01: With no conversation selected and no device in the sidebar's list, the chat area shows the Lucide `radar` icon above the text 正在搜索局域网设备… / Searching for devices on the LAN….
+- transfer-chat::REQ-010/AC-02: With no conversation selected and at least one device in the sidebar's list, online or offline, the chat area shows the Lucide `message-circle` icon above the text 选择左侧设备开始聊天 / Select a device on the left to start chatting.
+- transfer-chat::REQ-010/AC-03: The icon is 40 px square with a 2 px stroke, centred above the text, in the same muted colour as the text. The icon and the text always change together.
+
+### transfer-chat::REQ-011 A file's icon follows its extension
+
+- transfer-chat::REQ-011/AC-01: A file's icon is chosen by the extension of its file name, whatever the case, from the table below. A name with no extension and an extension not in the table both get the plain `file` icon.
+- transfer-chat::REQ-011/AC-02: PDF files and document files show the same icon.
+- transfer-chat::REQ-011/AC-03: The icon is 17 px, in the accent colour, in a rounded 30 px square. The square has the own-wash tint in a file bubble sent from this device and the accent-soft tint everywhere else: in a file bubble from the other party, in every row of the 已接收文件 / Received Files page, and in the file row an image falls back to when its thumbnail cannot be shown.
+
+| Category | Extensions | Lucide icon |
+|---|---|---|
+| Image | those of transfer-chat::REQ-006/AC-01 | `file-image` |
+| Video | mp4, mov, avi, mkv, webm | `file-video-camera` |
+| Audio | mp3, wav, flac, aac, m4a | `file-music` |
+| PDF | pdf | `file-text` |
+| Archive | zip, rar, 7z, tar, gz, dmg, pkg, exe, msi | `file-archive` |
+| Document | doc, docx, txt, md, rtf | `file-text` |
+| Spreadsheet | xls, xlsx, csv | `file-spreadsheet` |
+
 ## 失败模式与边界穷举
 
 标注约定:**〔测〕**=有自动化用例驱动;**〔门〕**=由门禁/护栏守住;**〔缺〕**=已知未覆盖,理由见「已知缺口」;**〔人工〕**=manual check with a reviewable record (screenshot or measurement).
