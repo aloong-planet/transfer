@@ -11,7 +11,7 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "test": "node --test build/mac-packaging.test.cjs && NODE_OPTIONS=\"--experimental-sqlite --no-warnings\" vitest run",
+    "test": "node --test build/mac-packaging.test.cjs && node --test scripts/site-assets.test.mjs && NODE_OPTIONS=\"--experimental-sqlite --no-warnings\" vitest run",
     "test:watch": "NODE_OPTIONS=\"--experimental-sqlite --no-warnings\" vitest",
     "e2e": "electron-vite build && playwright test",
     "gen:info-plist": "node scripts/gen-info-plist-strings.mjs",
@@ -21,7 +21,8 @@
     "dist:mas:dev": "electron-vite build && electron-builder --mac mas-dev --publish never",
     "dist:mas": "electron-vite build && electron-builder --mac mas --universal --publish never",
     "pkg:mas": "node build/make-mas-pkg.cjs",
-    "deploy:site:cn": "bash build/deploy-site-cn.sh"
+    "deploy:site:cn": "bash build/deploy-site-cn.sh",
+    "site:assets": "node scripts/site-assets.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
