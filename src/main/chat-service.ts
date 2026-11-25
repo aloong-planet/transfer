@@ -10,7 +10,7 @@ import type { ProgressPayload } from '@shared/ipc'
 import { MessageStore } from './db/messages'
 import { isTerminal, type ErrorReason, type Message } from '@shared/message'
 import { SettingsStore } from './settings'
-import { isTextMessage } from './transfer/text-message'
+import { isTextMessage, isTextTooLarge } from './transfer/text-message'
 import type { SendTarget, SendResult, SendTextResult } from './transfer/http-client'
 
 export interface ChatSender {
@@ -37,6 +37,12 @@ export interface ChatServiceDeps {
    *  **必选**:可选会让"忘记接线"退化成静默不生效——目录重新混进批次、把同批正常
    *  文件一起判失败,而没有任何报错。这个故障会向上层逃逸,不能靠调用方自觉。 */
   isDirectory: (path: string) => boolean
+  /** Writes a text over the send limit to a .txt file and returns the file's path.
+   *  The file stays in the app's data folder: the `filePath` of the file message that goes
+   *  out has to keep pointing at it.
+   *  **Required**, for the same reason as `isDirectory`: optional would turn a forgotten
+   *  wiring into long texts that silently cannot be sent. */
+  writeTextFile: (text: string) => Promise<string>
   /** 单条消息新增/更新时通知 UI */
   onMessageUpserted: (msg: Message) => void
   /** 传输进度通知 UI(不落库,§12.3):messageId + 已传/总字节 + 方向 */
@@ -355,25 +361,16 @@ export class ChatService {
 
   // ── 发送方 ──
 
-  /** 发送文本(本地串行化排队) */
+  /**
+   * Sends a text (queued locally, one send at a time per peer). A text over the send
+   * limit goes out as a .txt file instead: writing the file and sending it both happen
+   * in the same queue slot, so a text sent to the same peer afterwards cannot overtake it.
+   */
   async sendText(peerFp: string, text: string): Promise<Message> {
     return this.enqueue(peerFp, async () => {
+      if (isTextTooLarge(text)) return this.sendLongText(peerFp, text)
       const peer = this.d.resolvePeer(peerFp)
-      const msg = this.d.store.insert({
-        id: randomUUID(),
-        type: 'text',
-        direction: 'sent',
-        peerFp,
-        peerAlias: peer?.alias ?? peerFp.slice(0, 8),
-        content: text,
-        fileName: null,
-        fileSize: null,
-        filePath: null,
-        status: 'pending',
-        errorReason: null,
-        transferId: null
-      })
-      this.upsert(msg)
+      const msg = this.insertSentText(peerFp, peer?.alias, text)
       // resolvePeer 契约:离线/已从发现表移除返回 null → 报"对方已离线",而非误导性的连接超时
       if (!peer) return this.fail(msg.id, 'offline')
       const res = await this.d.sender.sendText(peer.target, text)
@@ -381,67 +378,121 @@ export class ChatService {
     })
   }
 
+  /** Stores a pending sent text message and pushes it to the UI. */
+  private insertSentText(peerFp: string, peerAlias: string | undefined, text: string): Message {
+    const msg = this.d.store.insert({
+      id: randomUUID(),
+      type: 'text',
+      direction: 'sent',
+      peerFp,
+      peerAlias: peerAlias ?? peerFp.slice(0, 8),
+      content: text,
+      fileName: null,
+      fileSize: null,
+      filePath: null,
+      status: 'pending',
+      errorReason: null,
+      transferId: null
+    })
+    this.upsert(msg)
+    return msg
+  }
+
+  /**
+   * A text over the send limit: written to a .txt file, then sent as that file (the
+   * conversation shows one sent file message).
+   * Must run inside the peer's queue slot (sendText guarantees it). It cannot call
+   * sendFiles, which enqueues again behind the current slot while the current slot waits
+   * for it (a deadlock), so it calls sendFilesNow.
+   */
+  private async sendLongText(peerFp: string, text: string): Promise<Message> {
+    let path: string
+    try {
+      path = await this.d.writeTextFile(text)
+    } catch (e) {
+      // The file cannot be written: do not throw and do not contact the peer. Leave a failed
+      // text message in the conversation, like any other send failure. Only a full disk has
+      // its own wording; no other reason fits a local write failure (network would say
+      // "Network error", no-permission "No permission to read this file"), so the others
+      // get the generic "Failed" (no errorReason).
+      const msg = this.insertSentText(peerFp, this.d.resolvePeer(peerFp)?.alias, text)
+      const code = (e as NodeJS.ErrnoException).code
+      const failed = this.d.store.updateStatus(
+        msg.id,
+        'failed',
+        code === 'ENOSPC' ? { errorReason: 'enospc' } : undefined
+      )!
+      this.upsert(failed)
+      return failed
+    }
+    const [msg] = await this.sendFilesNow(peerFp, [path])
+    return msg
+  }
+
   /** 发送文件(本地串行化排队) */
   async sendFiles(peerFp: string, filePaths: string[]): Promise<Message[]> {
-    return this.enqueue(peerFp, async () => {
-      const peer = this.d.resolvePeer(peerFp)
-      const msgs = filePaths.map((path) => {
-        const name = path.split(/[/\\]/).pop() ?? 'file'
-        return this.d.store.insert({
-          id: randomUUID(),
-          type: 'file',
-          direction: 'sent',
-          peerFp,
-          peerAlias: peer?.alias ?? peerFp.slice(0, 8),
-          content: null,
-          fileName: name,
-          fileSize: this.d.fileSize?.(path) ?? null,
-          filePath: path,
-          status: 'pending',
-          errorReason: null,
-          transferId: null
-        })
-      })
-      msgs.forEach((m) => this.upsert(m))
-      if (!peer) {
-        return msgs.map((m) => this.fail(m.id, 'offline'))
-      }
-      // 目录(含 macOS 的包)不受支持,**必须在组批之前剔除**:整批共用一个 sender 调用、
-      // 且同一个 status 会套用到批内所有消息,目录若混进去会把同批的正常文件一起判失败。
-      // 目录各自标 'directory',不落到 classifyError 的兜底(那会说成"网络错误")。
-      const isDir = this.d.isDirectory
-      const done = new Map<string, Message>()
-      const sendable: { msg: Message; path: string }[] = []
-      msgs.forEach((m, i) => {
-        if (isDir(filePaths[i])) done.set(m.id, this.fail(m.id, 'directory'))
-        else sendable.push({ msg: m, path: filePaths[i] })
-      })
-      // 全是目录:无需联系对端
-      if (sendable.length === 0) return msgs.map((m) => done.get(m.id)!)
+    return this.enqueue(peerFp, () => this.sendFilesNow(peerFp, filePaths))
+  }
 
-      const files = sendable.map(({ msg, path }) => ({ id: msg.id, path }))
-      // 发送进度:fileId === 发送方 msgId,直接推 UI(§12.3)
-      const res = await this.d.sender.sendFiles(peer.target, files, (fileId, sent, total) =>
-        this.emitProgress(fileId, sent, total, 'send')
-      )
-      const status =
-        res.kind === 'done'
-          ? 'done'
-          : res.kind === 'rejected'
-            ? 'rejected'
-            : res.kind === 'busy'
-              ? 'failed'
-              : 'failed'
-      const reason: ErrorReason | undefined =
-        res.kind === 'busy' ? 'busy' : res.kind === 'error' ? classifySendError(res) : undefined
-      sendable.forEach(({ msg }) => {
-        const updated = this.d.store.updateStatus(msg.id, status, reason ? { errorReason: reason } : undefined)!
-        this.upsert(updated)
-        done.set(msg.id, updated)
+  /** The body of sendFiles. **Does not enqueue**: call it only inside the peer's queue slot (sendFiles, sendLongText). */
+  private async sendFilesNow(peerFp: string, filePaths: string[]): Promise<Message[]> {
+    const peer = this.d.resolvePeer(peerFp)
+    const msgs = filePaths.map((path) => {
+      const name = path.split(/[/\\]/).pop() ?? 'file'
+      return this.d.store.insert({
+        id: randomUUID(),
+        type: 'file',
+        direction: 'sent',
+        peerFp,
+        peerAlias: peer?.alias ?? peerFp.slice(0, 8),
+        content: null,
+        fileName: name,
+        fileSize: this.d.fileSize?.(path) ?? null,
+        filePath: path,
+        status: 'pending',
+        errorReason: null,
+        transferId: null
       })
-      // 按原始入参顺序返回,调用方不感知内部分流
-      return msgs.map((m) => done.get(m.id)!)
     })
+    msgs.forEach((m) => this.upsert(m))
+    if (!peer) {
+      return msgs.map((m) => this.fail(m.id, 'offline'))
+    }
+    // 目录(含 macOS 的包)不受支持,**必须在组批之前剔除**:整批共用一个 sender 调用、
+    // 且同一个 status 会套用到批内所有消息,目录若混进去会把同批的正常文件一起判失败。
+    // 目录各自标 'directory',不落到 classifyError 的兜底(那会说成"网络错误")。
+    const isDir = this.d.isDirectory
+    const done = new Map<string, Message>()
+    const sendable: { msg: Message; path: string }[] = []
+    msgs.forEach((m, i) => {
+      if (isDir(filePaths[i])) done.set(m.id, this.fail(m.id, 'directory'))
+      else sendable.push({ msg: m, path: filePaths[i] })
+    })
+    // 全是目录:无需联系对端
+    if (sendable.length === 0) return msgs.map((m) => done.get(m.id)!)
+
+    const files = sendable.map(({ msg, path }) => ({ id: msg.id, path }))
+    // 发送进度:fileId === 发送方 msgId,直接推 UI(§12.3)
+    const res = await this.d.sender.sendFiles(peer.target, files, (fileId, sent, total) =>
+      this.emitProgress(fileId, sent, total, 'send')
+    )
+    const status =
+      res.kind === 'done'
+        ? 'done'
+        : res.kind === 'rejected'
+          ? 'rejected'
+          : res.kind === 'busy'
+            ? 'failed'
+            : 'failed'
+    const reason: ErrorReason | undefined =
+      res.kind === 'busy' ? 'busy' : res.kind === 'error' ? classifySendError(res) : undefined
+    sendable.forEach(({ msg }) => {
+      const updated = this.d.store.updateStatus(msg.id, status, reason ? { errorReason: reason } : undefined)!
+      this.upsert(updated)
+      done.set(msg.id, updated)
+    })
+    // 按原始入参顺序返回,调用方不感知内部分流
+    return msgs.map((m) => done.get(m.id)!)
   }
 
   /** 同一 peer 的发送串行化(DESIGN §11.2.3) */

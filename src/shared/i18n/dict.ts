@@ -184,6 +184,7 @@ const zh = {
 
   // main.file:文件名前缀 / dialog filter
   'main.file.imagePrefix': '图片',
+  'main.file.textPrefix': '文本',
   'main.file.screenshotPrefix': '截图',
   'main.file.pngFilterName': 'PNG 图片'
 } as const
@@ -346,6 +347,7 @@ const en: Record<TKey, string> = {
   'main.dialog.screenPermCancel': 'Cancel',
 
   'main.file.imagePrefix': 'image',
+  'main.file.textPrefix': 'text',
   'main.file.screenshotPrefix': 'screenshot',
   'main.file.pngFilterName': 'PNG Image'
 }
