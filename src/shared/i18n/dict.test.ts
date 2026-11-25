@@ -16,6 +16,14 @@ describe('DICT 完整性', () => {
     }
   })
 
+  // The prefix of the .txt file a long text is sent as: 文本_… in Chinese, text_… in English.
+  test.each([
+    { lang: 'zh', prefix: '文本' },
+    { lang: 'en', prefix: 'text' }
+  ] as const)('the text file name prefix ($lang) is $prefix', ({ lang, prefix }) => {
+    expect(DICT[lang]['main.file.textPrefix']).toBe(prefix)
+  })
+
   test('带 {var} 的键两种语言占位符一致(防插值键漏写)', () => {
     const placeholders = (s: string): string[] => (s.match(/\{(\w+)\}/g) ?? []).sort()
     for (const k of Object.keys(DICT.zh)) {

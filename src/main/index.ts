@@ -37,6 +37,7 @@ import { isValidAccelerator } from '@shared/accelerator'
 import { handle, installWebGuards } from './web-guards'
 import { loadOrCreateIdentity, saveAlias } from './device-identity'
 import { AppCore } from './app-core'
+import { writeTextFile } from './transfer/text-file'
 import { MessageStore } from './db/messages'
 import { SettingsStore } from './settings'
 import { ScreenshotService, persistAndSend } from './screenshot-service'
@@ -611,6 +612,11 @@ app.whenReady().then(async () => {
     httpPort: portOverride,
     store,
     settings,
+    // A text over the send limit is written to a .txt file: kept in the app's data folder
+    // after it is sent, like a pasted image (sent-images). The prefix is read at send time,
+    // so it follows the interface language at that moment.
+    writeTextFile: (text) =>
+      writeTextFile(join(userData, 'sent-texts'), t('main.file.textPrefix'), text),
     events: {
       onDevicesUpdated: (devices) => send(EVT.devicesUpdated, devices),
       onMessageUpserted: (msg) => {

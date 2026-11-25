@@ -55,6 +55,16 @@ describe('extractText', () => {
     const got = extractText(fm({ preview: huge }))!
     expect(Buffer.byteLength(got, 'utf8')).toBeLessThanOrEqual(MAX_RECV_PREVIEW_BYTES)
   })
+  test('a body of exactly 64 KiB is not cut', () => {
+    const exact = 'a'.repeat(65536)
+    expect(extractText(fm({ preview: exact }))).toBe(exact)
+  })
+  test('a cut that splits a multibyte character leaves one U+FFFD in its place', () => {
+    // 30000 × '€' is 90000 bytes (3 each); 65536 = 21845 × 3 + 1, so the cut falls
+    // one byte into the 21846th '€'.
+    const got = extractText(fm({ preview: '€'.repeat(30000) }))
+    expect(got).toBe('€'.repeat(21845) + '�')
+  })
 })
 
 describe('encodeTextMessage', () => {
@@ -79,10 +89,14 @@ describe('encodeTextMessage', () => {
 })
 
 describe('isTextTooLarge', () => {
-  test('小文本不超限', () => {
-    expect(isTextTooLarge('short')).toBe(false)
-  })
-  test('超 32KB 超限', () => {
-    expect(isTextTooLarge('a'.repeat(33 * 1024))).toBe(true)
+  // The limit is counted in UTF-8 bytes, not characters: 16385 × 'é' is only 16385
+  // characters but 32770 bytes.
+  test.each([
+    { name: 'short text', text: 'short', expected: false },
+    { name: 'exactly 32768 bytes', text: 'a'.repeat(32768), expected: false },
+    { name: '32769 bytes', text: 'a'.repeat(32769), expected: true },
+    { name: '16385 characters = 32770 bytes', text: 'é'.repeat(16385), expected: true }
+  ])('$name → over the limit: $expected', ({ text, expected }) => {
+    expect(isTextTooLarge(text)).toBe(expected)
   })
 })
