@@ -92,8 +92,8 @@ describe('build/info-plist, which the packages ship, matches the dictionary (fix
 
 interface BuilderConfig {
   mac: { extendInfo: Record<string, unknown>; extraResources?: unknown }
-  mas?: { extendInfo?: Record<string, unknown>; extraResources?: unknown }
-  masDev?: { extendInfo?: Record<string, unknown>; extraResources?: unknown }
+  mas?: { extendInfo?: Record<string, unknown> }
+  masDev?: { extendInfo?: Record<string, unknown> }
 }
 const BUILDER_CONFIG = parse(readFileSync(new URL('../../../electron-builder.yml', import.meta.url), 'utf8')) as BuilderConfig
 
@@ -119,11 +119,9 @@ describe('electron-builder.yml carries the Info.plist text into the packages', (
     }
   })
 
-  test('both macOS release lines ship build/info-plist into Contents/Resources', () => {
-    // The Mac App Store builds are packed with the mac options merged with their own: the list is shared as long as
-    // neither of them sets a list of its own, which would replace this one
-    expect(BUILDER_CONFIG.mac.extraResources).toContainEqual({ from: 'build/info-plist', to: '.' })
-    expect(BUILDER_CONFIG.mas?.extraResources).toBeUndefined()
-    expect(BUILDER_CONFIG.masDev?.extraResources).toBeUndefined()
+  test('the mac options ship build/info-plist into Contents/Resources, and the Mac App Store builds are packed from them too', () => {
+    // The Mac App Store builds are packed with the mac options merged with mas's and masDev's, and the merge
+    // concatenates lists, so the entry reaches them whatever those two add
+    expect(BUILDER_CONFIG.mac.extraResources ?? []).toContainEqual({ from: 'build/info-plist', to: '.' })
   })
 })

@@ -80,8 +80,8 @@ mac:
   # generated from the dictionary by `pnpm gen:info-plist` (src/shared/i18n/info-plist.ts says which folders and why).
   # Copied into Contents/Resources after electronLanguages has pruned Chromium's folders (those are empty, so nothing
   # collides) and before signing. The Mac App Store builds ship it too: they are packed with these mac options merged
-  # with mas's, so a list of its own under mas or masDev would replace this one (src/shared/i18n/info-plist.test.ts
-  # refuses that).
+  # with mas's and masDev's, and the merge concatenates lists, so a list under mas or masDev adds to this one and
+  # never replaces it.
   extraResources:
     - from: build/info-plist
       to: .
@@ -153,7 +153,7 @@ mas:
   # 加固运行时是 Developer ID 公证那条线的要求,MAS 走沙盒,不启用。
   hardenedRuntime: false
   # ⚠️ 这里**没有** extendInfo —— 它写在上面的 mac 块里,写在这儿不生效。原因见那里的注释。
-  # Nor an extraResources list: the one in mac's block applies to this line too, and a list here would replace it.
+  # Likewise no extraResources here: the list in mac's block applies to this line too (a list here would be added to it).
 
 masDev:
   # 继承 mas,只换成开发用 profile(本机测沙盒行为,不上传)

@@ -17,6 +17,9 @@ export const INFO_PLIST_KEYS = {
  *   - `zh_CN` + `zh-Hant` is Chinese for zh-Hans, zh-Hant, zh-HK, zh-TW, zh-MO and zh-SG alike
  * `zh_CN` is the folder Electron already ships (`electronLanguages` in electron-builder.yml, empty there), so it is
  * reused rather than adding `zh-Hans` next to it, which would make both match a Simplified system.
+ * Every folder is also a locale to Chromium: with `zh-Hant`, a zh-Hant, zh-TW, zh-HK or zh-MO system's renderer
+ * formats in zh-Hant instead of the en-US fallback (`toLocaleTimeString([])` gives 下午09:30, not 09:30 PM), as a
+ * Simplified system's already does through `zh_CN` (21:30).
  */
 export const LPROJ_NAMES: Record<Lang, readonly string[]> = {
   en: ['en'],
