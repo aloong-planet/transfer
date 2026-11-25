@@ -27,7 +27,7 @@
 ## User stories
 
 - 作为发送方,我选中一台设备,拖进去几个文件,能看到每个文件各自的进度,并在对方拒绝或出错时知道**具体是什么原因**,而不是笼统的"失败"。
-- 作为发送方,我发一段文字,对方立刻看到,不需要他点任何确认。
+- 作为发送方,我发一段文字,对方立刻看到,不需要他点任何确认(长正文见 section E)。
 - 作为接收方,我在聊天流里看到"对方要发 X 给你",我点接收或拒绝;我可以只接受其中几个。
 - 作为接收方,我打开自动接收后,不超过阈值的文件不再打扰我。
 - 作为任一方,我关掉 app 再打开,聊天记录还在。
@@ -74,8 +74,9 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 
 ### transfer-chat::REQ-006 Showing a finished file in its folder
 
-- transfer-chat::REQ-006/AC-01: A file message that has been received or delivered, and whose file is stored, has a text button 打开所在文件夹 / Show in Folder that shows the file, selected, in the system's file manager. A message whose file is an image (png, jpg, jpeg, gif, webp, bmp, heic or svg) has no such button in the chat, whether or not a thumbnail can be shown, and neither has a file that is pending, failed, rejected or expired.
+- transfer-chat::REQ-006/AC-01: A file message that has been received or delivered, and whose file is stored, has a text button 打开所在文件夹 / Show in Folder that shows the file, selected, in the system's file manager. A message whose file is an image (png, jpg, jpeg, gif, webp, bmp, heic or svg) has no such button in the chat, whether or not a thumbnail can be shown, and neither has a file that is pending, failed, rejected or expired, except as transfer-chat::REQ-006/AC-03 says.
 - transfer-chat::REQ-006/AC-02: Every received file listed on the 已接收文件 / Received Files page has the same button.
+- transfer-chat::REQ-006/AC-03: A message whose file the app wrote from a text sent as a file (section E) has the button of transfer-chat::REQ-006/AC-01 also when it failed, was rejected or expired, as long as that file is still in the app's own data folder.
 
 ### transfer-chat::REQ-007 The message input takes screenshots and pasted images
 
@@ -136,7 +137,7 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 |---|---|---|
 | 文件名含路径穿越(`../`、绝对路径) | 只取文件名本身,不允许写出接收目录 | 〔测〕 |
 | 接收目录已有同名文件 | 自动加后缀,**绝不覆盖**。判重必须是原子占位,不能"先查再写"——并发同名会在查与写之间互相覆盖 | 〔测〕 |
-| 磁盘写满 | 该文件转失败并给出"空间不足",删除残留;**同批其他文件不受影响** | 〔测〕 |
+| 磁盘写满 | 该文件转失败并给出"磁盘空间不足",删除残留;**同批其他文件不受影响** | 〔测〕 |
 | 内容校验不通过 | 该文件转失败并给出"校验失败",不留下"已接收"的假象 | 〔测〕 |
 | 临时文件与最终文件跨盘 | 不允许——必须同目录,否则改名不是原子操作 | 〔缺〕 |
 | 接收目录不存在或不可写 | 自动接收要退回询问,不能默默失败 | 〔测〕 |
@@ -164,7 +165,9 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 |---|---|---|
 | 一条纯文本 | 编码成特殊"文件"随协商请求送达,不走传输通道,对方回 204 | 〔测〕 |
 | 文本 + 文件混在一批 | 不按文本处理,走正常传输 | 〔测〕 |
-| 正文超长 | 截断到上限 | 〔测〕 |
+| A text over 32 KiB (32 × 1024 bytes in UTF-8; exactly 32 KiB is still a text message) | Not sent as a text message but as a file holding the whole text, named as in transfer-chat::REQ-007/AC-02 except that the prefix is 文本_ (Chinese interface) or text_ (English interface) and the ending is .txt. The sender's conversation shows one sent file message; the receiver gets an ordinary file message, asked or auto-accepted under transfer-chat::REQ-008. It keeps its place among the other sends to the same peer (section D), and its file stays in the app's own data folder. When it does not arrive: transfer-chat::REQ-006/AC-03 | 〔测〕 |
+| Writing that file fails (disk full, no permission) | Nothing is sent and the peer is not contacted: the sender's conversation shows a failed text message with the whole text, labelled 磁盘空间不足 / Not enough disk space when the disk is full and 失败 / Failed for any other cause | 〔测〕 |
+| 正文超长: a text message of more than 64 KiB (64 × 1024 bytes in UTF-8) reaches the receiver | Cut to its first 64 KiB, counted in bytes, not characters; exactly 64 KiB is not cut. A character the cut splits becomes one U+FFFD, so the stored text can be up to 2 bytes over 64 KiB | 〔测〕 |
 | 非 ASCII 正文 | 长度按字节算,不按字符数 | 〔测〕 |
 | 连发两条相同内容 | 两条都要收到,不能被当成重复丢掉 | 〔测〕 |
 | 文本不受自动接收开关限制 | 始终自动接收 | 〔测〕 |
@@ -270,6 +273,7 @@ Image copy and orientation (transfer-chat::US-001, transfer-chat::REQ-001 to REQ
 - **PIN 校验**:只识别对端要求 PIN 并提示,不实现。
 - **多播报文伪造 / 放大攻击**:属发现层,不在本模块处理。
 - **总时长上限**:选了空闲语义就意味着放弃它;涓流可以让传输无限期挂着(ADR-0020 的负面后果)。
+- **Marking a text the receiver cut**: a cut text shows no mark or note that it was cut. A sender that follows the limit in section E never sends a text message longer than the receiver keeps, so only a sender that ignores that limit causes a cut.
 - **不为"传输中用时在走"与"速度的渲染"补端到端测试**(2026-08-22 用户裁定)。两者的计算逻辑有纯函数单测、显示形态有真机渲染核对过;补齐它们需要能驱动渲染层连续多帧的 e2e 基建,投入与收益不成比例。**这是决定,不是遗漏** —— 后来者不必再把它当待办。
 - **A file reference on the clipboard** (so that pasting in Finder or Explorer yields the file): rejected 2026-10-22. Electron has no API for it, each platform would need its own low-level clipboard format, and chat apps that see a file reference may attach a file instead of inserting the image.
 - **Feedback after copying** (a "Copied" toast, or an error on failure): decided against, 2026-10-22. It matches the screenshot's copy exit and the image menu's other two items, which give none either.
@@ -285,6 +289,7 @@ Image copy and orientation (transfer-chat::US-001, transfer-chat::REQ-001 to REQ
 - **GB 级端到端没测**。自动化最大到 16MB 真实字节 / 320MB 稀疏文件;GB 级只有手工实测数据。
 - **组批前的可发性校验对"发送后才出现的错误"无能为力**(比如组批后文件才被删)。
 - **大文件计算校验值期间界面无反馈**(50GB 约 40 秒),用户会觉得点了没反应。**部分缓解**:计时从点发送算起,所以那段时间会计入用时——但传输中的用时靠进度帧驱动,而算摘要期间还没有帧,所以那几十秒里数字仍不动。
+- **The Show in Folder button of a long text that did not arrive (transfer-chat::REQ-006/AC-03) does not go when its file is deleted.** The file is looked for when the message is shown or changes status, not continuously: a `.txt` deleted while its message stays on screen keeps the button until the message is shown again, and clicking it then opens nothing.
 
 - **历史 schema 快照只有一条**,靠人在下次改表时记得追加。
 - **That a failed copy shows nothing (transfer-chat::US-001/AC-03, its failure half) has no automated check.** The failing copies are driven through the copy command, not the menu (see 测试决策), so the menu's handling of a failure is not exercised; the menu handler gives no feedback by construction. The success half is checked for text only: the page text is unchanged after a copy through the menu, read once the renderer has had two frames to show anything; feedback without text (an icon alone) would not be caught.

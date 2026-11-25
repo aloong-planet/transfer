@@ -52,7 +52,7 @@ Good for:
 ```
 
 - **Discovery**: each device periodically sends announce packets (UDP multicast `224.0.0.167:53317` + per-interface subnet broadcast); on receipt it responds with an HTTP directed register. Own packets are filtered out by `fingerprint`.
-- **Transfer**: follows the LocalSend v2 handshake over **HTTPS** (self-signed certificate + fingerprint TOFU pinning) — `prepare-upload` (negotiate + confirm) → `upload` (raw binary streamed to disk, can be parallel) → SHA-256 verification on completion. Text goes in the `preview` field of `prepare-upload` and does not use `upload`.
+- **Transfer**: follows the LocalSend v2 handshake over **HTTPS** (self-signed certificate + fingerprint TOFU pinning) — `prepare-upload` (negotiate + confirm) → `upload` (raw binary streamed to disk, can be parallel) → SHA-256 verification on completion. Text of up to 32 KiB goes in the `preview` field of `prepare-upload` and does not use `upload`; longer text is written to a `.txt` file and sent through `upload` like any other file.
 - **Process split**: the main process handles all networking / file / system capabilities; the renderer only does UI and communicates via restricted IPC through `contextBridge`.
 
 See [`docs/specs/`](docs/specs/) for each feature's behaviour and boundaries, [`docs/adr/`](docs/adr/) for architecture decisions, and [`docs/DESIGN.md`](docs/DESIGN.md) for the detailed design.

@@ -387,6 +387,15 @@ describe('文件收发(集成)', () => {
     expect(receivedTexts).toEqual(['hi', 'hi'])
   })
 
+  // The receiver's own bound: a sender that does not apply the send limit (this transport-level
+  // sendText has none) can still put any size into the text. 64 KiB = 65536 bytes = 21845
+  // three-byte characters (65535 bytes) plus the first byte of the next one, which becomes one U+FFFD.
+  test('a text over 64 KiB is cut at 64 KiB of UTF-8, and a character split by the cut becomes one U+FFFD', async () => {
+    const res = await sendText(target, selfInfo('S', 'FP'), '€'.repeat(30000)) // 90000 bytes
+    expect(res.kind).toBe('done')
+    expect(receivedTexts).toEqual(['€'.repeat(21845) + '�'])
+  })
+
   test('自动接收开启:文件不询问用户,直接落盘', async () => {
     autoAcceptImpl = () => true // 全部自动接收
     let askCalled = false

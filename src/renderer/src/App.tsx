@@ -884,6 +884,22 @@ function FileBubble({
   const { t } = useI18n()
   const respondable = canRespond(msg)
   const canOpen = msg.status === 'done' && msg.filePath
+  // A text sent as a file that did not arrive: its .txt is the only copy of the text, so it gets the
+  // same button. Only main knows whether the message is such a file and whether it is still there.
+  const [unfinishedTextFile, setUnfinishedTextFile] = useState(false)
+  useEffect(() => {
+    if (msg.type !== 'file' || msg.direction !== 'sent' || msg.status === 'done') {
+      setUnfinishedTextFile(false)
+      return
+    }
+    let current = true
+    void window.transfer.canShowUnfinishedTextFile(msg.id).then((ok) => {
+      if (current) setUnfinishedTextFile(ok)
+    })
+    return () => {
+      current = false
+    }
+  }, [msg.id, msg.type, msg.direction, msg.status])
   // 传输中(pending/accepted)且有进度 → 百分比进度条(§12.3)
   const transferring = isTransferring(msg.status)
   const pct = prog && prog.total > 0 ? Math.min(100, Math.round((prog.sent / prog.total) * 100)) : null
@@ -899,7 +915,7 @@ function FileBubble({
   // 两者同源(都是"从点发送/点接收算起"),所以传完的瞬间数字不会跳。
   const took = showThumb ? null : fmtDuration(prog ? prog.elapsedMs : msg.durationMs)
   return (
-    <div>
+    <div data-testid="file-bubble">
       {showThumb ? (
         <ImageThumb msg={msg} />
       ) : (
@@ -952,7 +968,7 @@ function FileBubble({
           </button>
         </div>
       )}
-      {canOpen && !showThumb && (
+      {(canOpen || unfinishedTextFile) && !showThumb && (
         <button
           className="tf-btn"
           style={S.openBtn}
