@@ -27,7 +27,7 @@
 ## User stories
 
 - 作为发送方,我选中一台设备,拖进去几个文件,能看到每个文件各自的进度,并在对方拒绝或出错时知道**具体是什么原因**,而不是笼统的"失败"。
-- 作为发送方,我发一段文字,对方立刻看到,不需要他点任何确认。
+- 作为发送方,我发一段文字,对方立刻看到,不需要他点任何确认(长正文见 section E)。
 - 作为接收方,我在聊天流里看到"对方要发 X 给你",我点接收或拒绝;我可以只接受其中几个。
 - 作为接收方,我打开自动接收后,不超过阈值的文件不再打扰我。
 - 作为任一方,我关掉 app 再打开,聊天记录还在。
@@ -137,7 +137,7 @@ The thumbnail's tooltip reads 点击查看原图 · 右键复制或保存 / Clic
 |---|---|---|
 | 文件名含路径穿越(`../`、绝对路径) | 只取文件名本身,不允许写出接收目录 | 〔测〕 |
 | 接收目录已有同名文件 | 自动加后缀,**绝不覆盖**。判重必须是原子占位,不能"先查再写"——并发同名会在查与写之间互相覆盖 | 〔测〕 |
-| 磁盘写满 | 该文件转失败并给出"空间不足",删除残留;**同批其他文件不受影响** | 〔测〕 |
+| 磁盘写满 | 该文件转失败并给出"磁盘空间不足",删除残留;**同批其他文件不受影响** | 〔测〕 |
 | 内容校验不通过 | 该文件转失败并给出"校验失败",不留下"已接收"的假象 | 〔测〕 |
 | 临时文件与最终文件跨盘 | 不允许——必须同目录,否则改名不是原子操作 | 〔缺〕 |
 | 接收目录不存在或不可写 | 自动接收要退回询问,不能默默失败 | 〔测〕 |
@@ -289,6 +289,7 @@ Image copy and orientation (transfer-chat::US-001, transfer-chat::REQ-001 to REQ
 - **GB 级端到端没测**。自动化最大到 16MB 真实字节 / 320MB 稀疏文件;GB 级只有手工实测数据。
 - **组批前的可发性校验对"发送后才出现的错误"无能为力**(比如组批后文件才被删)。
 - **大文件计算校验值期间界面无反馈**(50GB 约 40 秒),用户会觉得点了没反应。**部分缓解**:计时从点发送算起,所以那段时间会计入用时——但传输中的用时靠进度帧驱动,而算摘要期间还没有帧,所以那几十秒里数字仍不动。
+- **The Show in Folder button of a long text that did not arrive (transfer-chat::REQ-006/AC-03) does not go when its file is deleted.** The file is looked for when the message is shown or changes status, not continuously: a `.txt` deleted while its message stays on screen keeps the button until the message is shown again, and clicking it then opens nothing.
 
 - **历史 schema 快照只有一条**,靠人在下次改表时记得追加。
 - **That a failed copy shows nothing (transfer-chat::US-001/AC-03, its failure half) has no automated check.** The failing copies are driven through the copy command, not the menu (see 测试决策), so the menu's handling of a failure is not exercised; the menu handler gives no feedback by construction. The success half is checked for text only: the page text is unchanged after a copy through the menu, read once the renderer has had two frames to show anything; feedback without text (an icon alone) would not be caught.
