@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Checks the include contract of the prototype pages under docs/prototypes/ (ADR-0014): the files there change no
 // executable content and are outside every build, so no test reads them, and this command is how they are checked.
-// It runs as a step of the `checks` job (.github/workflows/checks.yml) and the same way locally, from anywhere:
+// It runs as a step of the `checks` job (.github/workflows/checks.yml) and the same way locally, from the repository
+// root:
 //   node scripts/check-prototype-contract.mjs
+// It finds docs/prototypes/ from its own location, so started by its path it gives the same output from any directory.
 // An optional argument names another folder to check instead of docs/prototypes/ (the same layout).
 //
 // A page is every .html file under the folder except the gallery shell index.html beside manifest.js and anything
@@ -16,7 +18,7 @@
 //   4. A page that manifest.js registers as ui or candidates has, between the doctype and the root element, one
 //      comment, the single line `Review notes: <page file name without extension>.md`, and that file exists beside it.
 //   5. Every path in manifest.js exists, every page has an entry, and an entry's type is candidates exactly when its
-//      file name starts with candidates-.
+//      file name starts with candidates- (each entry is checked on its own, also when another entry lists the same path).
 //   6. demo-dimensions.js, app-identity.js, index.html and demo-harness.js each carry the marker
 //      `copied from the prototype skill's template` in the file's first comment.
 //
@@ -155,15 +157,26 @@ function check(root) {
   const violations = []
   const report = (rel, line, rule, message) => violations.push({ file: show(path.join(root, rel)), line, rule, message })
 
-  // Entries by normalised path; an entry without a usable path is itself reported.
+  // Every entry on its own: two entries for one path are both checked, and a later one never hides an earlier one. An
+  // entry without a usable path is itself reported. `line` is where this entry's path is written (the n-th place the
+  // text occurs for the n-th entry listing it).
   const manifestLine = (needle) => lineOf(manifest.text, Math.max(0, manifest.text.indexOf(needle)))
-  const entryByPath = new Map()
+  const entries = []
+  const entriesByPath = new Map()
+  const listed = new Map()
   manifest.entries.forEach((entry, i) => {
     if (typeof entry !== 'object' || entry === null || typeof entry.path !== 'string' || entry.path === '') {
       report('manifest.js', manifestLine('PROTOTYPES'), 5, `entry ${i + 1} has no path`)
-    } else {
-      entryByPath.set(path.posix.normalize(entry.path), entry)
+      return
     }
+    const nth = listed.get(entry.path) ?? 0
+    listed.set(entry.path, nth + 1)
+    let at = -1
+    for (let k = 0; k <= nth; k++) at = manifest.text.indexOf(entry.path, at + 1)
+    const key = path.posix.normalize(entry.path)
+    const item = { entry, key, line: lineOf(manifest.text, Math.max(0, at)) }
+    entries.push(item)
+    entriesByPath.set(key, [...(entriesByPath.get(key) ?? []), item])
   })
 
   for (const page of pages) {
@@ -227,8 +240,8 @@ function check(root) {
     }
 
     // Rule 4
-    const entry = entryByPath.get(page)
-    if (entry && (entry.type === 'ui' || entry.type === 'candidates')) {
+    const registered = entriesByPath.get(page) ?? []
+    if (registered.some(({ entry }) => entry.type === 'ui' || entry.type === 'candidates')) {
       const stem = path.posix.basename(page, '.html')
       const rootTag = /<html[\s>]/i.exec(pageTag)
       const doctype = /<!doctype[^>]*>/i.exec(pageTag)
@@ -248,14 +261,13 @@ function check(root) {
     }
 
     // Rule 5: the page's entry
-    if (!entry) report(page, 1, 5, 'the page has no entry in manifest.js')
+    if (registered.length === 0) report(page, 1, 5, 'the page has no entry in manifest.js')
   }
 
-  // Rule 5: the entries
-  for (const [entryPath, entry] of entryByPath) {
-    const line = manifestLine(entry.path)
-    if (!files.includes(entryPath)) report('manifest.js', line, 5, `path ${entry.path} does not exist`)
-    const wantsCandidates = path.posix.basename(entryPath).startsWith('candidates-')
+  // Rule 5: the entries, each one
+  for (const { entry, key, line } of entries) {
+    if (!files.includes(key)) report('manifest.js', line, 5, `path ${entry.path} does not exist`)
+    const wantsCandidates = path.posix.basename(key).startsWith('candidates-')
     if (wantsCandidates !== (entry.type === 'candidates')) {
       report('manifest.js', line, 5, wantsCandidates ? `${entry.path} starts with candidates-, so its type must be candidates` : `${entry.path} has type candidates, so its file name must start with candidates-`)
     }
