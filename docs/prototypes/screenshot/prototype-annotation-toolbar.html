@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Review notes: prototype-annotation-toolbar.md -->
-<html lang="zh-CN">
+<html lang="zh-Hans">
 <head>
 <meta charset="utf-8">
 <title>截图标注工具条 — 图标定案</title>
@@ -55,7 +55,7 @@
     en: { rect:'Rectangle', ellipse:'Ellipse', arrow:'Arrow', line:'Line', pen:'Pen', mosaic:'Mosaic', blur:'Blur', text:'Text', badge:'Number', undo:'Undo', redo:'Redo' }
   }
   DemoDimensions.on('language', (lang) => {
-    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
+    document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : 'en'
     for (const el of document.querySelectorAll('[data-tool]')) {
       const name = TOOLS[lang][el.dataset.tool]
       if (el.tagName === 'TD') el.textContent = name
