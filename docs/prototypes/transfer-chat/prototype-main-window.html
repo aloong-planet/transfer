@@ -4,15 +4,21 @@
 <head>
 <meta charset="utf-8">
 <title>原型 — 主界面(双栏)</title>
+<script src="../manifest.js"></script>
+<script src="../app-identity.js"></script>
+<script src="../dimensions.js"></script>
+<script src="../demo-dimensions.js" data-follow="language mode"></script>
 <style>
-  :root{
+  /* The mode comes from the gallery's settings, as data-demo-mode on the root */
+  html[data-demo-mode="light"]{
     --bg:#f7f8f9; --card:#ffffff; --text:#37352f; --text-2:#787774;
     --line:#e8eaed; --line-strong:#d9dce0;
     --accent:#8a67ab; --accent-hover:#7c5a9c; --accent-soft:#f0ebf6; --danger:#dc2626; --ok:#3fb950;
   }
-  @media (prefers-color-scheme: dark){
-    :root{ --bg:#18191b; --card:#1f2124; --text:#e6e6e5; --text-2:#9b9a97;
-      --line:#2a2c30; --line-strong:#34373c; --accent:#a084c7; --accent-soft:#2c2733; }
+  html[data-demo-mode="dark"]{
+    --bg:#18191b; --card:#1f2124; --text:#e6e6e5; --text-2:#9b9a97;
+    --line:#2a2c30; --line-strong:#34373c;
+    --accent:#a084c7; --accent-hover:#7c5a9c; --accent-soft:#2c2733; --danger:#dc2626; --ok:#3fb950;
   }
   *{box-sizing:border-box;margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
   body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;font-size:13px;display:flex}
@@ -36,6 +42,8 @@
   .fic{width:34px;height:34px;border-radius:8px;background:var(--accent-soft);color:var(--accent);
     display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
   .fbtns{display:flex;gap:8px;margin-top:8px}
+  /* display:flex above outranks the UA's [hidden] rule, so hidden needs its own */
+  .fbtns[hidden]{display:none}
   .sm{font-size:12px;padding:4px 12px;border-radius:6px;border:1px solid var(--line-strong);background:var(--card);color:var(--text);cursor:pointer}
   .sm.p{background:var(--accent);border-color:var(--accent);color:#fff}.sm.p:hover{background:var(--accent-hover)}
   .img{width:180px;height:110px;border-radius:8px;background:linear-gradient(135deg,var(--accent-soft),var(--line));
@@ -53,44 +61,76 @@
 </head>
 <body>
   <div class="side">
-    <h1>Transfer<span class="gear" title="设置"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span></h1>
-    <div class="dev on" onclick="pick(this,'客厅 Mac')"><span class="dot"></span><span>客厅 Mac<div class="sub">MacBook Pro · 192.168.3.24</div></span><span class="badge">2</span></div>
-    <div class="dev" onclick="pick(this,'Work-PC')"><span class="dot"></span><span>Work-PC<div class="sub">Windows · 192.168.3.31</div></span></div>
-    <div class="dev" onclick="pick(this,'旧笔记本')"><span class="dot off"></span><span>旧笔记本<div class="sub">离线 · 保留中</div></span></div>
+    <h1>Transfer<span class="gear" title="设置" data-t-title="settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span></h1>
+    <div class="dev on" onclick="pick(this,0)"><span class="dot"></span><span><span data-t="d0">客厅 Mac</span><div class="sub">MacBook Pro · 192.168.3.24</div></span><span class="badge" id="badge">2</span></div>
+    <div class="dev" onclick="pick(this,1)"><span class="dot"></span><span>Work-PC<div class="sub">Windows · 192.168.3.31</div></span></div>
+    <div class="dev" onclick="pick(this,2)"><span class="dot off"></span><span><span data-t="d2">旧笔记本</span><div class="sub" data-t="d2sub">离线 · 保留中</div></span></div>
   </div>
   <div class="chat">
-    <div class="c-h"><span class="dot" id="hdot"></span><span id="hname">客厅 Mac</span></div>
+    <div class="c-h"><span class="dot" id="hdot"></span><span id="hname" data-t="d0">客厅 Mac</span></div>
     <div class="flow">
       <div class="time">14:02</div>
-      <div class="bub">给你发了刚才那份合同</div>
-      <div class="bub file"><span class="fic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></svg></span><span>合同-final.pdf<div class="sub" id="fsub">2.1 MB · 等待确认</div><span class="fbtns" id="fb"><button class="sm p" onclick="acc()">接收</button><button class="sm" onclick="rej()">拒绝</button></span></span></div>
-      <div class="bub me">收到,我看下</div>
-      <div class="bub me img"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg> 截图预览</div>
+      <div class="bub" data-t="m1">给你发了刚才那份合同</div>
+      <div class="bub file"><span class="fic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></svg></span><span><span data-t="fname">合同-final.pdf</span><div class="sub" id="fsub">2.1 MB · 等待确认</div><span class="fbtns" id="fb"><button class="sm p" onclick="acc()" data-t="accept">接收</button><button class="sm" onclick="rej()" data-t="reject">拒绝</button></span></span></div>
+      <div class="bub me" data-t="m2">收到,我看下</div>
+      <div class="bub me img"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg> <span data-t="shot">截图预览</span></div>
       <div class="time">14:05</div>
-      <div class="bub">图里第二段要改一下</div>
+      <div class="bub" data-t="m3">图里第二段要改一下</div>
     </div>
     <div class="inp">
-      <span class="ico" title="截图"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></span><span class="ico" title="发送文件"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.234 20.252 21 12.3"/><path d="m16 6-8.414 8.586a2 2 0 0 0 0 2.828 2 2 0 0 0 2.828 0l8.414-8.586a4 4 0 0 0 0-5.656 4 4 0 0 0-5.656 0l-8.415 8.585a6 6 0 1 0 8.486 8.486l7.766-7.952"/></svg></span>
-      <input placeholder="输入消息,Enter 发送;可直接粘贴图片">
-      <button class="send">发送</button>
+      <span class="ico" title="截图" data-t-title="capture"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></span><span class="ico" title="发送文件" data-t-title="sendFile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.234 20.252 21 12.3"/><path d="m16 6-8.414 8.586a2 2 0 0 0 0 2.828 2 2 0 0 0 2.828 0l8.414-8.586a4 4 0 0 0 0-5.656 4 4 0 0 0-5.656 0l-8.415 8.585a6 6 0 1 0 8.486 8.486l7.766-7.952"/></svg></span>
+      <input placeholder="输入消息,Enter 发送;可直接粘贴图片" data-t-placeholder="placeholder">
+      <button class="send" data-t="send">发送</button>
     </div>
   </div>
 <script>
-  function pick(el, name){
+  // The page's product copy; the language comes from the gallery's settings
+  const COPY = {
+    zh: { settings: '设置', d0: '客厅 Mac', d2: '旧笔记本', d2sub: '离线 · 保留中',
+          m1: '给你发了刚才那份合同', fname: '合同-final.pdf', accept: '接收', reject: '拒绝',
+          openFolder: '打开所在文件夹', m2: '收到,我看下', shot: '截图预览', m3: '图里第二段要改一下',
+          capture: '截图', sendFile: '发送文件', placeholder: '输入消息,Enter 发送;可直接粘贴图片', send: '发送',
+          fsub: { pending: '2.1 MB · 等待确认', accepted: '2.1 MB · 已接收', rejected: '2.1 MB · 已拒绝' } },
+    en: { settings: 'Settings', d0: 'Living Room Mac', d2: 'Old Laptop', d2sub: 'Offline · Kept',
+          m1: 'Sent you that contract from earlier', fname: 'contract-final.pdf', accept: 'Accept', reject: 'Decline',
+          openFolder: 'Show in Folder', m2: "Got it, I'll take a look", shot: 'Screenshot preview', m3: 'The second paragraph in the image needs a change',
+          capture: 'Screenshot', sendFile: 'Send Files', placeholder: 'Type a message. Enter to send; you can paste images directly', send: 'Send',
+          fsub: { pending: '2.1 MB · Awaiting confirmation', accepted: '2.1 MB · Received', rejected: '2.1 MB · Declined' } }
+  }
+  const DEVICES = ['d0', null, 'd2']        // the second device's name is the same in both languages
+  let lang = 'zh', sel = 0, file = 'pending'  // the language in effect, the selected device, the file's state
+
+  function render(){
+    const c = COPY[lang]
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
+    for (const el of document.querySelectorAll('[data-t]')) el.textContent = c[el.dataset.t]
+    for (const el of document.querySelectorAll('[data-t-title]')) el.title = c[el.dataset.tTitle]
+    for (const el of document.querySelectorAll('[data-t-placeholder]')) el.placeholder = c[el.dataset.tPlaceholder]
+    document.getElementById('hname').textContent = DEVICES[sel] ? c[DEVICES[sel]] : 'Work-PC'
+    document.getElementById('fsub').textContent = c.fsub[file]
+    const fb = document.getElementById('fb')
+    if (file === 'pending') {
+      fb.hidden = false
+      fb.innerHTML = '<button class="sm p" onclick="acc()">' + c.accept + '</button><button class="sm" onclick="rej()">' + c.reject + '</button>'
+    } else if (file === 'accepted') {
+      fb.hidden = false
+      fb.innerHTML = '<button class="sm">' + c.openFolder + '</button>'
+    } else {
+      fb.hidden = true
+    }
+  }
+  function pick(el, idx){
     document.querySelectorAll('.dev').forEach(d=>d.classList.remove('on'));
     el.classList.add('on');
     const b = el.querySelector('.badge'); if(b) b.remove();          // 进入会话未读清零
-    document.getElementById('hname').textContent = name;
+    sel = idx;
     document.getElementById('hdot').className = el.querySelector('.dot').className;
+    render();
   }
-  function acc(){
-    document.getElementById('fsub').textContent = '2.1 MB · 已接收';
-    document.getElementById('fb').innerHTML = '<button class="sm">打开所在文件夹</button>';
-  }
-  function rej(){
-    document.getElementById('fsub').textContent = '2.1 MB · 已拒绝';
-    document.getElementById('fb').remove();
-  }
+  function acc(){ file = 'accepted'; render() }
+  function rej(){ file = 'rejected'; render() }
+
+  DemoDimensions.on('language', (v) => { lang = v; render() })
 </script>
 </body>
 </html>

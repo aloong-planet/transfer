@@ -5,20 +5,27 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>原型 · 落地页页脚(备案号)</title>
+<script src="../manifest.js"></script>
+<script src="../app-identity.js"></script>
+<script src="../dimensions.js"></script>
+<script src="../demo-dimensions.js" data-follow="language mode"></script>
 <style>
-  /* 色板抄自 site/src/styles/global.css,与真站一致 */
+  /* Palette: the site's. The mode comes from the gallery's settings, as data-demo-mode on the root. */
   :root {
+    --maxw: 1080px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+      'Hiragino Sans GB', 'Microsoft YaHei', Roboto, Helvetica, Arial, sans-serif;
+  }
+  html[data-demo-mode='light'] {
     --brand: #8a67ab;
     --fg: #1a1626;
     --fg-muted: #5c5470;
     --bg: #ffffff;
     --bg-soft: #faf8fc;
     --border: #e7e1ef;
-    --maxw: 1080px;
-    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-      'Hiragino Sans GB', 'Microsoft YaHei', Roboto, Helvetica, Arial, sans-serif;
   }
-  :root[data-theme='dark'] {
+  html[data-demo-mode='dark'] {
+    --brand: #8a67ab;
     --fg: #ece8f4;
     --fg-muted: #a49cbb;
     --bg: #14111c;
@@ -129,18 +136,10 @@
   <span class="demo-label">演示 · 构建目标</span>
   <button data-target-btn="com" aria-pressed="true">.com（Pages）</button>
   <button data-target-btn="cn" aria-pressed="false">.com.cn（ECS）</button>
-  <span class="demo-sep"></span>
-  <span class="demo-label">语言</span>
-  <button data-lang-btn="zh" aria-pressed="true">中文</button>
-  <button data-lang-btn="en" aria-pressed="false">EN</button>
-  <span class="demo-sep"></span>
-  <span class="demo-label">主题</span>
-  <button data-theme-btn="light" aria-pressed="true">浅色</button>
-  <button data-theme-btn="dark" aria-pressed="false">深色</button>
 </div>
 
 <script>
-  /* 以下全是演示基建的接线,真站没有这些控件 */
+  /* The copy table: the site's footer and tail-section texts, per language */
   const I18N = {
     zh: {
       'tail.title': '现在就试试', 'tail.sub': '免费、开源,装上就能用。', 'tail.cta': '免费下载',
@@ -168,30 +167,15 @@
     })
   }
 
-  for (const btn of document.querySelectorAll('[data-lang-btn]')) {
-    btn.addEventListener('click', () => {
-      const dict = I18N[btn.dataset.langBtn]
-      for (const el of document.querySelectorAll('[data-i18n]')) {
-        const v = dict[el.dataset.i18n]
-        if (v !== undefined) el.textContent = v
-      }
-      document.documentElement.lang = btn.dataset.langBtn === 'zh' ? 'zh-CN' : 'en'
-      setPressed('[data-lang-btn]', btn)
-    })
-  }
-
-  for (const btn of document.querySelectorAll('[data-theme-btn]')) {
-    btn.addEventListener('click', () => {
-      document.documentElement.dataset.theme = btn.dataset.themeBtn
-      setPressed('[data-theme-btn]', btn)
-    })
-  }
-
-  document.documentElement.dataset.theme =
-    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  for (const b of document.querySelectorAll('[data-theme-btn]')) {
-    b.setAttribute('aria-pressed', String(b.dataset.themeBtn === document.documentElement.dataset.theme))
-  }
+  // The language comes from the gallery's settings
+  DemoDimensions.on('language', (lang) => {
+    const dict = I18N[lang]
+    for (const el of document.querySelectorAll('[data-i18n]')) {
+      const v = dict[el.dataset.i18n]
+      if (v !== undefined) el.textContent = v
+    }
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
+  })
 </script>
 
 <script>

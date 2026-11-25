@@ -1,12 +1,19 @@
 <!doctype html>
 <!-- Review notes: prototype-file-type-icons.md -->
+<html lang="zh-CN">
+<head>
 <meta charset="utf-8">
 <title>文件类型图标 — 选型</title>
+<script src="../manifest.js"></script>
+<script src="../app-identity.js"></script>
+<script src="../dimensions.js"></script>
+<script src="../demo-dimensions.js" data-follow="language mode"></script>
 <style>
- :root{--bg:#f7f8f9;--card:#fff;--ink:#1a1c1f;--sub:#868b93;--line:#e8eaed;
+ /* The mode comes from the gallery's settings, as data-demo-mode on the root */
+ html[data-demo-mode="light"]{--bg:#f7f8f9;--card:#fff;--ink:#1a1c1f;--sub:#868b93;--line:#e8eaed;
    --accent:#8a67ab;--accent-soft:#f0ebf6;--own-wash:#efe9f5}
- @media (prefers-color-scheme:dark){:root{--bg:#18191b;--card:#1f2124;--ink:#e9eaed;--sub:#7f858c;
-   --line:#2a2c30;--accent:#a084c7;--accent-soft:#2c2733;--own-wash:#2a2533}}
+ html[data-demo-mode="dark"]{--bg:#18191b;--card:#1f2124;--ink:#e9eaed;--sub:#7f858c;
+   --line:#2a2c30;--accent:#a084c7;--accent-soft:#2c2733;--own-wash:#2a2533}
  body{background:var(--bg);color:var(--ink);font:13px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;margin:0;padding:22px}
  h2{font-size:13px;margin:26px 0 4px} p{color:var(--sub);font-size:12px;margin:0 0 12px}
  .chip{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;
@@ -23,6 +30,8 @@
  .sub{font-size:11px;color:var(--sub)} b{font-weight:550;font-size:12.5px}
  .two{display:flex;gap:26px;flex-wrap:wrap}
 </style>
+</head>
+<body>
 
 <h2>现状(emoji)</h2>
 <p>自带颜色、尺寸随字体度量走,与界面其余图标不是一套。</p>
@@ -42,11 +51,27 @@
 <h2>放进真实场景看</h2>
 <p>上=已接收文件列表(--accent-soft 底),下=自己发的文件气泡(--own-wash 底)。左 A 案 / 右 B 案。</p>
 <div class="two"><div class="ctx">
-      <div class="dl"><span class="chip"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <circle cx="10" cy="12" r="2" /> <path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22" /></svg></span><div><b>设计稿-v3.png</b><div class="sub">2.4 MB · 来自 客厅 Mac</div></div></div>
-      <div class="dl"><span class="chip"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v11.5" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M8 12v-1" /> <path d="M8 18v-2" /> <path d="M8 7V6" /> <circle cx="8" cy="20" r="2" /></svg></span><div><b>素材包.zip</b><div class="sub">18.6 MB · 来自 Work-PC</div></div></div>
-      <div class="bub"><span class="chip own"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></svg></span><div><b>合同-final.pdf</b><div class="sub">2.1 MB · 已发送</div></div></div>
+      <div class="dl"><span class="chip"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <circle cx="10" cy="12" r="2" /> <path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22" /></svg></span><div><b data-t="f1">设计稿-v3.png</b><div class="sub" data-t="s1">2.4 MB · 来自 客厅 Mac</div></div></div>
+      <div class="dl"><span class="chip"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v11.5" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M8 12v-1" /> <path d="M8 18v-2" /> <path d="M8 7V6" /> <circle cx="8" cy="20" r="2" /></svg></span><div><b data-t="f2">素材包.zip</b><div class="sub" data-t="s2">18.6 MB · 来自 Work-PC</div></div></div>
+      <div class="bub"><span class="chip own"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></svg></span><div><b data-t="f3">合同-final.pdf</b><div class="sub" data-t="s3">2.1 MB · 已发送</div></div></div>
     </div><div class="ctx">
-      <div class="dl"><span class="chip"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg></span><div><b>设计稿-v3.png</b><div class="sub">2.4 MB · 来自 客厅 Mac</div></div></div>
-      <div class="dl"><span class="chip"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /> <path d="M12 22V12" /> <polyline points="3.29 7 12 12 20.71 7" /> <path d="m7.5 4.27 9 5.15" /></svg></span><div><b>素材包.zip</b><div class="sub">18.6 MB · 来自 Work-PC</div></div></div>
-      <div class="bub"><span class="chip own"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" /></svg></span><div><b>合同-final.pdf</b><div class="sub">2.1 MB · 已发送</div></div></div>
+      <div class="dl"><span class="chip"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg></span><div><b data-t="f1">设计稿-v3.png</b><div class="sub" data-t="s1">2.4 MB · 来自 客厅 Mac</div></div></div>
+      <div class="dl"><span class="chip"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /> <path d="M12 22V12" /> <polyline points="3.29 7 12 12 20.71 7" /> <path d="m7.5 4.27 9 5.15" /></svg></span><div><b data-t="f2">素材包.zip</b><div class="sub" data-t="s2">18.6 MB · 来自 Work-PC</div></div></div>
+      <div class="bub"><span class="chip own"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" /></svg></span><div><b data-t="f3">合同-final.pdf</b><div class="sub" data-t="s3">2.1 MB · 已发送</div></div></div>
     </div></div>
+<script>
+  // File names and status lines in the realistic-context rows are the product's copy; the language
+  // comes from the gallery's settings
+  const COPY = {
+    zh: { f1: '设计稿-v3.png', f2: '素材包.zip', f3: '合同-final.pdf',
+          s1: '2.4 MB · 来自 客厅 Mac', s2: '18.6 MB · 来自 Work-PC', s3: '2.1 MB · 已发送' },
+    en: { f1: 'design-draft-v3.png', f2: 'assets.zip', f3: 'contract-final.pdf',
+          s1: '2.4 MB · From Living Room Mac', s2: '18.6 MB · From Work-PC', s3: '2.1 MB · Sent' }
+  }
+  DemoDimensions.on('language', (lang) => {
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
+    for (const el of document.querySelectorAll('[data-t]')) el.textContent = COPY[lang][el.dataset.t]
+  })
+</script>
+</body>
+</html>

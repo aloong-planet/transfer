@@ -4,17 +4,23 @@
 <head>
 <meta charset="utf-8">
 <title>原型 — 跳到最新按钮(染色玻璃深浅 3 档)</title>
+<script src="../manifest.js"></script>
+<script src="../app-identity.js"></script>
+<script src="../dimensions.js"></script>
+<script src="../demo-dimensions.js" data-follow="language mode"></script>
+<link rel="stylesheet" href="../_shared/bubble-colors.css">
 <style>
-  :root{
+  /* The mode comes from the gallery's settings, as data-demo-mode on the root */
+  html[data-demo-mode="light"]{
     --bg:#f7f8f9; --card:#ffffff; --text:#1a1c1f; --text-2:#52565c; --muted:#868b93;
     --line:#e8eaed; --line-strong:#d9dce0;
-    --accent:#8a67ab; --accent-soft:#f0ebf6; --bubble-me:#f6f3f8; --bubble-you:#eef0f3;
+    --accent:#8a67ab; --accent-soft:#f0ebf6;
     --shadow-md:0 4px 16px -6px rgba(20,22,26,.12);
   }
-  @media (prefers-color-scheme: dark){
-    :root{ --bg:#18191b; --card:#1f2124; --text:#e9eaed; --text-2:#b4b8bd; --muted:#7f858c;
-      --line:#2a2c30; --line-strong:#34373c; --accent:#a084c7; --accent-soft:#2a2430;
-      --bubble-me:#2a2430; --bubble-you:#26282c; --shadow-md:0 6px 20px -8px rgba(0,0,0,.5); }
+  html[data-demo-mode="dark"]{
+    --bg:#18191b; --card:#1f2124; --text:#e9eaed; --text-2:#b4b8bd; --muted:#7f858c;
+    --line:#2a2c30; --line-strong:#34373c; --accent:#a084c7; --accent-soft:#2a2430;
+    --shadow-md:0 6px 20px -8px rgba(0,0,0,.5);
   }
   *{box-sizing:border-box;margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
   body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;font-size:13px;display:flex}
@@ -55,28 +61,22 @@
     color:var(--accent)}
 
   /* 档 A 现状:常态 .16 / 悬浮 .30 —— 已实现的那版,留作参照 */
-  .vA{background:rgba(138,103,171,.16);box-shadow:0 4px 14px -5px rgba(138,103,171,.45)}
-  .vA:hover{background:rgba(138,103,171,.30);box-shadow:0 6px 18px -5px rgba(138,103,171,.6)}
-  @media (prefers-color-scheme: dark){
-    .vA{background:rgba(160,132,199,.22);box-shadow:0 4px 14px -5px rgba(0,0,0,.5)}
-    .vA:hover{background:rgba(160,132,199,.36)}
-  }
+  html[data-demo-mode="light"] .vA{background:rgba(138,103,171,.16);box-shadow:0 4px 14px -5px rgba(138,103,171,.45)}
+  html[data-demo-mode="light"] .vA:hover{background:rgba(138,103,171,.30);box-shadow:0 6px 18px -5px rgba(138,103,171,.6)}
+  html[data-demo-mode="dark"] .vA{background:rgba(160,132,199,.22);box-shadow:0 4px 14px -5px rgba(0,0,0,.5)}
+  html[data-demo-mode="dark"] .vA:hover{background:rgba(160,132,199,.36);box-shadow:0 6px 18px -5px rgba(138,103,171,.6)}
 
   /* 档 B 稍深:常态 .24 / 悬浮 .40 —— 存在感明确,仍能透出底下内容 */
-  .vB{background:rgba(138,103,171,.24);box-shadow:0 4px 14px -5px rgba(138,103,171,.5)}
-  .vB:hover{background:rgba(138,103,171,.4);box-shadow:0 6px 18px -5px rgba(138,103,171,.65)}
-  @media (prefers-color-scheme: dark){
-    .vB{background:rgba(160,132,199,.3);box-shadow:0 4px 14px -5px rgba(0,0,0,.55)}
-    .vB:hover{background:rgba(160,132,199,.46)}
-  }
+  html[data-demo-mode="light"] .vB{background:rgba(138,103,171,.24);box-shadow:0 4px 14px -5px rgba(138,103,171,.5)}
+  html[data-demo-mode="light"] .vB:hover{background:rgba(138,103,171,.4);box-shadow:0 6px 18px -5px rgba(138,103,171,.65)}
+  html[data-demo-mode="dark"] .vB{background:rgba(160,132,199,.3);box-shadow:0 4px 14px -5px rgba(0,0,0,.55)}
+  html[data-demo-mode="dark"] .vB:hover{background:rgba(160,132,199,.46);box-shadow:0 6px 18px -5px rgba(138,103,171,.65)}
 
   /* 档 C 更深:常态 .32 / 悬浮 .50 —— 最醒目,深色内容垫底时接近实心 */
-  .vC{background:rgba(138,103,171,.32);box-shadow:0 4px 14px -5px rgba(138,103,171,.55)}
-  .vC:hover{background:rgba(138,103,171,.5);box-shadow:0 6px 18px -5px rgba(138,103,171,.7)}
-  @media (prefers-color-scheme: dark){
-    .vC{background:rgba(160,132,199,.38);box-shadow:0 4px 14px -5px rgba(0,0,0,.6)}
-    .vC:hover{background:rgba(160,132,199,.54)}
-  }
+  html[data-demo-mode="light"] .vC{background:rgba(138,103,171,.32);box-shadow:0 4px 14px -5px rgba(138,103,171,.55)}
+  html[data-demo-mode="light"] .vC:hover{background:rgba(138,103,171,.5);box-shadow:0 6px 18px -5px rgba(138,103,171,.7)}
+  html[data-demo-mode="dark"] .vC{background:rgba(160,132,199,.38);box-shadow:0 4px 14px -5px rgba(0,0,0,.6)}
+  html[data-demo-mode="dark"] .vC:hover{background:rgba(160,132,199,.54);box-shadow:0 6px 18px -5px rgba(138,103,171,.7)}
 
   /* 演示:内容底色切换(把按钮放到深色图片上验玻璃) */
   body.dark-bed .pad{display:none}
@@ -98,29 +98,29 @@
 <body>
   <div class="side">
     <h1>Transfer</h1>
-    <div class="dev on"><span class="dot"></span><span>客厅 Mac<div class="sub">macOS · 192.168.3.24</div></span></div>
+    <div class="dev on"><span class="dot"></span><span><span data-t="dev1">客厅 Mac</span><div class="sub">macOS · 192.168.3.24</div></span></div>
     <div class="dev"><span class="dot"></span><span>Work-PC<div class="sub">Windows · 192.168.3.31</div></span></div>
   </div>
 
   <div class="chat">
-    <div class="c-h">客厅 Mac</div>
+    <div class="c-h" data-t="dev1">客厅 Mac</div>
     <div class="flow" id="flow">
-      <div class="bub">收到了,我这边看一下这几张截图。</div>
-      <div class="bub me"><div class="shot">截图 · 2560×1600</div><div class="meta">已送达 · 15:45</div></div>
-      <div class="bub">这版的间距比上一版舒服。</div>
-      <div class="bub me"><div class="shot">截图 · 2560×1600</div><div class="meta">已送达 · 15:45</div></div>
+      <div class="bub" data-t="m1">收到了,我这边看一下这几张截图。</div>
+      <div class="bub me"><div class="shot" data-t="shot">截图 · 2560×1600</div><div class="meta" data-t="delivered">已送达 · 15:45</div></div>
+      <div class="bub" data-t="m2">这版的间距比上一版舒服。</div>
+      <div class="bub me"><div class="shot" data-t="shot">截图 · 2560×1600</div><div class="meta" data-t="delivered">已送达 · 15:45</div></div>
       <!-- 演示:浅色留白垫底 -->
       <div class="pad" style="height:150px"></div>
       <!-- 演示:深色图片垫底 -->
-      <div class="bed bub me" style="max-width:56%"><div class="shot" style="height:230px">截图 · 深色内容垫底</div></div>
+      <div class="bed bub me" style="max-width:56%"><div class="shot" style="height:230px" data-t="shotDark">截图 · 深色内容垫底</div></div>
 
-      <button class="jump vA" id="jump" aria-label="跳到最新">
+      <button class="jump vA" id="jump" aria-label="跳到最新" data-t-aria="jump">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
         <span class="badge"></span>
       </button>
     </div>
     <div class="inp">
-      <div class="box">Type a message. Enter to send, Shift+Enter for newline</div>
+      <div class="box" data-t="placeholder">输入消息,Enter 发送,Shift+Enter 换行</div>
       <div class="snd">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
       </div>
@@ -139,6 +139,21 @@
   </div>
 
 <script>
+  // The page's product copy; the language comes from the gallery's settings
+  const COPY = {
+    zh: { dev1: '客厅 Mac', m1: '收到了,我这边看一下这几张截图。', m2: '这版的间距比上一版舒服。',
+          shot: '截图 · 2560×1600', delivered: '已送达 · 15:45', shotDark: '截图 · 深色内容垫底',
+          jump: '跳到最新', placeholder: '输入消息,Enter 发送,Shift+Enter 换行' },
+    en: { dev1: 'Living Room Mac', m1: "Got them, I'll look at these screenshots.", m2: 'The spacing in this version feels better than the last.',
+          shot: 'Screenshot · 2560×1600', delivered: 'Delivered · 15:45', shotDark: 'Screenshot · dark content underneath',
+          jump: 'Jump to latest', placeholder: 'Type a message. Enter to send, Shift+Enter for newline' }
+  }
+  DemoDimensions.on('language', (lang) => {
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
+    for (const el of document.querySelectorAll('[data-t]')) el.textContent = COPY[lang][el.dataset.t]
+    for (const el of document.querySelectorAll('[data-t-aria]')) el.setAttribute('aria-label', COPY[lang][el.dataset.tAria])
+  })
+
   const VARIANTS = [
     { cls: 'vA', name: 'A · 现状 .16/.30' },
     { cls: 'vB', name: 'B · 稍深 .24/.40' },

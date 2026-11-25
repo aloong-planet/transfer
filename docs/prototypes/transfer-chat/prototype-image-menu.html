@@ -8,29 +8,29 @@
 <script src="../app-identity.js"></script>
 <script src="../dimensions.js"></script>
 <script src="../demo-dimensions.js" data-follow="language mode"></script>
+<link rel="stylesheet" href="../_shared/bubble-colors.css">
 <style>
   :root {
     --bg: #f7f8f9; --card: #ffffff; --ink: #1a1c1f; --muted: #868b93; --line: #e8eaed;
     --hover: rgba(20, 22, 26, 0.04); --shadow-md: 0 4px 16px -6px rgba(20, 22, 26, 0.12);
-    --bubble-me: #f6f3f8; --bubble-you: #eef0f3;
   }
   html[data-demo-mode="light"] {
     --bg: #f7f8f9; --card: #ffffff; --ink: #1a1c1f; --muted: #868b93; --line: #e8eaed;
     --hover: rgba(20, 22, 26, 0.04); --shadow-md: 0 4px 16px -6px rgba(20, 22, 26, 0.12);
-    --bubble-me: #f6f3f8; --bubble-you: #eef0f3;
+    --pg-bg: #e9ebee; --pg-text: #3a3f46; --pg-title: #1a1c1f;
   }
   html[data-demo-mode="dark"] {
     --bg: #18191b; --card: #1f2124; --ink: #e9eaed; --muted: #7f858c; --line: #2a2c30;
     --hover: rgba(255, 255, 255, 0.05); --shadow-md: 0 6px 20px -8px rgba(0, 0, 0, 0.5);
-    --bubble-me: #2a2430; --bubble-you: #26282c;
+    --pg-bg: #101113; --pg-text: #b4b8bd; --pg-title: #e9eaed;
   }
   * { box-sizing: border-box }
   body { margin: 0 }
 
   /* Page chrome around the app window: not part of the design */
-  .page { min-height: 100vh; padding: 20px; background: #e9ebee; color: #3a3f46;
+  .page { min-height: 100vh; padding: 20px; background: var(--pg-bg); color: var(--pg-text);
     font: 12px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif }
-  .page h1 { font-size: 14px; margin: 0 0 4px; color: #1a1c1f }
+  .page h1 { font-size: 14px; margin: 0 0 4px; color: var(--pg-title) }
   .lead { margin: 0 0 14px; max-width: 860px }
   .lead ol { margin: 4px 0 0; padding-left: 18px }
 
@@ -172,7 +172,7 @@
   window.addEventListener('click', () => { if (menu) { menu = null; paintMenu() } })
   stream.addEventListener('scroll', () => { if (menu) { menu = null; paintMenu() } })
 
-  DemoDimensions.on('language', (v) => { lang = v; render() })
+  DemoDimensions.on('language', (v) => { lang = v; document.documentElement.lang = v === 'zh' ? 'zh-CN' : 'en'; render() })
 
   // Open on load over the received photo, as if it had been right-clicked there
   const photo = stream.querySelectorAll('.thumb')[0]
