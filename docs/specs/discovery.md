@@ -40,7 +40,7 @@
 
 - discovery::REQ-001/AC-01: An announcement is a JSON datagram sent to the multicast group 224.0.0.167 on UDP port 53317 and, on the same port, to the broadcast address of the subnet of each LAN interface in use, once when the app starts and every 5 seconds after.
 - discovery::REQ-001/AC-02: Its fields are `alias`, `version` ("2.0"), `deviceModel`, `deviceType` ("desktop"), `fingerprint`, `port` (the HTTP port actually in use), `protocol` ("https"), `download` (false) and `announce` (true or false).
-- discovery::REQ-001/AC-03: A datagram is read as an announcement when it is JSON with a string `alias` and a string `fingerprint`. The other fields are optional; a missing `port` reads as 53317 and a missing `protocol` as `https`. Every device that announces in this form is listed, whatever application it runs: nothing filters on version, device type or application.
+- discovery::REQ-001/AC-03: A datagram is read as an announcement when it is JSON with a string `alias` and a `fingerprint` accepted under discovery::REQ-004/AC-01. The other fields are optional; a missing `port` reads as 53317 and a missing `protocol` as `https`. Every device that announces in this form is listed, whatever application it runs: nothing filters on version, device type or application.
 
 ### discovery::REQ-002 The offline-retention setting
 
@@ -50,8 +50,14 @@
 
 ### discovery::REQ-003 Transfers are encrypted
 
-- discovery::REQ-003/AC-01: Everything a device sends to negotiate, carry out or cancel a transfer, text messages included, travels over TLS, so that a passive listener on the LAN reads none of it. Which of these requests check the peer's certificate is set out in section E.
+- discovery::REQ-003/AC-01: Everything a device sends to negotiate, carry out or cancel a transfer, text messages included, travels over TLS. Which of these requests check the peer's certificate is set out in section E.
 - discovery::REQ-003/AC-02: The announcements of discovery::REQ-001 are not encrypted: a device's alias, model, fingerprint and port are visible to anyone on the LAN.
+
+### discovery::REQ-004 The fingerprint a peer sends
+
+- discovery::REQ-004/AC-01: A fingerprint received from a peer is accepted when it is a string of 1 to 128 characters, counted in UTF-16 code units; a string of exactly 128 is accepted.
+- discovery::REQ-004/AC-02: A datagram whose `fingerprint` is not accepted is ignored: the device is not listed and gets no register reply.
+- discovery::REQ-004/AC-03: `POST /api/localsend/v2/register` with a body `fingerprint`, and `POST /api/localsend/v2/prepare-upload` with an `info.fingerprint`, that is not accepted are answered 400 with the body `{"message":"Invalid body"}`. The device is not registered, no message or file request is shown, and no session is opened.
 
 ## 失败模式与边界穷举
 

@@ -28,6 +28,7 @@ The user gives any discovered device a name of their own. The app shows that nam
 - device-alias::REQ-003/AC-01: An alias is kept for the device's fingerprint, so it applies again when the device reappears after it went offline, was renamed or changed its address.
 - device-alias::REQ-003/AC-02: Nothing removes an alias except the user clearing it: not the device going offline, and not the device being dropped from the device list once its offline retention time has passed ([discovery::REQ-002/AC-01](discovery.md)).
 - device-alias::REQ-003/AC-03: Aliases are stored on this machine only, in `settings.json` under `deviceAliases`, a map from the device's fingerprint to its alias. No message sent to another device carries an alias.
+- device-alias::REQ-003/AC-04: An alias is saved, read and cleared for exactly the fingerprint it was saved for, whatever string that fingerprint is. A device in the device list, or the sender of a file on the Received Files page, has an alias only when one is saved for exactly its fingerprint.
 
 ### device-alias::REQ-004 A failed save
 
