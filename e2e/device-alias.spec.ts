@@ -1,4 +1,4 @@
-// e2e: committing the alias input of a device (spec device-alias, REQ-001/AC-02).
+// e2e: committing the alias input of a device (device-alias::REQ-001/AC-02).
 //
 // How a device gets into the list: quiet instances run no discovery (they would announce on the LAN), so
 // the test sends the renderer a device-list update, the channel discovery uses in the product (the same
@@ -9,6 +9,9 @@
 //   device-alias::REQ-002/AC-01) is not asserted: after a save the main process pushes its own merged
 //   list, which is empty here because the injected device is not in its registry. The saved alias is read
 //   from settings.json instead. Closable by a way to put a device into the registry without announcing.
+// - That the device's menu still offers no 清除备注 after an unchanged commit is not asserted: the menu
+//   takes whether the device has an alias from the device list the test injects, so no change to the code
+//   under test could turn that assertion red. Closable by the same registry seam.
 // - The hidden test window takes no real pointer or key input (see ui-icons.spec.ts), so the right-click,
 //   the menu click, Enter and "clicking elsewhere" are dispatched as DOM events: Enter as a keydown on the
 //   input, "clicking elsewhere" as the input losing focus. Closable by a shown window driven with
@@ -125,12 +128,6 @@ test.describe.serial('device alias input', () => {
     await pressEnter(input)
     await expect(input).toHaveCount(0)
     expect(aliasesOnDisk()).not.toHaveProperty(fp)
-    // the menu offers no 清除备注: the device has no alias
-    await rowOf('Enter-PC').evaluate((el) =>
-      el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2, clientX: 40, clientY: 40 }))
-    )
-    await expect(page.getByText('修改备注', { exact: true })).toBeVisible()
-    await expect(page.getByText('清除备注', { exact: true })).toHaveCount(0)
   })
 
   test('clicking elsewhere on an unchanged input closes it and stores no alias', async () => {
