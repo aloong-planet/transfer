@@ -7,9 +7,10 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import { MessageStore } from '../src/main/db/messages'
 import { openChatWith } from './helpers/open-chat'
+import { launchQuiet } from './helpers/quiet-launch'
 
 interface SentMessage {
   id: string
@@ -28,23 +29,13 @@ type TransferApi = {
   canShowUnfinishedTextFile: (messageId: string) => Promise<boolean>
 }
 
-async function launch(userData: string): Promise<{ app: ElectronApplication; page: Page }> {
-  const app = await electron.launch({
-    args: ['.', `--user-data-dir=${userData}`],
-    env: { ...process.env, NODE_ENV: 'production', TRANSFER_E2E_QUIET: '1', TRANSFER_USERDATA: userData }
-  })
-  const page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
-  return { app, page }
-}
-
 // The file is written, and named, when the text is sent: no second device is needed. The recipient
 // is a fingerprint nobody has, so the send fails as offline; by then the file exists and the sent
 // file message points at it, which is all this case looks at.
 test('a text over 32 KiB is written to sent-texts, named in the interface language of the moment it is sent', async () => {
   const userData = mkdtempSync(join(tmpdir(), 'transfer-longtext-e2e-'))
   writeFileSync(join(userData, 'settings.json'), JSON.stringify({ language: 'zh' }))
-  const { app, page } = await launch(userData)
+  const { app, page } = await launchQuiet(userData)
   try {
     const text = '€'.repeat(12000) // 36000 bytes in 12000 characters
     const sendLongText = (): Promise<SentMessage> =>
@@ -117,7 +108,7 @@ test('a text sent as a file that did not arrive can be shown in its folder while
   })
   store.close()
 
-  const { app, page } = await launch(userData)
+  const { app, page } = await launchQuiet(userData)
   try {
     await openChatWith(app, page, { fingerprint: PEER, alias: ALIAS })
     const bubble = (name: string): ReturnType<Page['getByTestId']> =>

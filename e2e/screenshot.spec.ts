@@ -11,18 +11,20 @@
 // Known gap: the real handler's answer with the conflict set is not exercised end to end; its answer without one is
 // (the second case).
 //
-// The main process is touched only after `firstWindow()`. `electron.launch` can return before the app's
+// The main process is touched only after `firstWindow()`. Electron's launch can return before the app's
 // `app.whenReady()` handler has run, so an `app.evaluate` made right after it can land first. A handler registered then
 // for a channel the app registers itself makes `registerIpc()` throw on the duplicate: the ready handler stops before
 // `createWindow()`, no window ever opens, and the case fails with a `firstWindow` timeout. The first window exists only
 // once `registerIpc()` has run (src/main/index.ts), and Settings asks for the answer only when it opens, so replacing
-// the handler between the two keeps each case's meaning.
+// the handler between the two keeps each case's meaning. `launchQuiet` (helpers/quiet-launch.ts) returns only after
+// `firstWindow()` has, so a case replaces a handler right after it.
 //
 // A quiet instance per case: its own userData, no window shown, no global shortcut, no network (see ui-icons.spec.ts).
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
+import { launchQuiet } from './helpers/quiet-launch'
 
 /** The notice's text in each interface language, as screenshot::REQ-001/AC-04 gives it */
 const NOTICE = {
@@ -32,22 +34,15 @@ const NOTICE = {
 
 interface Launched {
   app: ElectronApplication
+  page: Page
   userData: string
 }
 
 async function launch(language: 'zh' | 'en'): Promise<Launched> {
   const userData = mkdtempSync(join(tmpdir(), 'transfer-shortcut-e2e-'))
   writeFileSync(join(userData, 'settings.json'), JSON.stringify({ language }))
-  const app = await electron.launch({
-    args: ['.', `--user-data-dir=${userData}`],
-    env: {
-      ...process.env,
-      NODE_ENV: 'production',
-      TRANSFER_E2E_QUIET: '1',
-      TRANSFER_USERDATA: userData
-    }
-  })
-  return { app, userData }
+  const { app, page } = await launchQuiet(userData)
+  return { app, page, userData }
 }
 
 async function close(l: Launched): Promise<void> {
@@ -57,7 +52,7 @@ async function close(l: Launched): Promise<void> {
 
 /**
  * The main process answers that the saved combination (F1) could not be registered at startup. Call it only after
- * `firstWindow()` (see the header).
+ * `firstWindow()` has returned, as it has when `launch` does (see the header).
  */
 async function reportStartupConflict(app: ElectronApplication): Promise<void> {
   await app.evaluate(({ ipcMain }) => {
@@ -65,13 +60,6 @@ async function reportStartupConflict(app: ElectronApplication): Promise<void> {
     ipcMain.removeHandler('settings:getShortcut')
     ipcMain.handle('settings:getShortcut', () => ({ accel: 'F1', conflict: true }))
   })
-}
-
-/** The instance's window; it exists only after the app's startup has registered its IPC handlers */
-async function firstPage(l: Launched): Promise<Page> {
-  const page = await l.app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
-  return page
 }
 
 async function openSettings(page: Page): Promise<void> {
@@ -82,7 +70,7 @@ for (const language of ['zh', 'en'] as const) {
   test(`a startup refusal is told in Settings from the moment it opens, in ${language}`, async () => {
     const l = await launch(language)
     try {
-      const page = await firstPage(l)
+      const { page } = l
       await reportStartupConflict(l.app)
       await openSettings(page)
       const capture = page.getByRole('button', { name: 'F1', exact: true })
@@ -105,7 +93,7 @@ test('Settings shows no notice when the saved combination was not refused', asyn
   // The real handler answers: a quiet instance registers nothing, so nothing was refused
   const l = await launch('zh')
   try {
-    const page = await firstPage(l)
+    const { page } = l
     await openSettings(page)
     await expect(page.getByRole('button', { name: 'F1', exact: true })).toBeVisible()
     await expect(page.getByText(NOTICE.zh, { exact: true })).toHaveCount(0)
@@ -117,7 +105,7 @@ test('Settings shows no notice when the saved combination was not refused', asyn
 test('setting a combination that registers removes the notice', async () => {
   const l = await launch('zh')
   try {
-    const page = await firstPage(l)
+    const { page } = l
     await reportStartupConflict(l.app)
     // Electron's registration is replaced at its boundary: the real one would claim the combination system-wide
     // from a test instance. The change itself goes through the real handler and the real service.

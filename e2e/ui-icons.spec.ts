@@ -10,7 +10,8 @@
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { test, expect, _electron as electron, type ElectronApplication } from '@playwright/test'
+import { test, expect, type ElectronApplication } from '@playwright/test'
+import { launchQuiet } from './helpers/quiet-launch'
 
 interface Launched {
   app: ElectronApplication
@@ -21,21 +22,13 @@ interface Launched {
 async function launch(): Promise<Launched> {
   const userData = mkdtempSync(join(tmpdir(), 'transfer-e2e-'))
   const errors: string[] = []
-  const app = await electron.launch({
-    args: ['.', `--user-data-dir=${userData}`],
-    env: {
-      ...process.env,
-      NODE_ENV: 'production',
-      // 静音三件事见 src/main/index.ts 的 QUIET 定义
-      TRANSFER_E2E_QUIET: '1',
-      // userData 双保险:--user-data-dir 由 Chromium 认,TRANSFER_USERDATA 由主进程认。
-      // 只给前者时主进程若走 setPath 分支仍会落到真实目录,污染用户数据。
-      TRANSFER_USERDATA: userData
-    }
-  })
-  app.process().stderr?.on('data', (b: Buffer) => {
-    const t = b.toString()
-    if (/Error occurred in handler|UnhandledPromiseRejection|TypeError/.test(t)) errors.push(t.trim())
+  // The listener is attached as the process starts, before the launch waits for the window, so it sees start-up errors too
+  const { app } = await launchQuiet(userData, {
+    onLaunch: (app) =>
+      app.process().stderr?.on('data', (b: Buffer) => {
+        const t = b.toString()
+        if (/Error occurred in handler|UnhandledPromiseRejection|TypeError/.test(t)) errors.push(t.trim())
+      })
   })
   return { app, userData, errors }
 }
