@@ -145,7 +145,7 @@ version 可以不变,但 build 号必须递增**,否则 ASC 拒收。
 可以在 `electron-builder.yml` 的 `extendInfo` 里加 `ITSAppUsesNonExemptEncryption`
 让它不再每次都问。
 
-> **本项目当前没有配置这个键**,也就是每次上传都要在网页上手填一次。
+> **本项目已在 `mac.extendInfo` 里配置这个键(值为 `false`,理由见 `electron-builder.yml` 中的注释)**。
 > 要不要配、配成什么值,是**合规判断而非技术判断**:这个 app 用 TLS 保护传输、
 > 自签证书并做指纹 pinning,是否落在 Apple 的豁免类别里需要发布者自己确认。
 > 本手册不给结论。
