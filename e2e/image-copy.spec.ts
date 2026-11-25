@@ -25,7 +25,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
 import { MessageStore } from '../src/main/db/messages'
-import { EVT } from '../src/shared/ipc'
+import { openChatWith } from './helpers/open-chat'
 import type { TransferApi } from '../src/preload'
 import { injectMetadata, phoneMetadata } from '../src/main/image-orientation.fixture'
 
@@ -207,29 +207,8 @@ test.describe.serial('image copy', () => {
     // at the top-left)
     writeFileSync(join(files, 'phone.jpg'), injectMetadata(await encode('jpeg', 200, 100, true), phoneMetadata(6)))
 
-    // Stand in for discovery: one online device, the peer of the seeded messages. Sent until the row
-    // shows, because a single update sent during start-up was seen to be lost (2026-10-22) — likely sent
-    // before the renderer subscribed, or replaced by the renderer's own first, empty device fetch.
-    const device = {
-      info: { alias: ALIAS, version: '2.1', fingerprint: PEER, deviceType: 'desktop', hasCustomAlias: false },
-      address: '127.0.0.1',
-      port: 53399,
-      protocol: 'https',
-      lastSeen: Date.now(),
-      status: 'online'
-    }
-    const row = page.getByText(ALIAS, { exact: true }).first()
-    await expect(async () => {
-      await app.evaluate(
-        ({ BrowserWindow }, [channel, d]) => {
-          const main = BrowserWindow.getAllWindows().find((w) => !w.webContents.getURL().includes('overlay'))!
-          main.webContents.send(channel, [d])
-        },
-        [EVT.devicesUpdated, device] as const
-      )
-      await expect(row).toBeVisible({ timeout: 500 })
-    }).toPass({ timeout: 15_000 })
-    await row.dispatchEvent('click')
+    // Stand in for discovery: one online device, the peer of the seeded messages
+    await openChatWith(app, page, { fingerprint: PEER, alias: ALIAS })
 
     // Let the chat settle before any right-click. Thumbnails arrive one by one and the stream keeps
     // itself at the bottom as they do; in CI (2026-10-22) a menu opened while they were still arriving

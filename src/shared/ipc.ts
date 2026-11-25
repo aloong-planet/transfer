@@ -58,6 +58,8 @@ export const CMD = {
   openFile: 'message:openFile',
   /** 在系统文件管理器中定位并高亮选中该文件(收到的文件"打开所在文件夹") */
   showInFolder: 'message:showInFolder',
+  /** Whether "Show in Folder" is offered for a sent message that ended without arriving because it is a text sent as a file (its .txt is then the only copy of the text) */
+  canShowUnfinishedTextFile: 'message:canShowUnfinishedTextFile',
   /** 取图片消息缩略图 dataURL(png/jpg 可生成;拿不到返回 null → UI 回退文件图标) */
   getThumbnail: 'message:getThumbnail',
   /** 图片"另存为":弹系统对话框把原图复制到用户选定位置,返回保存路径或 null(取消) */

@@ -86,6 +86,9 @@ const api = {
     ipcRenderer.invoke(CMD.dismissReceiveDirNotice),
   /** 在文件管理器中定位并选中收到的文件 */
   showInFolder: (messageId: string): Promise<void> => ipcRenderer.invoke(CMD.showInFolder, messageId),
+  /** 发出去没送到的"长文本文件"消息(失败/被拒/过期)是否还该给"打开所在文件夹":文件还在 sent-texts 里 */
+  canShowUnfinishedTextFile: (messageId: string): Promise<boolean> =>
+    ipcRenderer.invoke(CMD.canShowUnfinishedTextFile, messageId),
   /** 同步总未读数给 main(驱动 mac Dock 数字角标) */
   setUnread: (total: number): Promise<void> => ipcRenderer.invoke(CMD.setUnread, total),
 

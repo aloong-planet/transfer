@@ -370,26 +370,32 @@ export class ChatService {
     return this.enqueue(peerFp, async () => {
       if (isTextTooLarge(text)) return this.sendLongText(peerFp, text)
       const peer = this.d.resolvePeer(peerFp)
-      const msg = this.d.store.insert({
-        id: randomUUID(),
-        type: 'text',
-        direction: 'sent',
-        peerFp,
-        peerAlias: peer?.alias ?? peerFp.slice(0, 8),
-        content: text,
-        fileName: null,
-        fileSize: null,
-        filePath: null,
-        status: 'pending',
-        errorReason: null,
-        transferId: null
-      })
-      this.upsert(msg)
+      const msg = this.insertSentText(peerFp, peer?.alias, text)
       // resolvePeer 契约:离线/已从发现表移除返回 null → 报"对方已离线",而非误导性的连接超时
       if (!peer) return this.fail(msg.id, 'offline')
       const res = await this.d.sender.sendText(peer.target, text)
       return this.applySendResult(msg.id, res)
     })
+  }
+
+  /** Stores a pending sent text message and pushes it to the UI. */
+  private insertSentText(peerFp: string, peerAlias: string | undefined, text: string): Message {
+    const msg = this.d.store.insert({
+      id: randomUUID(),
+      type: 'text',
+      direction: 'sent',
+      peerFp,
+      peerAlias: peerAlias ?? peerFp.slice(0, 8),
+      content: text,
+      fileName: null,
+      fileSize: null,
+      filePath: null,
+      status: 'pending',
+      errorReason: null,
+      transferId: null
+    })
+    this.upsert(msg)
+    return msg
   }
 
   /**
@@ -409,22 +415,7 @@ export class ChatService {
       // its own wording; no other reason fits a local write failure (network would say
       // "Network error", no-permission "No permission to read this file"), so the others
       // get the generic "Failed" (no errorReason).
-      const peer = this.d.resolvePeer(peerFp)
-      const msg = this.d.store.insert({
-        id: randomUUID(),
-        type: 'text',
-        direction: 'sent',
-        peerFp,
-        peerAlias: peer?.alias ?? peerFp.slice(0, 8),
-        content: text,
-        fileName: null,
-        fileSize: null,
-        filePath: null,
-        status: 'pending',
-        errorReason: null,
-        transferId: null
-      })
-      this.upsert(msg)
+      const msg = this.insertSentText(peerFp, this.d.resolvePeer(peerFp)?.alias, text)
       const code = (e as NodeJS.ErrnoException).code
       const failed = this.d.store.updateStatus(
         msg.id,
