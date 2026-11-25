@@ -16,10 +16,11 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { EVT } from '../src/shared/ipc'
 import type { Message } from '../src/shared/message'
 import { openChatWith } from './helpers/open-chat'
+import { launchQuiet } from './helpers/quiet-launch'
 
 const LISTED = { fingerprint: 'constructor', alias: 'Odd-PC' }
 const UNLISTED = 'AB:CD:EF:01:23:45:67:89'
@@ -70,12 +71,7 @@ const badgeOf = (alias: string): ReturnType<Page['locator']> =>
 test.beforeAll(async () => {
   userData = mkdtempSync(join(tmpdir(), 'transfer-unread-e2e-'))
   writeFileSync(join(userData, 'settings.json'), JSON.stringify({ language: 'zh' }))
-  app = await electron.launch({
-    args: ['.', `--user-data-dir=${userData}`],
-    env: { ...process.env, NODE_ENV: 'production', TRANSFER_E2E_QUIET: '1', TRANSFER_USERDATA: userData }
-  })
-  page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  ;({ app, page } = await launchQuiet(userData))
   // Records the count instead of setting the operating system's badge
   await app.evaluate(({ app: electronApp }) => {
     electronApp.setBadgeCount = (count?: number): boolean => {
